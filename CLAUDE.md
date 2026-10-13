@@ -96,3 +96,8 @@ desligada por padrão) amplia primeiro por um número inteiro (pixels nítidos)
 e depois encaixa na janela com filtro bilinear, para os pixels ficarem do
 mesmo tamanho quando a ampliação não é inteira (`sharp_bilinear_prescale()`
 em `src/video.c`). Em múltiplos exatos nada muda.
+
+Steam Deck: o modo "Integer" já dá o encaixe exato 4x (1280x800, pixels
+quadrados), então não há opção nova para isso. O jogo não muda a taxa da tela
+no Modo de Jogo (o gamescope/Steam controla); o LEIA-ME explica 70 Hz no OLED
+e 60 Hz no LCD (40-60 Hz, nada combina com 35 FPS).

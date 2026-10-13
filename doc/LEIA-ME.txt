@@ -46,6 +46,22 @@ LINUX / STEAM DECK
   No Linux, saves e configuracoes ficam em ~/.config/opentyrian2000
   (ou ao lado do jogo, se existir um opentyrian.cfg na pasta dele).
 
+TELA DO STEAM DECK (1280x800)
+  O padrao e "Fit 4:3", fiel aos monitores de 1995 (faixas pretas finas nas
+  laterais). Para tela cheia com pixels quadrados e nitidos, escolha
+  Setup > Graphics > Scaling Mode > "Integer": no Deck cada pixel do jogo
+  vira um bloco exato de 4x4. No Fit 4:3, ligue "Sharp Bilinear" para os
+  pixels ficarem do mesmo tamanho.
+  Rolagem lisa: o Tyrian roda a 35 quadros por segundo. O jogo nao consegue
+  mudar a taxa da tela sozinho no Modo de Jogo; ajuste no Deck:
+  - Deck OLED: botao "..." > Desempenho > ative "Usar perfil por jogo" e
+    coloque "Taxa de atualizacao" em 70 Hz (2 x 35). Fica perfeitamente liso.
+  - Deck LCD: a tela vai de 40 a 60 Hz e nenhum valor combina com 35.
+    Deixe em 60 Hz (o padrao).
+  Nao ligue o "Limite de quadros" da Steam: o jogo ja controla a velocidade.
+  Musica: funciona no Deck. Se ficar sem som, confira o volume em
+  Setup > Sound e envie o opentyrian.log.
+
 PROBLEMAS
   O jogo grava o arquivo opentyrian.log (na mesma pasta do jogo, ou em
   %APPDATA%\OpenTyrian2000 no Windows e ~/.config/opentyrian2000 no

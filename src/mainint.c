@@ -53,6 +53,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <math.h>
 #include <string.h>
 
 bool button[4];

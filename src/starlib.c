@@ -24,6 +24,7 @@
 #include "video.h"
 
 #include <ctype.h>
+#include <math.h>
 
 #define starlib_MAX_STARS 1000
 #define MAX_TYPES 14

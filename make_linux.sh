@@ -1,5 +1,6 @@
 #!/bin/bash
-# make_linux.sh — build a self-contained OpenTyrian binary on Linux.
+# make_linux.sh — build a self-contained Tyrian2000Plus for Linux (and the
+# Steam Deck) and pack it into dist/Tyrian2000Plus-linux-x86_64.tar.gz.
 #
 # SDL2 and SDL2_net are built from source and linked STATICALLY.  A distro's
 # libSDL2 is linked against whatever that distro has (libdecor, Wayland,
@@ -7,39 +8,31 @@
 # hard dependency on the user's machine.  SDL built from source instead
 # loads all of those backends with dlopen at run time, so the resulting
 # binary needs nothing beyond glibc and libm - and whatever the user has
-# (X11 or Wayland, ALSA or Pulse) gets picked up when it runs.
+# (X11 or Wayland, ALSA, Pulse or PipeWire) gets picked up when it runs.
+# Build on the oldest distro you want to support (CI uses Ubuntu 22.04):
+# the binary needs a glibc no newer than the one it was built against.
 #
-# The freeware Tyrian 2.1 data is fetched into ./data if missing.
+# The Tyrian 2000 data is NOT included in the package; the user copies it
+# into the data/ folder next to the binary (see doc/LEIA-ME.txt).
 #
 # Build requirements (headers only; nothing is linked from them):
-#   Debian/Ubuntu:  sudo apt install build-essential cmake pkg-config curl unzip \
-#       libasound2-dev libpulse-dev libx11-dev libxext-dev libxrandr-dev \
-#       libxcursor-dev libxfixes-dev libxi-dev libxss-dev libwayland-dev \
-#       libxkbcommon-dev libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
-#       libdbus-1-dev libudev-dev
+#   Debian/Ubuntu:  sudo apt install build-essential cmake pkg-config curl \
+#       libasound2-dev libpulse-dev libpipewire-0.3-dev libx11-dev libxext-dev \
+#       libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
+#       libwayland-dev wayland-protocols libxkbcommon-dev libdecor-0-dev \
+#       libegl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libgbm-dev \
+#       libdrm-dev libdbus-1-dev libudev-dev
 #
-# Usage: ./make_linux.sh [data-dir]     (default: ./data, fetched if missing)
+# Usage: ./make_linux.sh
 set -euo pipefail
 
 cd "$(dirname "$0")"
-DATA_ARG="${1:-data}"
 
-have_data() { find "$1" -maxdepth 1 -iname "tyrian1.lvl" 2>/dev/null | grep -q .; }
-
-if ! have_data "$DATA_ARG" && [ "$#" -ge 1 ]; then
-    echo "ERROR: no Tyrian data in '$DATA_ARG'" >&2
-    echo "Point make_linux.sh at your Tyrian 2.1 data, or run it with no argument" >&2
-    echo "to download the freeware release into ./data automatically." >&2
-    exit 1
-fi
-./get_data.sh "$DATA_ARG"
-DATA_DIR="$(cd "$DATA_ARG" && pwd)"
-
-# ---- static SDL2 + SDL2_net from source, installed under build/sdl ----
 SDL2_VER="2.32.10"
-SDL2_NET_VER="2.2.0"
+SDL2_NET_VER="2.4.0"
 PREFIX="$PWD/build/sdl"
 NPROC="$(nproc 2>/dev/null || echo 4)"
+NAME="Tyrian2000Plus-linux-x86_64"
 
 # The license of anything we link in has to travel with the binary.  Keep the
 # copies inside the prefix, since that is what CI caches: on a cache hit the
@@ -56,10 +49,11 @@ install_license() {  # $1 = source directory, $2 = name in the package
     exit 1
 }
 
+# ---- static SDL2 + SDL2_net from source, installed under build/sdl ----
 if [ ! -f "$PREFIX/lib/libSDL2.a" ]; then
     echo "Building SDL2 $SDL2_VER (static) ..."
     mkdir -p build/vendor
-    curl -fL --progress-bar -o build/vendor/SDL2.tar.gz \
+    curl -fsSL -o build/vendor/SDL2.tar.gz \
         "https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VER/SDL2-$SDL2_VER.tar.gz"
     rm -rf "build/vendor/SDL2-$SDL2_VER"
     tar -xzf build/vendor/SDL2.tar.gz -C build/vendor
@@ -78,12 +72,10 @@ fi
 if [ ! -f "$PREFIX/lib/libSDL2_net.a" ]; then
     echo "Building SDL2_net $SDL2_NET_VER (static) ..."
     mkdir -p build/vendor
-    curl -fL --progress-bar -o build/vendor/SDL2_net.tar.gz \
+    curl -fsSL -o build/vendor/SDL2_net.tar.gz \
         "https://github.com/libsdl-org/SDL_net/releases/download/release-$SDL2_NET_VER/SDL2_net-$SDL2_NET_VER.tar.gz"
     rm -rf "build/vendor/SDL2_net-$SDL2_NET_VER"
     tar -xzf build/vendor/SDL2_net.tar.gz -C build/vendor
-    # Work around SDL2_net not creating a .pc file
-    sed -i ':a;N;$!ba;s/if(SDL2NET_BUILD_SHARED_LIBS)[[:space:]]*\n\([[:space:]]*\)# Only create a .pc file for a shared SDL2_net/if(TRUE)\n\1set(ENABLE_SHARED_TRUE "#")/' "build/vendor/SDL2_net-$SDL2_NET_VER/CMakeLists.txt"
     cmake -S "build/vendor/SDL2_net-$SDL2_NET_VER" -B "build/vendor/SDL2_net-$SDL2_NET_VER/build" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX="$PREFIX" \
@@ -96,17 +88,36 @@ if [ ! -f "$PREFIX/lib/libSDL2_net.a" ]; then
 fi
 
 # ---- the game, against the static SDL ----
-# pkg-config resolves sdl2/SDL2_net from our prefix; --static pulls in the
-# libraries SDL itself needs (m, dl, pthread, rt) for the static link.
+# A static SDL2_net installs no .pc file, so its flags are given by hand;
+# --static pulls in the libraries SDL itself needs (m, dl, pthread, rt).
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
 make clean >/dev/null
-make -j"$NPROC" \
-    SDL_LDLIBS="$(pkg-config --static --libs-only-l sdl2 SDL2_net)"
+make -j"$NPROC" WITH_NETWORK=true \
+    SDL_CPPFLAGS="$(pkg-config --cflags sdl2)" \
+    SDL_LDFLAGS="$(pkg-config --static --libs-only-L sdl2)" \
+    SDL_LDLIBS="-lSDL2_net $(pkg-config --static --libs-only-l sdl2)"
 
-echo
-if ldd opentyrian | grep -q "libSDL2"; then
-    echo "ERROR: opentyrian still links SDL2 dynamically" >&2
+if ldd opentyrian2000 | grep -q "libSDL2"; then
+    echo "ERROR: opentyrian2000 still links SDL2 dynamically" >&2
     exit 1
 fi
-echo "built: ./opentyrian (SDL2 linked statically)"
-echo "run:   ./opentyrian --data=\"$DATA_DIR\""
+
+# ---- package ----
+rm -rf "dist/$NAME" "dist/$NAME.tar.gz"
+mkdir -p "dist/$NAME/data" "dist/$NAME/licencas"
+cp opentyrian2000 "dist/$NAME/Tyrian2000Plus"
+strip "dist/$NAME/Tyrian2000Plus"
+cp doc/LEIA-ME.txt "dist/$NAME/"
+cp linux/icons/tyrian2000-128.png "dist/$NAME/Tyrian2000Plus.png"
+cp COPYING "dist/$NAME/licencas/GPL-2.0.txt"
+cp doc/tyrian-freeware-license.txt "dist/$NAME/licencas/tyrian-freeware-license.txt"
+cp "$PREFIX/share/licenses/SDL2.txt" "$PREFIX/share/licenses/SDL2_net.txt" "dist/$NAME/licencas/"
+cat > "dist/$NAME/data/COLOQUE-OS-DADOS-AQUI.txt" <<'EOF'
+Copie para esta pasta todos os arquivos da pasta "tyrian2000" de
+https://www.camanis.net/tyrian/tyrian2000.zip (tyrian.hdt, tyrian1.lvl,
+music.mus etc.). Veja LEIA-ME.txt.
+EOF
+tar -czf "dist/$NAME.tar.gz" -C dist "$NAME"
+
+echo
+echo "built: dist/$NAME.tar.gz (SDL2 linked statically)"

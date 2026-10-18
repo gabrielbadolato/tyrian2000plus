@@ -3496,7 +3496,7 @@ bool titleScreen(void)
 		{
 			for (size_t ti = 0U; last_text[ti] != '\0'; ++ti)
 			{
-				const char c = toupper(last_text[ti]);
+				const char c = (unsigned char)last_text[ti] <= 127U ? toupper(last_text[ti]) : 0;
 
 				for (size_t i = 0; i < SA_ENGAGE; i++)
 				{

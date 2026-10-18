@@ -862,8 +862,8 @@ static void code_to_assignment(Joystick_assignment *assignment, const char *buff
 	else
 		--assignment->num;
 
-	assignment->x_axis = (toupper(axis) == 'X');
-	assignment->negative_axis = (toupper(direction) == '-');
+	assignment->x_axis = (toupper((unsigned char)axis) == 'X');
+	assignment->negative_axis = (toupper((unsigned char)direction) == '-');
 }
 
 /* gives the short (6 or less characters) identifier for a joystick assignment

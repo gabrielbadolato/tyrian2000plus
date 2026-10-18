@@ -76,3 +76,8 @@ Mouse..., os mesmos ajustes do menu da nave, feitos no estilo do `setupMenu`
 
 Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
 ao investigar problemas no PC do Gabriel.
+
+Telas de ajuda: `padHelpText()` em `src/helptext.c` troca, só quando há um
+controle conectado, as menções a teclas dos textos do `tyrian.hdt` (Enter, ESC,
+setas, Alt-X, "[/]") pelos nomes dos botões do controle (conforme o mapeamento
+atual). Texto que não reconhece fica igual.

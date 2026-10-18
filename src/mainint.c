@@ -1586,7 +1586,7 @@ JE_boolean JE_inGameSetup(void)
 		}
 
 		// Draw help text.
-		JE_outTextAdjust(VGAScreen, 10, 147, mainMenuHelp[helpIndexes[selectedIndex]], 14, 6, TINY_FONT, true);
+		JE_outTextAdjust(VGAScreen, 10, 147, padHelpText(mainMenuHelp[helpIndexes[selectedIndex]]), 14, 6, TINY_FONT, true);
 
 		JE_mouseStart();
 		JE_showVGA();
@@ -2194,7 +2194,7 @@ void JE_highScoreCheck(void)
 				textGlowBrightness = 10;
 				JE_outTextGlow(VGAScreenSeg, 150, (slot * 12) + 65, t2kHighScores[table][slot].playerName);
 				textGlowBrightness = 10;
-				JE_outTextGlow(VGAScreenSeg, JE_fontCenter(miscText[4], TINY_FONT), 180, miscText[4]);
+				JE_outTextGlow(VGAScreenSeg, JE_fontCenter(padHelpText(miscText[4]), TINY_FONT), 180, padHelpText(miscText[4]));
 
 				JE_showVGA();
 

@@ -965,6 +965,46 @@ static const char *assignment_to_label(int j, const Joystick_assignment *assignm
 	return assignment_to_code(assignment);
 }
 
+// index of the first connected gamepad (SDL_GameController), or -1 if none
+int joystick_first_gamepad(void)
+{
+	for (int j = 0; j < joysticks; j++)
+		if (joystick[j].controller != NULL)
+			return j;
+
+	return -1;
+}
+
+// the name printed on the controller for a standardized button (ex. "A", "CROSS")
+const char *joystick_button_label(int j, SDL_GameControllerButton button)
+{
+	assert(j < joysticks);
+
+	Joystick_assignment assignment;
+	set_assignment(&assignment, PAD_BUTTON, button, false);
+	return assignment_to_label(j, &assignment);
+}
+
+// like joystick_assignments_to_string(), but compact: "A/RT"
+void joystick_action_label(int j, int action, char *buffer, size_t buffer_len)
+{
+	assert(j < joysticks);
+	assert(action >= 0 && (size_t)action < COUNTOF(joystick[j].assignment));
+
+	SDL_strlcpy(buffer, "", buffer_len);
+
+	for (uint i = 0; i < COUNTOF(joystick[j].assignment[action]); ++i)
+	{
+		const Joystick_assignment *assignment = &joystick[j].assignment[action][i];
+		if (assignment->type == NONE)
+			continue;
+
+		if (buffer[0] != '\0')
+			SDL_strlcat(buffer, "/", buffer_len);
+		SDL_strlcat(buffer, assignment_to_label(j, assignment), buffer_len);
+	}
+}
+
 // captures gamepad input for configuring assignments (standardized buttons/axes)
 static bool detect_gamepad_assignment(int j, Joystick_assignment *assignment)
 {

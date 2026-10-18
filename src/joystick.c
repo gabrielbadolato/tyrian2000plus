@@ -52,7 +52,6 @@ static void code_to_assignment(Joystick_assignment *assignment, const char *buff
 
 static void open_joysticks(void);
 static void close_joysticks(bool save);
-static void check_joystick_hotplug(void);
 
 int joystick_repeat_delay = 300; // milliseconds, repeat delay for buttons
 bool joydown = false;            // any joystick buttons down, updated by poll_joysticks()
@@ -527,7 +526,7 @@ static void close_joysticks(bool save)
 }
 
 // rebuilds the device list when something was connected or disconnected
-static void check_joystick_hotplug(void)
+void check_joystick_hotplug(void)
 {
 	if (ignore_joystick)
 		return;

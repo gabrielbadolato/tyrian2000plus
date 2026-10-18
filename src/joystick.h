@@ -82,6 +82,7 @@ bool joystick_analog_angle(int j, float *angle);
 
 void poll_joystick(int j);
 void poll_joysticks(void);
+void check_joystick_hotplug(void);
 
 void push_key(SDL_Scancode key);
 void push_joysticks_as_keyboard(void);

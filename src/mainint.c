@@ -3677,6 +3677,7 @@ redo:
 				}
 
 				/* joystick input */
+				check_joystick_hotplug();  // pick up controllers connected mid-level
 				if ((inputDevice == 0 || inputDevice >= 3) && joysticks > 0)
 				{
 					int j = inputDevice  == 0 ? 0 : inputDevice - 3;

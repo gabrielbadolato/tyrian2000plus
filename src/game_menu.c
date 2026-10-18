@@ -445,6 +445,8 @@ void JE_itemScreen(void)
 				temp = (i == curSel[curMenu] - 2u) ? 252 : 250;
 
 				char value[30] = "";
+				if (joystick_config >= joysticks) // a controller was disconnected
+					joystick_config = 0;
 				if (joysticks == 0 && i < 14) // no joysticks, everything disabled
 				{
 					sprintf(value, "-");
@@ -465,7 +467,7 @@ void JE_itemScreen(void)
 				}
 				else if (i < 14) // assignments
 				{
-					joystick_assignments_to_string(value, sizeof(value), joystick[joystick_config].assignment[i - 4]);
+					joystick_assignments_to_string(joystick_config, value, sizeof(value), joystick[joystick_config].assignment[i - 4]);
 				}
 
 				JE_textShade(VGAScreen, 236, 38 + i * 8, value, temp / 16, temp % 16 - 8, DARKEN);
@@ -991,6 +993,8 @@ void JE_itemScreen(void)
 				wait_delay();
 
 				push_joysticks_as_keyboard();
+				if (joystick_config >= joysticks) // a controller was disconnected
+					joystick_config = 0;
 				service_SDL_events(false);
 				mouseButton = JE_mousePosition(&mouseX, &mouseY);
 				inputDetected = newkey || mouseButton > 0;
@@ -2995,6 +2999,8 @@ void JE_menuFunction(JE_byte select)
 		break;
 
 	case MENU_JOYSTICK_CONFIG:
+		if (joystick_config >= joysticks) // a controller was disconnected
+			joystick_config = 0;
 		if (joysticks == 0 && select != 17)
 			break;
 

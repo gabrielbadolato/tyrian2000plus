@@ -1038,6 +1038,22 @@ void JE_wipeShieldArmorBars(void)
 	}
 }
 
+// vibrates the controller(s) belonging to a player
+static void rumble_player(const Player *this_player, Uint16 low, Uint16 high, Uint32 duration_ms)
+{
+	if (!twoPlayerMode || galagaMode)
+	{
+		joysticks_rumble_all(low, high, duration_ms);
+		return;
+	}
+
+	JE_byte device = inputDevice[this_player == &player[1] ? 1 : 0];
+	if (device == 0)
+		joysticks_rumble_all(low, high, duration_ms);
+	else if (device >= 3)
+		joystick_rumble(device - 3, low, high, duration_ms);
+}
+
 JE_byte JE_playerDamage(JE_byte temp,
                         Player *this_player)
 {
@@ -1069,18 +1085,21 @@ JE_byte JE_playerDamage(JE_byte temp,
 					levelEnd = 40;
 					tempVolume = tyrMusicVolume;
 					soundQueue[1] = S_EXPLOSION_22;
+					rumble_player(this_player, 0xFFFF, 0xFFFF, 700);
 				}
 			}
 			else
 			{
 				this_player->armor -= temp;
 				soundQueue[7] = S_HULL_HIT;
+				rumble_player(this_player, 0xA000, 0x7000, 220);
 			}
 		}
 	}
 	else
 	{
 		this_player->shield -= temp;
+		rumble_player(this_player, 0x2800, 0x4000, 120);
 
 		JE_setupExplosion(this_player->x - 17, this_player->y - 12, 0, 14, false, !twoPlayerMode);
 		JE_setupExplosion(this_player->x - 5 , this_player->y - 12, 0, 15, false, !twoPlayerMode);

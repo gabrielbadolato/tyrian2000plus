@@ -29,7 +29,9 @@ typedef enum
 	NONE,
 	AXIS,
 	BUTTON,
-	HAT
+	HAT,
+	PAD_BUTTON, // standardized gamepad button (SDL_GameControllerButton)
+	PAD_AXIS    // standardized gamepad axis (SDL_GameControllerAxis)
 }
 Joystick_assignment_types;
 
@@ -41,7 +43,7 @@ typedef struct
 	// if hat
 	bool x_axis; // else y_axis
 	
-	// if hat or axis
+	// if hat, axis or pad axis
 	bool negative_axis; // else positive
 }
 Joystick_assignment;
@@ -49,6 +51,8 @@ Joystick_assignment;
 typedef struct
 {
 	SDL_Joystick *handle;
+	SDL_GameController *controller; // non-NULL when SDL recognizes the device as a gamepad
+	SDL_JoystickID instance_id;
 	
 	Joystick_assignment assignment[10][2]; // 0-3: directions, 4-9: actions
 	
@@ -89,7 +93,11 @@ void reset_joystick_assignments(int j);
 bool load_joystick_assignments(Config* config, int j);
 bool save_joystick_assignments(Config* config, int j);
 
-void joystick_assignments_to_string(char *buffer, size_t buffer_len, const Joystick_assignment *assignments);
+void joystick_assignments_to_string(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments);
+
+const char *joystick_display_name(int j);
+void joystick_rumble(int j, Uint16 low, Uint16 high, Uint32 duration_ms);
+void joysticks_rumble_all(Uint16 low, Uint16 high, Uint32 duration_ms);
 
 bool detect_joystick_assignment(int j, Joystick_assignment *assignment);
 bool joystick_assignment_cmp(const Joystick_assignment *, const Joystick_assignment *);

@@ -3681,6 +3681,8 @@ redo:
 				{
 					int j = inputDevice  == 0 ? 0 : inputDevice - 3;
 					int j_max = inputDevice == 0 ? joysticks : inputDevice - 3 + 1;
+					if (j_max > joysticks)  // assigned controller was disconnected
+						j_max = joysticks;
 					for (; j < j_max; j++)
 					{
 						poll_joystick(j);

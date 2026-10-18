@@ -1,6 +1,6 @@
 /*
  * OpenTyrian: A modern cross-platform port of Tyrian
- * Copyright (C) 2007-2009  The OpenTyrian Development Team
+ * Copyright (C) The OpenTyrian Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,11 +22,10 @@
 #include "config_file.h"
 #include "file.h"
 #include "keyboard.h"
+#include "logging.h"
+#include "network.h"
 #include "nortsong.h"
 #include "opentyr.h"
-#include "params.h"
-#include "varz.h"
-#include "video.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -440,17 +439,30 @@ void push_joysticks_as_keyboard(void)
 	}
 }
 
-static void load_controller_mappings(const char *dir)
+// loads optional community mappings (gamecontrollerdb.txt) for unusual controllers
+static void load_controller_mappings(File file, const char *where)
 {
-	if (dir == NULL || dir[0] == '\0')
+	if (file.error)
 		return;
 
-	char path[1024];
-	snprintf(path, sizeof(path), "%s/gamecontrollerdb.txt", dir);
+	long length = fileGetLength(&file);
+	if (length > 0 && length < 8 * 1024 * 1024)
+	{
+		char *data = malloc(length);
+		if (data != NULL)
+		{
+			fileReadExactly(&file, data, length);
+			if (!file.error)
+			{
+				int added = SDL_GameControllerAddMappingsFromRW(SDL_RWFromConstMem(data, length), 1);
+				if (added > 0)
+					logInfo("Loaded %d controller mappings from the %s directory.", added, where);
+			}
+			free(data);
+		}
+	}
 
-	int added = SDL_GameControllerAddMappingsFromFile(path);
-	if (added > 0)
-		printf("loaded %d controller mappings from %s\n", added, path);
+	fileClose(&file);
 }
 
 // opens every connected device and loads (or creates) its assignments
@@ -480,21 +492,21 @@ static void open_joysticks(void)
 
 		if (joystick[j].handle == NULL)
 		{
-			fprintf(stderr, "warning: failed to open controller %d: %s\n", j, SDL_GetError());
+			logWarn("Failed to open controller %d: %s", j, SDL_GetError());
 			continue;
 		}
 
 		if (joystick[j].controller != NULL)
 		{
-			printf("gamepad detected: %s\n", joystick_display_name(j));
+			logInfo("Gamepad detected: %s", joystick_display_name(j));
 		}
 		else
 		{
-			printf("joystick detected: %s ", joystick_display_name(j));
-			printf("(%d axes, %d buttons, %d hats)\n",
-			       SDL_JoystickNumAxes(joystick[j].handle),
-			       SDL_JoystickNumButtons(joystick[j].handle),
-			       SDL_JoystickNumHats(joystick[j].handle));
+			logInfo("Joystick detected: %s (%d axes, %d buttons, %d hats)",
+				joystick_display_name(j),
+				SDL_JoystickNumAxes(joystick[j].handle),
+				SDL_JoystickNumButtons(joystick[j].handle),
+				SDL_JoystickNumHats(joystick[j].handle));
 		}
 
 		if (!load_joystick_assignments(&opentyrian_config, j))
@@ -549,13 +561,13 @@ void check_joystick_hotplug(void)
 	if (!changed)
 		return;
 
-	printf("controller connected/disconnected, rescanning\n");
+	logInfo("Controller connected or disconnected; rescanning.");
 
 	close_joysticks(true);
 	open_joysticks();
 
 	if (joysticks == 0)
-		printf("no controllers connected\n");
+		logInfo("No controllers connected.");
 }
 
 // initializes SDL joystick system and loads assignments for joysticks found
@@ -570,9 +582,9 @@ void init_joysticks(void)
 	// Keep reading the controller if the window loses focus for a moment (overlays etc.)
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
-	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER))
+	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0)
 	{
-		fprintf(stderr, "warning: failed to initialize controller system: %s\n", SDL_GetError());
+		logWarn("Failed to initialize SDL game controller: %s", SDL_GetError());
 		ignore_joystick = true;
 		return;
 	}
@@ -581,14 +593,14 @@ void init_joysticks(void)
 	SDL_GameControllerEventState(SDL_IGNORE);
 
 	// optional community mappings for unusual controllers
-	load_controller_mappings(data_dir());
-	load_controller_mappings(get_user_directory());
+	load_controller_mappings(dataFileOpen("gamecontrollerdb.txt", "rb"), "data");
+	load_controller_mappings(userFileOpen("gamecontrollerdb.txt", "rb"), "user");
 
 	open_joysticks();
 	next_hotplug_check = SDL_GetTicks() + hotplug_check_interval;
 
 	if (joysticks == 0)
-		printf("no joysticks detected\n");
+		logInfo("No joysticks detected.");
 }
 
 // deinitializes SDL joystick system and saves joystick assignments
@@ -956,9 +968,15 @@ static bool detect_gamepad_assignment(int j, Joystick_assignment *assignment)
 
 	bool detected = false;
 
-	do
+	while (true)
 	{
-		setDelay(1);
+		setFrameCount(1);
+
+		NETWORK_KEEP_ALIVE();
+
+		delayUntilElapsed();
+
+		handleSdlEvents();
 
 		SDL_GameControllerUpdate();
 
@@ -991,11 +1009,9 @@ static bool detect_gamepad_assignment(int j, Joystick_assignment *assignment)
 			}
 		}
 
-		service_SDL_events(true);
-		JE_showVGA();
-
-		wait_delay();
-	} while (!detected && !newkey && !newmouse && SDL_GameControllerGetAttached(pad));
+		if (detected || hasInput(INPUT_NO_MOTION) || !SDL_GameControllerGetAttached(pad))
+			break;
+	}
 
 	return detected;
 }
@@ -1030,9 +1046,15 @@ bool detect_joystick_assignment(int j, Joystick_assignment *assignment)
 
 	bool detected = false;
 
-	do
+	while (true)
 	{
-		setDelay(1);
+		setFrameCount(1);
+
+		NETWORK_KEEP_ALIVE();
+
+		delayUntilElapsed();
+
+		handleSdlEvents();
 
 		SDL_JoystickUpdate();
 
@@ -1093,12 +1115,9 @@ bool detect_joystick_assignment(int j, Joystick_assignment *assignment)
 			}
 		}
 
-		service_SDL_events(true);
-		JE_showVGA();
-
-		wait_delay();
-	} while (!detected && !newkey && !newmouse);
-
+		if (detected || hasInput(INPUT_NO_MOTION))
+			break;
+	}
 	free(axis);
 	free(button);
 	free(hat);

@@ -30,21 +30,25 @@ Regras:
    teste headless do jogo com os dados reais (SDL_VIDEODRIVER=dummy). Só então
    faça push e avise o Gabriel do que entrou e do que ficou de fora.
 
-Não integrado de propósito (opentyrian, out/2026): as reescritas grandes de
-input/config/saves/file I/O e a otimização SWAR do backgrnd.c (624e2f2), pois
-não há como validar visualmente e o ganho é irrelevante em 320x200.
+Histórico: em out/2026 o branch `merge-opentyrian` juntou o OpenTyrian completo
+(reescritas de input, config/saves, file I/O, logging, SWAR), com aprovação do
+Gabriel. Depois disso, as próximas atualizações do `opentyrian` devem ser
+pequenas e podem seguir as regras acima normalmente.
 
 ## Build
 
 - Windows x64: cross-compile com clang/llvm-mingw + SDL2 2.32 e SDL2_net 2.4,
-  `make PLATFORM=WIN32 CC=x86_64-w64-mingw32-clang TARGET=opentyrian2000.exe`
-  com `visualc/resources.rc` compilado via windres e passado em LDLIBS.
+  `make PLATFORM=WIN32 CC=x86_64-w64-mingw32-clang WINDRES=x86_64-w64-mingw32-windres`
+  (o Makefile já embute ícone e manifesto UTF-8 de `visualc/resources.rc`).
   Entregar o exe como `Tyrian2000Plus.exe` junto com SDL2.dll e SDL2_net.dll.
 - Os dados do jogo (freeware) ficam em `data/` ao lado do executável e não
   vão para o repositório.
-- O assert em `read_encrypted_pascal_string` (helptext.c) dispara com os dados
-  do Tyrian 2000 em builds de depuração; é problema antigo do upstream e não
-  afeta o build de release (NDEBUG).
+- Testes: `tests/test_gamepad.c` (controles virtuais) e `tests/test_saves.c`
+  (carrega e regrava um TYRIAN.SAV/TYRIAN.CFG reais; devem sair idênticos).
+  Compile todos os `src/*.c` com `-Dmain=opentyrian_main` em opentyr.c e
+  linke junto com o teste.
+- Pastas do usuário: portátil (ao lado do exe) se existir `opentyrian.cfg` lá;
+  senão `%APPDATA%/OpenTyrian2000` ou `~/.config/opentyrian2000`.
 
 ## Controles
 

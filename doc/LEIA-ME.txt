@@ -1,0 +1,40 @@
+TYRIAN 2000 PLUS
+================
+
+Projeto de fa, nao oficial. Tyrian foi criado pela Eclipse Software e
+publicado pela Epic MegaGames em 1995; Jason Emery liberou o jogo como
+freeware. Veja tyrian-freeware-license.txt.
+
+COMO RODAR
+1. Baixe os dados do jogo (freeware): https://www.camanis.net/tyrian/tyrian2000.zip
+2. Descompacte o zip e copie TODOS os arquivos de dentro da pasta "tyrian2000"
+   (tyrian.hdt, tyrian1.lvl, music.mus etc.) para uma subpasta chamada "data"
+   ao lado do Tyrian2000Plus.exe.
+3. Conecte o controle e abra Tyrian2000Plus.exe.
+
+CONTROLES (Xbox / Steam Controller / Steam Deck)
+  Analogico esquerdo ou D-pad .... mover a nave (analogico = movimento proporcional)
+  A ou RT ......................... atirar
+  Y ............................... trocar modo da arma traseira
+  LB ou LT ........................ sidekick esquerdo
+  RB ou X ......................... sidekick direito
+  Start (Menu) .................... menu do jogo
+  Back (View) ..................... pausa
+  Nos menus: A/Start confirma, B/Back volta.
+  PS5 e Switch Pro usam os botoes nas mesmas posicoes (Cruz = A, etc.).
+
+STEAM CONTROLLER
+  Com a Steam aberta, ela transforma o Steam Controller em teclado e mouse
+  para programas que nao estao na biblioteca dela. Assim o jogo nao ve um
+  controle: a vibracao nao funciona e o Y abre o teclado virtual.
+  Solucao: adicione o jogo na Steam e abra sempre por la.
+  1. Na Steam, clique em "Adicionar um jogo" > "Adicionar um jogo nao-Steam".
+  2. Clique em "Procurar", escolha o Tyrian2000Plus.exe e confirme.
+  3. Abra o jogo pela biblioteca da Steam.
+
+PROBLEMAS
+  O jogo grava o arquivo opentyrian.log (na mesma pasta do jogo, ou em
+  %APPDATA%\OpenTyrian2000). Envie esse arquivo ao relatar um problema.
+
+Atalhos: Alt+Enter = tela cheia.
+Codigo-fonte (GPL v2): https://github.com/gabrielbadolato/tyrian2000plus

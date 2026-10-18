@@ -789,6 +789,10 @@ static void logToFile(void *userdata, int category, SDL_LogPriority priority, co
 {
 	(void)userdata;
 
+	// SDL 2.32 on Windows logs this on every relative mouse motion; it is noise
+	if (strncmp(message, "speed = ", 8) == 0)
+		return;
+
 	if (logFile.f != NULL)
 	{
 		fprintf(logFile.f, "%s\n", message);

@@ -259,6 +259,10 @@ static void loadOpenTyrianConfig(void)
 		const char *scaling_mode;
 		if (config_get_string_option(section, "scaling_mode", &scaling_mode))
 			set_scaling_mode_by_name(scaling_mode);
+
+		bool vsync;
+		if (config_get_bool_option(section, "vsync", &vsync))
+			vsync_enabled = vsync;
 	}
 
 	section = config_find_section(config, "keyboard", NULL);
@@ -312,6 +316,8 @@ static void saveOpenTyrianConfig(void)
 	config_set_string_option(section, "scaler", scalers[scaler].name);
 	
 	config_set_string_option(section, "scaling_mode", scaling_mode_names[scaling_mode]);
+
+	config_set_bool_option(section, "vsync", vsync_enabled, OFF_ON);
 
 	section = config_find_or_add_section(config, "keyboard", NULL);
 	if (section == NULL)

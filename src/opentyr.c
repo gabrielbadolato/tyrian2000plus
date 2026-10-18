@@ -87,6 +87,18 @@ static const char *getScalerPickerItem(size_t i, char *buffer, size_t bufferSize
 	return scalers[i].name;
 }
 
+static size_t getVsyncPickerItemsCount(void)
+{
+	return 2;
+}
+
+static const char *getVsyncPickerItem(size_t i, char *buffer, size_t bufferSize)
+{
+	(void)buffer, (void)bufferSize;
+
+	return i == 0 ? "Off" : "On";
+}
+
 static size_t getScalingModePickerItemsCount(void)
 {
 	return (size_t)ScalingMode_MAX;
@@ -112,6 +124,7 @@ void setupMenu(void)
 		MENU_ITEM_DISPLAY,
 		MENU_ITEM_SCALER,
 		MENU_ITEM_SCALING_MODE,
+		MENU_ITEM_VSYNC,
 		MENU_ITEM_MUSIC_VOLUME,
 		MENU_ITEM_SOUND_VOLUME,
 	} MenuItemId;
@@ -157,6 +170,7 @@ void setupMenu(void)
 				{ MENU_ITEM_DISPLAY, "Display:", "Change the display mode.", getDisplayPickerItemsCount, getDisplayPickerItem },
 				{ MENU_ITEM_SCALER, "Scaler:", "Change the pixel art scaling algorithm.", getScalerPickerItemsCount, getScalerPickerItem },
 				{ MENU_ITEM_SCALING_MODE, "Scaling Mode:", "Change the scaling mode.", getScalingModePickerItemsCount, getScalingModePickerItem },
+				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getVsyncPickerItemsCount, getVsyncPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -263,6 +277,10 @@ void setupMenu(void)
 
 			case MENU_ITEM_SCALING_MODE:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, scaling_mode_names[scaling_mode], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
+			case MENU_ITEM_VSYNC:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, vsync_enabled ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_MUSIC_VOLUME:
@@ -382,6 +400,7 @@ void setupMenu(void)
 									case MENU_ITEM_DISPLAY:
 									case MENU_ITEM_SCALER:
 									case MENU_ITEM_SCALING_MODE:
+									case MENU_ITEM_VSYNC:
 									{
 										action = true;
 										break;
@@ -587,6 +606,14 @@ void setupMenu(void)
 					pickerSelectedIndex = scaling_mode;
 					break;
 				}
+				case MENU_ITEM_VSYNC:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = vsync_enabled ? 1 : 0;
+					break;
+				}
 				case MENU_ITEM_MUSIC_VOLUME:
 				{
 					JE_playSampleNum(S_CLICK);
@@ -736,6 +763,11 @@ void setupMenu(void)
 				case MENU_ITEM_SCALING_MODE:
 				{
 					scaling_mode = pickerSelectedIndex;
+					break;
+				}
+				case MENU_ITEM_VSYNC:
+				{
+					set_vsync(pickerSelectedIndex == 1);
 					break;
 				}
 				default:

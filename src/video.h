@@ -38,6 +38,9 @@ extern const char *const scaling_mode_names[ScalingMode_MAX];
 
 extern int fullscreen_display; // -1 means windowed
 extern ScalingMode scaling_mode;
+extern bool vsync_enabled;
+
+void set_vsync(bool enabled);
 
 extern SDL_Surface *VGAScreen, *VGAScreenSeg;
 extern SDL_Surface *game_screen;

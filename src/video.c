@@ -36,6 +36,7 @@ const char *const scaling_mode_names[ScalingMode_MAX] = {
 
 int fullscreen_display;
 ScalingMode scaling_mode = SCALE_INTEGER;
+bool vsync_enabled = true;  // sync presentation to the display refresh (no tearing)
 static SDL_Rect last_output_rect = { 0, 0, vga_width, vga_height };
 
 SDL_Surface *VGAScreen, *VGAScreenSeg;
@@ -50,6 +51,14 @@ static SDL_Texture *main_window_texture = NULL;
 static ScalerFunction scaler_function;
 
 static void init_renderer(void);
+void set_vsync(bool enabled)
+{
+	vsync_enabled = enabled;
+
+	if (main_window_renderer != NULL && SDL_RenderSetVSync(main_window_renderer, enabled ? 1 : 0) != 0)
+		logWarn("Failed to %s VSync: %s", enabled ? "enable" : "disable", SDL_GetError());
+}
+
 static void deinit_renderer(void);
 static void init_texture(void);
 static void deinit_texture(void);
@@ -121,7 +130,7 @@ void deinit_video(void)
 
 static void init_renderer(void)
 {
-	main_window_renderer = SDL_CreateRenderer(main_window, -1, 0);
+	main_window_renderer = SDL_CreateRenderer(main_window, -1, vsync_enabled ? SDL_RENDERER_PRESENTVSYNC : 0);
 
 	if (main_window_renderer == NULL)
 	{

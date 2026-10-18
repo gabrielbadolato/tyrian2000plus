@@ -780,11 +780,44 @@ void setupMenu(void)
 	}
 }
 
+static File logFile;
+static SDL_LogOutputFunction defaultLogOutput;
+static void *defaultLogUserdata;
+
+// copies every log message to opentyrian.log in the user directory
+static void logToFile(void *userdata, int category, SDL_LogPriority priority, const char *message)
+{
+	(void)userdata;
+
+	if (logFile.f != NULL)
+	{
+		fprintf(logFile.f, "%s\n", message);
+		fflush(logFile.f);
+	}
+
+	if (defaultLogOutput != NULL)
+		defaultLogOutput(defaultLogUserdata, category, priority, message);
+}
+
+static void closeLogFile(void)
+{
+	SDL_LogSetOutputFunction(defaultLogOutput, defaultLogUserdata);
+	fileClose(&logFile);
+}
+
 int main(int argc, char *argv[])
 {
 #ifndef NDEBUG
 	SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG);
 #endif
+
+	logFile = userFileOpen("opentyrian.log", "w");
+	if (logFile.f != NULL)
+	{
+		SDL_LogGetOutputFunction(&defaultLogOutput, &defaultLogUserdata);
+		SDL_LogSetOutputFunction(logToFile, NULL);
+		atexit(closeLogFile);
+	}
 
 	mt_srand(time(NULL));
 

@@ -496,6 +496,13 @@ static void open_joysticks(void)
 			continue;
 		}
 
+		logInfo("Controller %d: vendor %04x, product %04x, type %d, rumble %s",
+			j,
+			SDL_JoystickGetVendor(joystick[j].handle),
+			SDL_JoystickGetProduct(joystick[j].handle),
+			(int)SDL_JoystickGetType(joystick[j].handle),
+			SDL_JoystickHasRumble(joystick[j].handle) ? "yes" : "no");
+
 		if (joystick[j].controller != NULL)
 		{
 			logInfo("Gamepad detected: %s", joystick_display_name(j));
@@ -619,7 +626,12 @@ void joystick_rumble(int j, Uint16 low, Uint16 high, Uint32 duration_ms)
 	if (!rumble_enabled || j < 0 || j >= joysticks || joystick[j].handle == NULL)
 		return;
 
-	SDL_JoystickRumble(joystick[j].handle, low, high, duration_ms);
+	if (SDL_JoystickRumble(joystick[j].handle, low, high, duration_ms) != 0 && !joystick[j].rumble_failed)
+	{
+		// only report the first failure per controller to keep the log short
+		logWarn("Rumble failed on %s: %s", joystick_display_name(j), SDL_GetError());
+		joystick[j].rumble_failed = true;
+	}
 }
 
 void joysticks_rumble_all(Uint16 low, Uint16 high, Uint32 duration_ms)

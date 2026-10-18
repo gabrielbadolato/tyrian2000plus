@@ -52,6 +52,7 @@ typedef struct
 	SDL_Joystick *handle;
 	SDL_GameController *controller; // non-NULL when SDL recognizes the device as a gamepad
 	SDL_JoystickID instance_id;
+	bool rumble_failed; // already logged a rumble error for this controller
 	
 	Joystick_assignment assignment[10][2]; // 0-3: directions, 4-9: actions
 	

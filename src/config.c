@@ -145,6 +145,8 @@ KeySettings keySettings;
 /* Mouse settings */
 MouseSettings mouseSettings;
 
+bool autoFireToggle = false;  // fire button toggles constant fire instead of being held
+
 /* Configuration */
 JE_shortint levelFilter, levelFilterNew, levelBrightness, levelBrightnessChg;
 JE_boolean  filtrationAvail, filterActive, filterFade, filterFadeStart;
@@ -265,6 +267,14 @@ static void loadOpenTyrianConfig(void)
 			vsync_enabled = vsync;
 	}
 
+	section = config_find_section(config, "gameplay", NULL);
+	if (section != NULL)
+	{
+		bool autoFire;
+		if (config_get_bool_option(section, "auto_fire", &autoFire))
+			autoFireToggle = autoFire;
+	}
+
 	section = config_find_section(config, "keyboard", NULL);
 	if (section != NULL)
 	{
@@ -318,6 +328,12 @@ static void saveOpenTyrianConfig(void)
 	config_set_string_option(section, "scaling_mode", scaling_mode_names[scaling_mode]);
 
 	config_set_bool_option(section, "vsync", vsync_enabled, OFF_ON);
+
+	section = config_find_or_add_section(config, "gameplay", NULL);
+	if (section == NULL)
+		exit(EXIT_FAILURE);  // out of memory
+
+	config_set_bool_option(section, "auto_fire", autoFireToggle, OFF_ON);
 
 	section = config_find_or_add_section(config, "keyboard", NULL);
 	if (section == NULL)

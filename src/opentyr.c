@@ -87,12 +87,12 @@ static const char *getScalerPickerItem(size_t i, char *buffer, size_t bufferSize
 	return scalers[i].name;
 }
 
-static size_t getVsyncPickerItemsCount(void)
+static size_t getOffOnPickerItemsCount(void)
 {
 	return 2;
 }
 
-static const char *getVsyncPickerItem(size_t i, char *buffer, size_t bufferSize)
+static const char *getOffOnPickerItem(size_t i, char *buffer, size_t bufferSize)
 {
 	(void)buffer, (void)bufferSize;
 
@@ -119,12 +119,14 @@ void setupMenu(void)
 		MENU_ITEM_DONE,
 		MENU_ITEM_GRAPHICS,
 		MENU_ITEM_SOUND,
+		MENU_ITEM_CONTROLS,
 		MENU_ITEM_JUKEBOX,
 		MENU_ITEM_DESTRUCT,
 		MENU_ITEM_DISPLAY,
 		MENU_ITEM_SCALER,
 		MENU_ITEM_SCALING_MODE,
 		MENU_ITEM_VSYNC,
+		MENU_ITEM_AUTO_FIRE,
 		MENU_ITEM_MUSIC_VOLUME,
 		MENU_ITEM_SOUND_VOLUME,
 	} MenuItemId;
@@ -135,6 +137,7 @@ void setupMenu(void)
 		MENU_SETUP,
 		MENU_GRAPHICS,
 		MENU_SOUND,
+		MENU_CONTROLS,
 	} MenuId;
 
 	typedef struct
@@ -158,6 +161,7 @@ void setupMenu(void)
 			.items = {
 				{ MENU_ITEM_GRAPHICS, "Graphics...", "Change the graphics settings." },
 				{ MENU_ITEM_SOUND, "Sound...", "Change the sound settings." },
+				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
 				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
 				{ MENU_ITEM_DONE, "Done", "Return to the main menu." },
@@ -170,7 +174,7 @@ void setupMenu(void)
 				{ MENU_ITEM_DISPLAY, "Display:", "Change the display mode.", getDisplayPickerItemsCount, getDisplayPickerItem },
 				{ MENU_ITEM_SCALER, "Scaler:", "Change the pixel art scaling algorithm.", getScalerPickerItemsCount, getScalerPickerItem },
 				{ MENU_ITEM_SCALING_MODE, "Scaling Mode:", "Change the scaling mode.", getScalingModePickerItemsCount, getScalingModePickerItem },
-				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getVsyncPickerItemsCount, getVsyncPickerItem },
+				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -180,6 +184,14 @@ void setupMenu(void)
 			.items = {
 				{ MENU_ITEM_MUSIC_VOLUME, "Music Volume", "Change volume with the left/right arrow keys." },
 				{ MENU_ITEM_SOUND_VOLUME, "Sound Volume", "Change volume with the left/right arrow keys." },
+				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
+				{ -1 }
+			},
+		},
+		[MENU_CONTROLS] = {
+			.header = "Controls",
+			.items = {
+				{ MENU_ITEM_AUTO_FIRE, "Auto Fire:", "Press fire once to start or stop firing.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -281,6 +293,10 @@ void setupMenu(void)
 
 			case MENU_ITEM_VSYNC:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, vsync_enabled ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
+			case MENU_ITEM_AUTO_FIRE:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, autoFireToggle ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_MUSIC_VOLUME:
@@ -401,6 +417,7 @@ void setupMenu(void)
 									case MENU_ITEM_SCALER:
 									case MENU_ITEM_SCALING_MODE:
 									case MENU_ITEM_VSYNC:
+									case MENU_ITEM_AUTO_FIRE:
 									{
 										action = true;
 										break;
@@ -560,6 +577,15 @@ void setupMenu(void)
 					selectedMenuItemIndexes[currentMenu] = 0;
 					break;
 				}
+				case MENU_ITEM_CONTROLS:
+				{
+					JE_playSampleNum(S_SELECT);
+
+					menuParents[MENU_CONTROLS] = currentMenu;
+					currentMenu = MENU_CONTROLS;
+					selectedMenuItemIndexes[currentMenu] = 0;
+					break;
+				}
 				case MENU_ITEM_JUKEBOX:
 				{
 					JE_playSampleNum(S_SELECT);
@@ -612,6 +638,14 @@ void setupMenu(void)
 
 					currentPicker = selectedMenuItemId;
 					pickerSelectedIndex = vsync_enabled ? 1 : 0;
+					break;
+				}
+				case MENU_ITEM_AUTO_FIRE:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = autoFireToggle ? 1 : 0;
 					break;
 				}
 				case MENU_ITEM_MUSIC_VOLUME:
@@ -768,6 +802,11 @@ void setupMenu(void)
 				case MENU_ITEM_VSYNC:
 				{
 					set_vsync(pickerSelectedIndex == 1);
+					break;
+				}
+				case MENU_ITEM_AUTO_FIRE:
+				{
+					autoFireToggle = pickerSelectedIndex == 1;
 					break;
 				}
 				default:

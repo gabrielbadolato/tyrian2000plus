@@ -56,3 +56,18 @@ pequenas e podem seguir as regras acima normalmente.
 (PAD_BUTTON/PAD_AXIS, seção "gamepad" no opentyrian.cfg) e cai para a API
 antiga de joystick (AXIS/BUTTON/HAT) caso contrário. Hotplug é verificado a
 cada 500 ms, inclusive durante as fases.
+
+Steam Controller (testado com o modelo 2026 via puck): fora da biblioteca da
+Steam, a Steam o converte em teclado/mouse e o jogo não vê controle (sem
+vibração, Y abre o teclado virtual). Adicionado como "jogo não-Steam", vira
+gamepad 28de:1302 e vibra. Isso está explicado em `doc/LEIA-ME.txt`.
+Pendente: jogadores com o controle 2026 sem a Steam (o jogo não será
+publicado na Steam no início).
+
+Tiro automático: opção "Auto Fire" em Setup > Controls (seção "gameplay",
+`auto_fire` no opentyrian.cfg). Cada toque no tiro liga/desliga o disparo
+contínuo, por jogador (`src/mainint.c`). O submenu Controls é onde entram as
+próximas opções de controle.
+
+Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
+ao investigar problemas no PC do Gabriel.

@@ -3614,6 +3614,18 @@ redo:
 						recordDemoKeys();
 				}
 
+				// Auto Fire: each press of the fire button starts or stops constant fire.
+				if (autoFireToggle && !playDemo && !constantPlay)
+				{
+					static bool autoFiring[2], fireWasHeld[2];
+					const int p = this_player == &player[1] ? 1 : 0;
+
+					if (button[0] && !fireWasHeld[p])
+						autoFiring[p] = !autoFiring[p];
+					fireWasHeld[p] = button[0];
+					button[0] = autoFiring[p];
+				}
+
 				if (smoothies[9-1])
 				{
 					*mouseY_ = this_player->y - (*mouseY_ - this_player->y);

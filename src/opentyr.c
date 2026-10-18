@@ -334,6 +334,7 @@ void setupMenu(void)
 		},
 		[MENU_JOYSTICK] = {
 			.header = "Controller",
+			.wItemName = 105,
 			.items = {
 				{ MENU_ITEM_JOYSTICK_NUMBER, "Controller:", "Choose which controller to change." },
 				{ MENU_ITEM_JOYSTICK_ANALOG, "Analog:", "Use the stick for precise movement.", getOffOnPickerItemsCount, getOffOnPickerItem },
@@ -516,7 +517,12 @@ void setupMenu(void)
 				if (joy == NULL)
 					joyValue = menuItem->id == MENU_ITEM_JOYSTICK_NUMBER ? "None" : "-";
 				else if (menuItem->id == MENU_ITEM_JOYSTICK_NUMBER)
-					snprintf(buffer, sizeof(buffer), "%d of %d", joystickIndex + 1, joysticks);
+				{
+					// "1: Steam Controller", shortened with "..." if it does not fit
+					snprintf(buffer, sizeof(buffer), "%d: %s", joystickIndex + 1, joystick_display_name(joystickIndex));
+					for (size_t len = strlen(buffer); len > 4 && JE_textWidth(buffer, FONT_NORMAL) > wMenuItemValue; --len)
+						strcpy(&buffer[len - 4], "...");
+				}
 				else if (menuItem->id == MENU_ITEM_JOYSTICK_ANALOG)
 					joyValue = joy->analog ? "On" : "Off";
 				else if (menuItem->id == MENU_ITEM_JOYSTICK_SENSITIVITY || menuItem->id == MENU_ITEM_JOYSTICK_THRESHOLD)

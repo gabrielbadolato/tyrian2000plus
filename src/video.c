@@ -35,7 +35,7 @@ const char *const scaling_mode_names[ScalingMode_MAX] = {
 };
 
 int fullscreen_display;
-ScalingMode scaling_mode = SCALE_INTEGER;
+ScalingMode scaling_mode = SCALE_ASPECT_4_3;  // matches the original 4:3 CRT presentation
 bool vsync_enabled = true;  // sync presentation to the display refresh (no tearing)
 static SDL_Rect last_output_rect = { 0, 0, vga_width, vga_height };
 

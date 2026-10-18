@@ -102,5 +102,6 @@ void joysticks_rumble_all(Uint16 low, Uint16 high, Uint32 duration_ms);
 
 bool detect_joystick_assignment(int j, Joystick_assignment *assignment);
 bool joystick_assignment_cmp(const Joystick_assignment *, const Joystick_assignment *);
+bool assign_joystick_action(int j, int action);
 
 #endif /* JOYSTICK_H */

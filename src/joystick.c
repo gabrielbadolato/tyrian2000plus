@@ -1137,6 +1137,47 @@ bool detect_joystick_assignment(int j, Joystick_assignment *assignment)
 	return detected;
 }
 
+// waits for a press on joystick j and toggles it in the assignments of an action
+// (0-3: up, right, down, left; 4-9: fire, mode swap, left fire, right fire, menu, pause)
+bool assign_joystick_action(int j, int action)
+{
+	Joystick_assignment temp;
+	if (!detect_joystick_assignment(j, &temp))
+		return false;
+
+	Joystick_assignment *const assignment = joystick[j].assignment[action];
+	const uint count = COUNTOF(*joystick->assignment);
+
+	// if the detected assignment was already set, unset it
+	for (uint i = 0; i < count; i++)
+	{
+		if (joystick_assignment_cmp(&temp, &assignment[i]))
+		{
+			assignment[i].type = NONE;
+			goto done;
+		}
+	}
+
+	// if there is an empty assignment, set it
+	for (uint i = 0; i < count; i++)
+	{
+		if (assignment[i].type == NONE)
+		{
+			assignment[i] = temp;
+			goto done;
+		}
+	}
+
+	// if no assignments are empty, shift them all forward and set the last one
+	for (uint i = 0; i < count - 1; i++)
+		assignment[i] = assignment[i + 1];
+	assignment[count - 1] = temp;
+
+done:
+	poll_joysticks();
+	return true;
+}
+
 // compares relevant parts of joystick assignments for equality
 bool joystick_assignment_cmp(const Joystick_assignment *a, const Joystick_assignment *b)
 {

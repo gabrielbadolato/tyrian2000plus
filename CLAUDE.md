@@ -69,5 +69,10 @@ Tiro automático: opção "Auto Fire" em Setup > Controls (seção "gameplay",
 contínuo, por jogador (`src/mainint.c`). O submenu Controls é onde entram as
 próximas opções de controle.
 
+Setup > Controls também tem Keyboard..., Controller... (com Buttons...) e
+Mouse..., os mesmos ajustes do menu da nave, feitos no estilo do `setupMenu`
+(`src/opentyr.c`). A captura de botão do controle fica em
+`assign_joystick_action()` (`src/joystick.c`), usada pelos dois menus.
+
 Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
 ao investigar problemas no PC do Gabriel.

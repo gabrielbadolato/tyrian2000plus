@@ -3047,43 +3047,8 @@ void JE_menuFunction(JE_byte select)
 
 			JE_rectangle(VGAScreen, 235, 21 + select * 8, 310, 30 + select * 8, 248);
 
-			Joystick_assignment temp;
-			if (detect_joystick_assignment(joystick_config, &temp))
-			{
-				// if the detected assignment was already set, unset it
-				for (uint i = 0; i < COUNTOF(*joystick->assignment); i++)
-				{
-					if (joystick_assignment_cmp(&temp, &joystick[joystick_config].assignment[select - 6][i]))
-					{
-						joystick[joystick_config].assignment[select - 6][i].type = NONE;
-						goto joystick_assign_done;
-					}
-				}
-
-				// if there is an empty assignment, set it
-				for (uint i = 0; i < COUNTOF(*joystick->assignment); i++)
-				{
-					if (joystick[joystick_config].assignment[select - 6][i].type == NONE)
-					{
-						joystick[joystick_config].assignment[select - 6][i] = temp;
-						goto joystick_assign_done;
-					}
-				}
-
-				// if no assignments are empty, shift them all forward and set the last one
-				for (uint i = 0; i < COUNTOF(*joystick->assignment); i++)
-				{
-					if (i == COUNTOF(*joystick->assignment) - 1)
-						joystick[joystick_config].assignment[select - 6][i] = temp;
-					else
-						joystick[joystick_config].assignment[select - 6][i] = joystick[joystick_config].assignment[select - 6][i + 1];
-				}
-
-joystick_assign_done:
+			if (assign_joystick_action(joystick_config, select - 6))
 				curSelect++;
-
-				poll_joysticks();
-			}
 		}
 		break;
 

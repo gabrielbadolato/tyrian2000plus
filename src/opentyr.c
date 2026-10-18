@@ -99,6 +99,27 @@ static const char *getOffOnPickerItem(size_t i, char *buffer, size_t bufferSize)
 	return i == 0 ? "Off" : "On";
 }
 
+static const char *const mouseActionNames[] =
+{
+	"Fire Main Weapon",
+	"Left Sidekick",
+	"Right Sidekick",
+	"Both Sidekicks",
+	"Change Rear Mode",
+};
+
+static size_t getMouseActionPickerItemsCount(void)
+{
+	return COUNTOF(mouseActionNames);
+}
+
+static const char *getMouseActionPickerItem(size_t i, char *buffer, size_t bufferSize)
+{
+	(void)buffer, (void)bufferSize;
+
+	return mouseActionNames[i];
+}
+
 static size_t getScalingModePickerItemsCount(void)
 {
 	return (size_t)ScalingMode_MAX;
@@ -109,6 +130,71 @@ static const char *getScalingModePickerItem(size_t i, char *buffer, size_t buffe
 	(void)buffer, (void)bufferSize;
 
 	return scaling_mode_names[i];
+}
+
+// waits for a key press and assigns it to keySettings[i], swapping with the
+// action that used it before; the value being changed is at (x, y)
+static void captureKeySetting(size_t i, int x, int y, int w, int xStatus, const char *status)
+{
+	// replace the status text
+	memcpy((Uint8 *)VGAScreen->pixels + VGAScreen->pitch * 188, (Uint8 *)VGAScreen2->pixels + VGAScreen2->pitch * 188, (size_t)VGAScreen->pitch * 12);
+	JE_textShade(VGAScreen, xStatus, 190, status, 15, 4, PART_SHADE);
+
+	int col = 248, colC = 1;
+
+	bool joyHeld = joydown;
+	while (true)
+	{
+		joyHeld &= joydown;
+
+		setFrameCount(1);
+
+		col += colC;
+		if (col < 243 || col > 248)
+			colC *= -1;
+		JE_rectangle(VGAScreen, x - 3, y - 2, x + w, y + 10, col);
+
+		JE_showVGA();
+
+		delayUntilElapsed();
+
+		poll_joysticks();  // Notably, not push_joysticks_as_keyboard.
+		handleSdlEvents();
+
+		if (hasInput(INPUT_NO_MOTION) || (joydown && !joyHeld))
+			break;
+	}
+
+	KeyboardInput keyboardInput;
+
+	if (mouseGetInput(INPUT_NO_MOTION, NULL) || !keyboardGetInput(&keyboardInput))
+		return;  // cancel
+
+	const SDL_Scancode scancode = keyboardInput.scancode;
+	if (scancode == SDL_SCANCODE_ESCAPE)
+	{
+		JE_playSampleNum(S_SPRING);
+		return;
+	}
+	if (scancode == SDL_SCANCODE_F11 ||  // reserved for gamma
+	    scancode == SDL_SCANCODE_P)      // reserved for pause
+	{
+		JE_playSampleNum(S_CLINK);
+		return;
+	}
+
+	// already used? then swap
+	for (size_t j = 0; j < COUNTOF(keySettings); ++j)
+	{
+		if (keySettings[j] == scancode)
+		{
+			keySettings[j] = keySettings[i];
+			break;
+		}
+	}
+
+	JE_playSampleNum(S_CLICK);
+	keySettings[i] = scancode;
 }
 
 void setupMenu(void)
@@ -127,9 +213,33 @@ void setupMenu(void)
 		MENU_ITEM_SCALING_MODE,
 		MENU_ITEM_VSYNC,
 		MENU_ITEM_AUTO_FIRE,
+		MENU_ITEM_KEYBOARD,
+		MENU_ITEM_JOYSTICK,
+		MENU_ITEM_MOUSE,
+		MENU_ITEM_KEY,                                      // + action (0-7)
+		MENU_ITEM_KEY_LAST = MENU_ITEM_KEY + 7,
+		MENU_ITEM_KEYS_RESET,
+		MENU_ITEM_JOYSTICK_NUMBER,
+		MENU_ITEM_JOYSTICK_ANALOG,
+		MENU_ITEM_JOYSTICK_SENSITIVITY,
+		MENU_ITEM_JOYSTICK_THRESHOLD,
+		MENU_ITEM_JOYSTICK_BUTTONS,
+		MENU_ITEM_JOYSTICK_RESET,
+		MENU_ITEM_JOYSTICK_ACTION,                          // + action (0-9)
+		MENU_ITEM_JOYSTICK_ACTION_LAST = MENU_ITEM_JOYSTICK_ACTION + 9,
+		MENU_ITEM_MOUSE_BUTTON,                             // + button (0-2)
+		MENU_ITEM_MOUSE_BUTTON_LAST = MENU_ITEM_MOUSE_BUTTON + 2,
+		MENU_ITEM_MOUSE_RESET,
 		MENU_ITEM_MUSIC_VOLUME,
 		MENU_ITEM_SOUND_VOLUME,
 	} MenuItemId;
+
+	// items that stand for one of several actions share the first one's id
+#define MENU_ITEM_BASE(id) \
+	((id) >= MENU_ITEM_KEY && (id) <= MENU_ITEM_KEY_LAST ? MENU_ITEM_KEY : \
+	 (id) >= MENU_ITEM_JOYSTICK_ACTION && (id) <= MENU_ITEM_JOYSTICK_ACTION_LAST ? MENU_ITEM_JOYSTICK_ACTION : \
+	 (id) >= MENU_ITEM_MOUSE_BUTTON && (id) <= MENU_ITEM_MOUSE_BUTTON_LAST ? MENU_ITEM_MOUSE_BUTTON : \
+	 (id))
 
 	typedef enum
 	{
@@ -138,6 +248,10 @@ void setupMenu(void)
 		MENU_GRAPHICS,
 		MENU_SOUND,
 		MENU_CONTROLS,
+		MENU_KEYBOARD,
+		MENU_JOYSTICK,
+		MENU_JOYSTICK_BUTTONS,
+		MENU_MOUSE,
 	} MenuId;
 
 	typedef struct
@@ -152,7 +266,9 @@ void setupMenu(void)
 	typedef struct
 	{
 		const char *header;
-		const MenuItem items[6];
+		bool compact;  // tighter rows, for long lists
+		int wItemName; // 0 = default
+		const MenuItem items[12];
 	} Menu;
 
 	static const Menu menus[] = {
@@ -191,7 +307,71 @@ void setupMenu(void)
 		[MENU_CONTROLS] = {
 			.header = "Controls",
 			.items = {
+				{ MENU_ITEM_KEYBOARD, "Keyboard...", "Change the keyboard keys." },
+				{ MENU_ITEM_JOYSTICK, "Controller...", "Change the controller (gamepad) settings." },
+				{ MENU_ITEM_MOUSE, "Mouse...", "Change the mouse buttons." },
 				{ MENU_ITEM_AUTO_FIRE, "Auto Fire:", "Press fire once to start or stop firing.", getOffOnPickerItemsCount, getOffOnPickerItem },
+				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
+				{ -1 }
+			},
+		},
+		[MENU_KEYBOARD] = {
+			.header = "Keyboard",
+			.compact = true,
+			.items = {
+				{ MENU_ITEM_KEY + 0, "Up", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEY + 1, "Down", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEY + 2, "Left", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEY + 3, "Right", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEY + 4, "Fire", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEY + 5, "Change Fire", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEY + 6, "Left Sidekick", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEY + 7, "Right Sidekick", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEYS_RESET, "Reset to Defaults", "Restore the default keys." },
+				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
+				{ -1 }
+			},
+		},
+		[MENU_JOYSTICK] = {
+			.header = "Controller",
+			.items = {
+				{ MENU_ITEM_JOYSTICK_NUMBER, "Controller:", "Choose which controller to change." },
+				{ MENU_ITEM_JOYSTICK_ANALOG, "Analog:", "Use the stick for precise movement.", getOffOnPickerItemsCount, getOffOnPickerItem },
+				{ MENU_ITEM_JOYSTICK_SENSITIVITY, "Sensitivity:", "Change with the left/right arrow keys." },
+				{ MENU_ITEM_JOYSTICK_THRESHOLD, "Threshold:", "Change with the left/right arrow keys." },
+				{ MENU_ITEM_JOYSTICK_BUTTONS, "Buttons...", "Choose the button for each action." },
+				{ MENU_ITEM_JOYSTICK_RESET, "Reset to Defaults", "Restore the default controller settings." },
+				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
+				{ -1 }
+			},
+		},
+		[MENU_JOYSTICK_BUTTONS] = {
+			.header = "Buttons",
+			.compact = true,
+			.wItemName = 105,
+			.items = {
+				{ MENU_ITEM_JOYSTICK_ACTION + 0, "Up", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 2, "Down", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 3, "Left", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 1, "Right", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 4, "Fire", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 5, "Change Fire", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 6, "Left Sidekick", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 7, "Right Sidekick", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 8, "Menu", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 9, "Pause", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
+				{ -1 }
+			},
+		},
+		[MENU_MOUSE] = {
+			.header = "Mouse",
+			.wItemName = 115,
+			.items = {
+				{ MENU_ITEM_MOUSE_BUTTON + 0, "Left Button:", "Choose what this button does.", getMouseActionPickerItemsCount, getMouseActionPickerItem },
+				{ MENU_ITEM_MOUSE_BUTTON + 1, "Right Button:", "Choose what this button does.", getMouseActionPickerItemsCount, getMouseActionPickerItem },
+				{ MENU_ITEM_MOUSE_BUTTON + 2, "Middle Button:", "Choose what this button does.", getMouseActionPickerItemsCount, getMouseActionPickerItem },
+				{ MENU_ITEM_MOUSE_RESET, "Reset to Defaults", "Restore the default mouse buttons." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -215,13 +395,25 @@ void setupMenu(void)
 	const int yMenuHeader = 4;
 	const int xMenuItem = 45;
 	const int xMenuItemName = xMenuItem;
-	const int wMenuItemName = 135;
-	const int xMenuItemValue = xMenuItemName + wMenuItemName;
-	const int wMenuItemValue = 95;
-	const int wMenuItem = wMenuItemName + wMenuItemValue;
-	const int yMenuItems = 37;
-	const int dyMenuItems = 21;
 	const int hMenuItem = 13;
+
+	int joystickIndex = 0;  // controller being changed
+
+	// changes the controller number, sensitivity or threshold by one step, wrapping around
+#define stepJoystickSetting(id, step) \
+	do { \
+		if (joysticks == 0) \
+			break; \
+		if ((id) == MENU_ITEM_JOYSTICK_NUMBER) \
+			joystickIndex = (joystickIndex + joysticks + (step)) % joysticks; \
+		else if (!joystick[joystickIndex].analog) \
+			break; \
+		else if ((id) == MENU_ITEM_JOYSTICK_SENSITIVITY) \
+			joystick[joystickIndex].sensitivity = (joystick[joystickIndex].sensitivity + 11 + (step)) % 11; \
+		else \
+			joystick[joystickIndex].threshold = (joystick[joystickIndex].threshold + 11 + (step)) % 11; \
+		JE_playSampleNum(S_CURSOR); \
+	} while (false)
 
 	for (; ; )
 	{
@@ -237,6 +429,17 @@ void setupMenu(void)
 		memcpy(VGAScreen->pixels, VGAScreen2->pixels, (size_t)VGAScreen->pitch * VGAScreen->h);
 
 		const Menu *menu = &menus[currentMenu];
+
+		const int wMenuItemName = menu->wItemName != 0 ? menu->wItemName : 135;
+		const int xMenuItemValue = xMenuItemName + wMenuItemName;
+		const int wMenuItemValue = menu->wItemName != 0 ? 320 - 10 - xMenuItemValue : 95;
+		const int wMenuItem = wMenuItemName + wMenuItemValue;
+		const int yMenuItems = menu->compact ? 30 : 37;
+		const int dyMenuItems = menu->compact ? 13 : 21;
+
+		if (joystickIndex >= joysticks)  // a controller was disconnected
+			joystickIndex = 0;
+		Joystick *const joy = joysticks > 0 ? &joystick[joystickIndex] : NULL;
 
 		// Draw header.
 		drawFontHvShadowAligned(VGAScreen, xCenter, yMenuHeader, menu->header, FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
@@ -270,7 +473,7 @@ void setupMenu(void)
 
 			drawFontHvShadow(VGAScreen, xMenuItemName, y, name, FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 
-			switch (menuItem->id)
+			switch (MENU_ITEM_BASE(menuItem->id))
 			{
 			case MENU_ITEM_DISPLAY:;
 				const char *value = "Window";
@@ -299,6 +502,38 @@ void setupMenu(void)
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, autoFireToggle ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
+			case MENU_ITEM_KEY:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, SDL_GetScancodeName(keySettings[menuItem->id - MENU_ITEM_KEY]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
+			case MENU_ITEM_JOYSTICK_NUMBER:
+			case MENU_ITEM_JOYSTICK_ANALOG:
+			case MENU_ITEM_JOYSTICK_SENSITIVITY:
+			case MENU_ITEM_JOYSTICK_THRESHOLD:
+			case MENU_ITEM_JOYSTICK_ACTION:;
+				const char *joyValue = buffer;
+				bool joyDisabled = disabled || joy == NULL;
+				if (joy == NULL)
+					joyValue = menuItem->id == MENU_ITEM_JOYSTICK_NUMBER ? "None" : "-";
+				else if (menuItem->id == MENU_ITEM_JOYSTICK_NUMBER)
+					snprintf(buffer, sizeof(buffer), "%d of %d", joystickIndex + 1, joysticks);
+				else if (menuItem->id == MENU_ITEM_JOYSTICK_ANALOG)
+					joyValue = joy->analog ? "On" : "Off";
+				else if (menuItem->id == MENU_ITEM_JOYSTICK_SENSITIVITY || menuItem->id == MENU_ITEM_JOYSTICK_THRESHOLD)
+				{
+					snprintf(buffer, sizeof(buffer), "%d", menuItem->id == MENU_ITEM_JOYSTICK_SENSITIVITY ? joy->sensitivity : joy->threshold);
+					joyDisabled |= !joy->analog;
+				}
+				else
+					joystick_assignments_to_string(joystickIndex, buffer, sizeof(buffer), joy->assignment[menuItem->id - MENU_ITEM_JOYSTICK_ACTION]);
+
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, joyValue, FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (joyDisabled ? -4 : 0), false, 2);
+				break;
+
+			case MENU_ITEM_MOUSE_BUTTON:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, mouseActionNames[mouseSettings[menuItem->id - MENU_ITEM_MOUSE_BUTTON] - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
 			case MENU_ITEM_MUSIC_VOLUME:
 				JE_barDrawShadow(VGAScreen, xMenuItemValue, y, 1, music_disabled ? 170 : 174, (tyrMusicVolume + 4) / 8, 2, 10);
 				JE_rectangle(VGAScreen, xMenuItemValue - 2, y - 2, xMenuItemValue + 96, y + 11, 242);
@@ -315,7 +550,10 @@ void setupMenu(void)
 		}
 
 		// Draw status text.
-		JE_textShade(VGAScreen, xMenuItemName, 190, menuItems[*selectedMenuItemIndex].description, 15, 4, PART_SHADE);
+		const char *description = menuItems[*selectedMenuItemIndex].description;
+		if (menuItems[*selectedMenuItemIndex].id == MENU_ITEM_JOYSTICK_NUMBER && joy != NULL)
+			description = joystick_display_name(joystickIndex);
+		JE_textShade(VGAScreen, xMenuItemName, 190, description, 15, 4, PART_SHADE);
 
 		// Draw picker box and items.
 
@@ -411,13 +649,20 @@ void setupMenu(void)
 								// Act on menu item via value.
 								else if (mouseInput.x >= xMenuItemValue && mouseInput.x < xMenuItemValue + wMenuItemValue)
 								{
-									switch (menuItems[*selectedMenuItemIndex].id)
+									switch (MENU_ITEM_BASE(menuItems[*selectedMenuItemIndex].id))
 									{
 									case MENU_ITEM_DISPLAY:
 									case MENU_ITEM_SCALER:
 									case MENU_ITEM_SCALING_MODE:
 									case MENU_ITEM_VSYNC:
 									case MENU_ITEM_AUTO_FIRE:
+									case MENU_ITEM_KEY:
+									case MENU_ITEM_JOYSTICK_NUMBER:
+									case MENU_ITEM_JOYSTICK_ANALOG:
+									case MENU_ITEM_JOYSTICK_SENSITIVITY:
+									case MENU_ITEM_JOYSTICK_THRESHOLD:
+									case MENU_ITEM_JOYSTICK_ACTION:
+									case MENU_ITEM_MOUSE_BUTTON:
 									{
 										action = true;
 										break;
@@ -486,6 +731,13 @@ void setupMenu(void)
 				{
 					switch (menuItems[*selectedMenuItemIndex].id)
 					{
+					case MENU_ITEM_JOYSTICK_NUMBER:
+					case MENU_ITEM_JOYSTICK_SENSITIVITY:
+					case MENU_ITEM_JOYSTICK_THRESHOLD:
+					{
+						stepJoystickSetting(menuItems[*selectedMenuItemIndex].id, -1);
+						break;
+					}
 					case MENU_ITEM_MUSIC_VOLUME:
 					{
 						JE_playSampleNum(S_CURSOR);
@@ -509,6 +761,13 @@ void setupMenu(void)
 				{
 					switch (menuItems[*selectedMenuItemIndex].id)
 					{
+					case MENU_ITEM_JOYSTICK_NUMBER:
+					case MENU_ITEM_JOYSTICK_SENSITIVITY:
+					case MENU_ITEM_JOYSTICK_THRESHOLD:
+					{
+						stepJoystickSetting(menuItems[*selectedMenuItemIndex].id, +1);
+						break;
+					}
 					case MENU_ITEM_MUSIC_VOLUME:
 					{
 						JE_playSampleNum(S_CURSOR);
@@ -549,9 +808,97 @@ void setupMenu(void)
 			if (action)
 			{
 				const MenuItemId selectedMenuItemId = menuItems[*selectedMenuItemIndex].id;
+				const int ySelected = yMenuItems + dyMenuItems * (int)*selectedMenuItemIndex;
 
-				switch (selectedMenuItemId)
+				MenuId subMenu = MENU_NONE;
+
+				switch (MENU_ITEM_BASE(selectedMenuItemId))
 				{
+				case MENU_ITEM_KEYBOARD:
+					subMenu = MENU_KEYBOARD;
+					break;
+				case MENU_ITEM_JOYSTICK:
+					subMenu = MENU_JOYSTICK;
+					break;
+				case MENU_ITEM_JOYSTICK_BUTTONS:
+					subMenu = MENU_JOYSTICK_BUTTONS;
+					break;
+				case MENU_ITEM_MOUSE:
+					subMenu = MENU_MOUSE;
+					break;
+				case MENU_ITEM_KEY:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					captureKeySetting(selectedMenuItemId - MENU_ITEM_KEY, xMenuItemValue, ySelected, wMenuItemValue, xMenuItemName, "Press the new key (Esc to cancel).");
+					break;
+				}
+				case MENU_ITEM_KEYS_RESET:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					memcpy(keySettings, defaultKeySettings, sizeof(keySettings));
+					break;
+				}
+				case MENU_ITEM_JOYSTICK_NUMBER:
+				case MENU_ITEM_JOYSTICK_SENSITIVITY:
+				case MENU_ITEM_JOYSTICK_THRESHOLD:
+				{
+					stepJoystickSetting(selectedMenuItemId, +1);
+					break;
+				}
+				case MENU_ITEM_JOYSTICK_ANALOG:
+				{
+					if (joy == NULL)
+						break;
+
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = joy->analog ? 1 : 0;
+					break;
+				}
+				case MENU_ITEM_JOYSTICK_RESET:
+				{
+					if (joy == NULL)
+						break;
+
+					JE_playSampleNum(S_CLICK);
+
+					reset_joystick_assignments(joystickIndex);
+					break;
+				}
+				case MENU_ITEM_JOYSTICK_ACTION:
+				{
+					if (joy == NULL)
+						break;
+
+					JE_playSampleNum(S_CLICK);
+
+					memcpy((Uint8 *)VGAScreen->pixels + VGAScreen->pitch * 188, (Uint8 *)VGAScreen2->pixels + VGAScreen2->pitch * 188, (size_t)VGAScreen->pitch * 12);
+					JE_textShade(VGAScreen, xMenuItemName, 190, "Press a button on the controller (Esc to cancel).", 15, 4, PART_SHADE);
+					JE_rectangle(VGAScreen, xMenuItemValue - 3, ySelected - 2, xMenuItemValue + wMenuItemValue, ySelected + 10, 248);
+					JE_showVGA();
+
+					if (!assign_joystick_action(joystickIndex, selectedMenuItemId - MENU_ITEM_JOYSTICK_ACTION))
+						getInput();  // discard the key or click that cancelled
+					break;
+				}
+				case MENU_ITEM_MOUSE_BUTTON:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = mouseSettings[selectedMenuItemId - MENU_ITEM_MOUSE_BUTTON] - 1;
+					break;
+				}
+				case MENU_ITEM_MOUSE_RESET:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					memcpy(mouseSettings, defaultMouseSettings, sizeof(mouseSettings));
+					break;
+				}
 				case MENU_ITEM_DONE:
 				{
 					JE_playSampleNum(S_SELECT);
@@ -667,6 +1014,15 @@ void setupMenu(void)
 				default:
 					break;
 				}
+
+				if (subMenu != MENU_NONE)
+				{
+					JE_playSampleNum(S_SELECT);
+
+					menuParents[subMenu] = currentMenu;
+					currentMenu = subMenu;
+					selectedMenuItemIndexes[currentMenu] = 0;
+				}
 			}
 
 			if (currentMenu == MENU_NONE)
@@ -773,8 +1129,19 @@ void setupMenu(void)
 			{
 				JE_playSampleNum(S_CLICK);
 
-				switch (selectedMenuItem->id)
+				switch (MENU_ITEM_BASE(selectedMenuItem->id))
 				{
+				case MENU_ITEM_JOYSTICK_ANALOG:
+				{
+					if (joy != NULL)
+						joy->analog = pickerSelectedIndex == 1;
+					break;
+				}
+				case MENU_ITEM_MOUSE_BUTTON:
+				{
+					mouseSettings[selectedMenuItem->id - MENU_ITEM_MOUSE_BUTTON] = pickerSelectedIndex + 1;
+					break;
+				}
 				case MENU_ITEM_DISPLAY:
 				{
 					if ((int)pickerSelectedIndex - 1 != fullscreen_display)
@@ -817,6 +1184,9 @@ void setupMenu(void)
 			}
 		}
 	}
+
+#undef stepJoystickSetting
+#undef MENU_ITEM_BASE
 }
 
 static File logFile;

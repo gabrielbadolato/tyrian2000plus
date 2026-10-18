@@ -36,6 +36,7 @@
 #include "palette.h"
 #include "picload.h"
 #include "sndmast.h"
+#include "update_check.h"
 #include "vga256d.h"
 #include "video.h"
 
@@ -260,6 +261,17 @@ static void addOriginalCredits(void)
 static void buildLines(void)
 {
 	lineCount = 0;
+
+	const char *newerVersion = update_check_newer_version();
+	if (newerVersion != NULL)
+	{
+		char text[160];
+		addWrapped(STYLE_HEADING, "New version available");
+		snprintf(text, sizeof(text), "Tyrian 2000+ %s is out (this is %s). Download it from the link below. On the Steam Deck, run atualizar-tyrian.sh again.", newerVersion, opentyrian_version);
+		addWrapped(STYLE_TEXT, text);
+		addLine(STYLE_LINK, "Download the new version", strlen("Download the new version"), UPDATE_CHECK_RELEASES_URL);
+		addLine(STYLE_BLANK, "", 0, NULL);
+	}
 
 	for (size_t i = 0; i < COUNTOF(aboutEntries); ++i)
 	{

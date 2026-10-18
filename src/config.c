@@ -28,6 +28,7 @@
 #include "nortsong.h"
 #include "opentyr.h"
 #include "player.h"
+#include "update_check.h"
 #include "varz.h"
 #include "video.h"
 #include "video_scale.h"
@@ -279,6 +280,14 @@ static void loadOpenTyrianConfig(void)
 			autoFireToggle = autoFire;
 	}
 
+	section = config_find_section(config, "updates", NULL);
+	if (section != NULL)
+	{
+		bool check;
+		if (config_get_bool_option(section, "check", &check))
+			update_check_enabled = check;
+	}
+
 	section = config_find_section(config, "keyboard", NULL);
 	if (section != NULL)
 	{
@@ -340,6 +349,12 @@ static void saveOpenTyrianConfig(void)
 		exit(EXIT_FAILURE);  // out of memory
 
 	config_set_bool_option(section, "auto_fire", autoFireToggle, OFF_ON);
+
+	section = config_find_or_add_section(config, "updates", NULL);
+	if (section == NULL)
+		exit(EXIT_FAILURE);  // out of memory
+
+	config_set_bool_option(section, "check", update_check_enabled, OFF_ON);
 
 	section = config_find_or_add_section(config, "keyboard", NULL);
 	if (section == NULL)

@@ -126,6 +126,15 @@ jogo, o recado do Gabriel, os créditos (os do jogo original são lidos do
 em português, está no `README.md` (e em inglês no `README.en.md`); mudou um, mude os outros. O README original
 do OpenTyrian2000 ficou em `doc/README-OpenTyrian2000`.
 
+Aviso de atualização: ao abrir, `update_check_start()` (`src/update_check.c`)
+consulta em segundo plano a última Release do GitHub (API pública, sem token;
+WinHTTP no Windows, `curl` no Linux) e compara com `opentyrian_version` (o
+`git describe`, ex. v1.0.2). Se houver mais nova, a tela de título mostra
+"vX is out! See About." no canto e o About ganha o link de download. Opção
+Setup > "Check Updates" (`check` na seção "updates", ligada por padrão).
+Build sem tag de versão não consulta. Para testar o aviso, compile com
+`VCS_IDREV='echo v1.0.1'`.
+
 Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
 ao investigar problemas no PC do Gabriel.
 

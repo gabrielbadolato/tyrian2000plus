@@ -111,7 +111,8 @@ screen, F1 shows help and F11 changes the brightness.
 
 - **Title screen > About:** what the game is, where it came from, the credits
   and the links (Enter or A opens a link in your browser).
-- **Title screen > Setup:** Graphics, Sound, Controls, Jukebox and About.
+- **Title screen > Setup:** Graphics, Sound, Controls, Jukebox, Check Updates
+  and About.
 - **Setup > Controls:** keyboard, controller, mouse, Auto Fire and the
   Controller Map.
 - **Ship menu (between levels) > Options > Setup...:** the same Setup.
@@ -120,6 +121,10 @@ screen, F1 shows help and F11 changes the brightness.
   brightness, applied right away).
 - **Setup > About:** the same About screen, to see it in the middle of a
   saved game.
+- **Setup > Check Updates:** at startup the game asks GitHub for the latest
+  published version. If there is a newer one, a note shows in the corner of
+  the title screen, and About has the link to download it. None of your data
+  is sent; without internet, nothing shows. Set it to "Off" to turn it off.
 
 ## Steam Controller tips
 

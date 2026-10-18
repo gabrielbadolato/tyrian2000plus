@@ -16,6 +16,8 @@ tyrian.sav
 
 # Windows build output
 /opentyrian.exe
+/opentyrian2000.exe
+/obj-win/
 /SDL2.dll
 /SDL2_net.dll
 

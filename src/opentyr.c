@@ -812,11 +812,12 @@ int main(int argc, char *argv[])
 	{
 		printf("initializing SDL audio...\n");
 
-		init_audio();
+		if (init_audio())
+		{
+			load_music();
 
-		load_music();
-
-		loadSndFile(xmas);
+			loadSndFile(xmas);
+		}
 	}
 	else
 	{

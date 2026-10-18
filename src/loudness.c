@@ -106,6 +106,9 @@ bool init_audio(void)
 	if (audioDevice == 0)
 	{
 		fprintf(stderr, "error: SDL failed to open audio device: %s\n", SDL_GetError());
+
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+
 		audio_disabled = true;
 		return false;
 	}

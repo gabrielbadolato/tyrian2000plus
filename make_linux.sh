@@ -110,7 +110,16 @@ mkdir -p "dist/$NAME/data" "dist/$NAME/licencas"
 cp opentyrian2000 "dist/$NAME/Tyrian2000Plus"
 strip "dist/$NAME/Tyrian2000Plus"
 cp doc/LEIA-ME.txt "dist/$NAME/"
-cp linux/icons/tyrian2000-128.png "dist/$NAME/Tyrian2000Plus.png"
+cp linux/steam/icone.png "dist/$NAME/Tyrian2000Plus.png"
+# Fora da raiz de propósito: versões antigas do atualizador copiam o pacote
+# por cima de si mesmas com "cp -r" e quebrariam ao sobrescrever o script
+# que está rodando.  O atualizador novo o instala com "mv".
+mkdir -p "dist/$NAME/atualizador"
+cp linux/atualizar-tyrian.sh "dist/$NAME/atualizador/"
+mkdir -p "dist/$NAME/steam"
+cp linux/steam/capa.png linux/steam/banner.png linux/steam/fundo.png \
+    linux/steam/logo.png linux/steam/icone.png linux/steam/instalar-na-steam.py \
+    "dist/$NAME/steam/"
 cp COPYING "dist/$NAME/licencas/GPL-2.0.txt"
 cp doc/tyrian-freeware-license.txt "dist/$NAME/licencas/tyrian-freeware-license.txt"
 cp "$PREFIX/share/licenses/SDL2.txt" "$PREFIX/share/licenses/SDL2_net.txt" "dist/$NAME/licencas/"

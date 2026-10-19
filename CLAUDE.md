@@ -88,6 +88,17 @@ controle conectado, as menções a teclas dos textos do `tyrian.hdt` (Enter, ESC
 setas, Alt-X, "[/]") pelos nomes dos botões do controle (conforme o mapeamento
 atual). Texto que não reconhece fica igual.
 
+## Steam (biblioteca)
+
+Arte própria em pixel art (nada tirado do jogo) em `linux/steam/`: capa,
+banner, fundo (hero), logo e ícone, desenhados por `gerar-arte.py` (Pillow;
+os PNGs ficam no repositório). O pacote Linux leva a pasta `steam/` e
+`instalar-na-steam.py`, que o `atualizar-tyrian.sh` roda: cria o atalho
+não-Steam se faltar, aponta o ícone e copia as imagens para
+`userdata/*/config/grid`. O shortcuts.vdf só é gravado com a Steam fechada
+(o atualizador pergunta se pode fechá-la). O atualizador vai no pacote em
+`atualizador/` e se instala com `mv`, para não quebrar o script em execução.
+
 ## Vídeo
 
 Padrão: Scaling Mode "Fit 4:3" (fiel ao monitor 4:3 de 1995). A opção

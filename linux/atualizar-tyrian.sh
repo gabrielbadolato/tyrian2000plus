@@ -3,7 +3,8 @@
 #
 # Baixa o build Linux mais recente que passou no GitHub Actions, instala em
 # ~/Jogos/Tyrian2000Plus (mantendo dados e saves) e, na primeira vez, baixa os
-# dados freeware do Tyrian 2000 do site original (camanis.net).
+# dados freeware do Tyrian 2000 do site original (camanis.net). Também põe o
+# jogo na biblioteca da Steam, com ícone e arte (steam/instalar-na-steam.py).
 #
 # O repositório é privado, então o download usa uma chave do GitHub
 # (fine-grained token, só leitura de Actions deste repositório). Ela é pedida
@@ -25,10 +26,46 @@ say() {
     echo "$1"
     if have_gui && [ ! -t 1 ]; then kdialog --title "Tyrian2000Plus" --msgbox "$1" || true; fi
 }
+confirmar() {  # pergunta sim/não; sem tela nem terminal, responde não
+    if have_gui && [ ! -t 1 ]; then
+        kdialog --title "Tyrian2000Plus" --yesno "$1"
+    elif [ -t 0 ]; then
+        read -r -p "$1 [s/N] " r; [[ "$r" =~ ^[sSyY] ]]
+    else
+        return 1
+    fi
+}
 fail() {
     echo "ERRO: $1" >&2
     if have_gui && [ ! -t 1 ]; then kdialog --title "Tyrian2000Plus" --error "$1" || true; fi
     exit 1
+}
+
+# ---- Steam: atalho, ícone e arte da biblioteca ----
+# Deixa em $extra uma frase para a mensagem final.
+passo_steam() {
+    extra=""
+    [ -f "$DEST/steam/instalar-na-steam.py" ] || return 0
+    local rc=0
+    python3 "$DEST/steam/instalar-na-steam.py" "$DEST" || rc=$?
+    case "$rc" in
+    0) extra=" O jogo está na biblioteca da Steam com ícone e arte." ;;
+    2) ;;   # Steam não instalada
+    3)
+        if [ "${XDG_CURRENT_DESKTOP:-}" != "gamescope" ] && confirmar \
+            "Para pôr o Tyrian2000Plus na Steam com ícone, a Steam precisa ser fechada por um instante. Fechar a Steam agora?"; then
+            steam -shutdown >/dev/null 2>&1 || true
+            for _ in $(seq 60); do pgrep -x steam >/dev/null || break; sleep 1; done
+            if ! pgrep -x steam >/dev/null && python3 "$DEST/steam/instalar-na-steam.py" "$DEST"; then
+                extra=" O jogo está na Steam com ícone e arte: abra a Steam de novo (ou volte ao Modo de Jogo)."
+            else
+                extra=" A Steam não fechou; rode o atualizador de novo para pôr o ícone."
+            fi
+        else
+            extra=" A arte da Steam foi copiada; o ícone entra quando você rodar o atualizador com a Steam fechada."
+        fi ;;
+    *) extra=" Não consegui pôr o jogo na Steam (rode pelo terminal para ver o erro)." ;;
+    esac
 }
 
 # ---- chave do GitHub ----
@@ -70,7 +107,8 @@ print(r[0]["id"], r[0]["head_sha"][:7] + " (" + r[0]["head_branch"] + ")")
 ' <<<"$runs") || fail "nenhum build pronto no GitHub"
 
 if [ -f "$DEST/.versao" ] && [ "$(cat "$DEST/.versao")" = "$run_id" ] && [ -x "$DEST/Tyrian2000Plus" ]; then
-    say "O Tyrian2000Plus já está na versão mais nova ($run_desc)."
+    passo_steam
+    say "O Tyrian2000Plus já está na versão mais nova ($run_desc).$extra"
     exit 0
 fi
 
@@ -94,9 +132,14 @@ tar -xzf "$TMP/x/$ARTIFACT.tar.gz" -C "$TMP/x"
 # Copia o pacote por cima da instalação: dados, saves e configurações
 # não fazem parte do pacote, então ficam como estão.
 mkdir -p "$DEST"
+# O atualizador novo do pacote entra por "mv" (arquivo novo): este script pode
+# estar rodando de $DEST, e o bash lê o arquivo aos poucos enquanto roda.
+mv "$TMP/x/$ARTIFACT/atualizador/atualizar-tyrian.sh" "$TMP/atualizar-tyrian.sh"
+rmdir "$TMP/x/$ARTIFACT/atualizador"
 cp -r "$TMP/x/$ARTIFACT/." "$DEST/"
-cp "$0" "$DEST/atualizar-tyrian.sh" 2>/dev/null || true
-chmod +x "$DEST/Tyrian2000Plus" "$DEST/atualizar-tyrian.sh"
+chmod +x "$TMP/atualizar-tyrian.sh"
+mv -f "$TMP/atualizar-tyrian.sh" "$DEST/atualizar-tyrian.sh"
+chmod +x "$DEST/Tyrian2000Plus"
 
 # ---- dados do jogo (só na primeira vez) ----
 if ! find "$DEST/data" -maxdepth 1 -iname "tyrian1.lvl" | grep -q .; then
@@ -140,4 +183,5 @@ Icon=$DEST/Tyrian2000Plus.png
 Categories=Game;
 EOF
 
-say "Tyrian2000Plus instalado na versão $run_desc, em $DEST."
+passo_steam
+say "Tyrian2000Plus instalado na versão $run_desc, em $DEST.$extra"

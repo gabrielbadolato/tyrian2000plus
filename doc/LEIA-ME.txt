@@ -32,7 +32,9 @@ ONDE FICAM AS OPCOES
   Tela de titulo > Setup: video, brilho, som, controles, Auto Fire e o
   desenho do controle.
   Entre as fases (menu da nave) > Options > Setup...: o mesmo Setup.
-  Durante a fase, Start/Esc: volume, nivel de detalhe e velocidade.
+  Durante a fase, Start/Esc: volume, nivel de detalhe, velocidade,
+  Auto Fire e Graphics... (tela cheia, escala, Sharp Bilinear, VSync e
+  brilho, aplicados na hora).
 
 STEAM CONTROLLER
   Com a Steam aberta, ela transforma o Steam Controller em teclado e mouse

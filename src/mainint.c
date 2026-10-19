@@ -52,6 +52,7 @@
 #include "varz.h"
 #include "vga256d.h"
 #include "video.h"
+#include "video_scale.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -1349,6 +1350,14 @@ void JE_gammaCorrect(Palette *colorBuffer, JE_byte gamma)
 	}
 }
 
+// re-applies the brightness (gammaCorrection) to the level palette
+static void applyLevelGamma(void)
+{
+	memcpy(colors, palettes[pcxpal[3-1]], sizeof(colors));
+	JE_gammaCorrect(&colors, gammaCorrection);
+	set_palette(colors, 0, 255);
+}
+
 JE_boolean JE_gammaCheck(void)
 {
 	bool temp = keysactive[SDL_SCANCODE_F11];
@@ -1356,9 +1365,7 @@ JE_boolean JE_gammaCheck(void)
 	{
 		keysactive[SDL_SCANCODE_F11] = false;
 		gammaCorrection = (gammaCorrection + 1) % 4;
-		memcpy(colors, palettes[pcxpal[3-1]], sizeof(colors));
-		JE_gammaCorrect(&colors, gammaCorrection);
-		set_palette(colors, 0, 255);
+		applyLevelGamma();
 	}
 	return temp;
 }
@@ -1488,6 +1495,8 @@ void JE_doInGameSetup(void)
 	mouseSetRelative(true);
 }
 
+static const char *const brightnessNames[] = { "Normal", "Bright", "Brighter", "Brightest" };
+
 JE_boolean JE_inGameSetup(void)
 {
 	bool result = false;
@@ -1503,20 +1512,87 @@ JE_boolean JE_inGameSetup(void)
 		MENU_ITEM_GAME_SPEED,
 		MENU_ITEM_RETURN_TO_GAME,
 		MENU_ITEM_QUIT,
+		// Items added by Tyrian2000 Plus (names and help are not in the game data).
+		MENU_ITEM_AUTO_FIRE,
+		MENU_ITEM_GRAPHICS,
+		MENU_ITEM_DISPLAY,
+		MENU_ITEM_SCALER,
+		MENU_ITEM_SCALING_MODE,
+		MENU_ITEM_SHARP_BILINEAR,
+		MENU_ITEM_VSYNC,
+		MENU_ITEM_BRIGHTNESS,
+		MENU_ITEM_DONE,
 	};
 
 	const size_t helpIndexes[] = { 14, 14, 27, 28, 25, 26 };
+
+	static const struct
+	{
+		const char *name;
+		const char *help;
+	} plusItems[] =
+	{
+		[MENU_ITEM_AUTO_FIRE - MENU_ITEM_AUTO_FIRE] = { "Auto Fire", "Press fire once to start or stop firing." },
+		[MENU_ITEM_GRAPHICS - MENU_ITEM_AUTO_FIRE] = { "Graphics...", "Change the graphics settings." },
+		[MENU_ITEM_DISPLAY - MENU_ITEM_AUTO_FIRE] = { "Display", "Change the display mode." },
+		[MENU_ITEM_SCALER - MENU_ITEM_AUTO_FIRE] = { "Scaler", "Change the pixel art scaling algorithm." },
+		[MENU_ITEM_SCALING_MODE - MENU_ITEM_AUTO_FIRE] = { "Scaling Mode", "Change the scaling mode." },
+		[MENU_ITEM_SHARP_BILINEAR - MENU_ITEM_AUTO_FIRE] = { "Sharp Bilinear", "Keep pixels even when the scale is not exact." },
+		[MENU_ITEM_VSYNC - MENU_ITEM_AUTO_FIRE] = { "VSync", "Sync to the display to prevent tearing." },
+		[MENU_ITEM_BRIGHTNESS - MENU_ITEM_AUTO_FIRE] = { "Brightness", "Brighten the level (F11 also works)." },
+		[MENU_ITEM_DONE - MENU_ITEM_AUTO_FIRE] = { "Done", "Return to the previous menu." },
+	};
+
+	// The graphics page is hidden in network games: changing the video there
+	// would stall the other player.
+	const int mainItems[] =
+	{
+		MENU_ITEM_MUSIC_VOLUME,
+		MENU_ITEM_EFFECTS_VOLUME,
+		MENU_ITEM_DETAIL_LEVEL,
+		MENU_ITEM_GAME_SPEED,
+		MENU_ITEM_AUTO_FIRE,
+		isNetworkGame ? -1 : MENU_ITEM_GRAPHICS,
+		MENU_ITEM_RETURN_TO_GAME,
+		MENU_ITEM_QUIT,
+	};
+	const int graphicsItems[] =
+	{
+		MENU_ITEM_DISPLAY,
+		MENU_ITEM_SCALER,
+		MENU_ITEM_SCALING_MODE,
+		MENU_ITEM_SHARP_BILINEAR,
+		MENU_ITEM_VSYNC,
+		MENU_ITEM_BRIGHTNESS,
+		MENU_ITEM_DONE,
+	};
+
+	int menuItems[COUNTOF(mainItems)];
+	size_t menuItemsCount = 0;
+	bool graphicsPage = false;
+
+#define setMenuPage(page) \
+	do { \
+		graphicsPage = (page); \
+		const int *const pageItems = graphicsPage ? graphicsItems : mainItems; \
+		const size_t pageItemsCount = graphicsPage ? COUNTOF(graphicsItems) : COUNTOF(mainItems); \
+		menuItemsCount = 0; \
+		for (size_t j = 0; j < pageItemsCount; ++j) \
+			if (pageItems[j] >= 0) \
+				menuItems[menuItemsCount++] = pageItems[j]; \
+	} while (false)
+
+	setMenuPage(false);
 
 	if (shopSpriteSheet.data == NULL)
 		JE_loadCompShapes(&shopSpriteSheet, '1');  // need mouse pointer sprites
 
 	bool restart = true;
 
-	const size_t menuItemsCount = COUNTOF(inGameText);
-	size_t selectedIndex = MENU_ITEM_MUSIC_VOLUME;
+	size_t selectedIndex = 0;
 
 	const int yMenuItems = 20;
-	const int dyMenuItems = 20;
+	const int dyMenuItems = 14;
 	const int xMenuItem = 10;
 	const int xMenuItemName = xMenuItem;
 	const int wMenuItemName = 110;
@@ -1554,13 +1630,22 @@ JE_boolean JE_inGameSetup(void)
 		{
 			const int y = yMenuItems + dyMenuItems * i;
 
-			const char *const name = inGameText[i];
+			const int item = menuItems[i];
+
+			const char *const name = item < MENU_ITEM_AUTO_FIRE
+				? inGameText[item]
+				: plusItems[item - MENU_ITEM_AUTO_FIRE].name;
 
 			const bool selected = i == selectedIndex;
 
-			drawFontHvShadow(VGAScreen, xMenuItemName, y, name, FONT_NORMAL, 15, -4 + (selected ? 2 : 0), false, 2);
+			const Sint8 value = -4 + (selected ? 2 : 0);
 
-			switch (i)
+			drawFontHvShadow(VGAScreen, xMenuItemName, y, name, FONT_NORMAL, 15, value, false, 2);
+
+			char buffer[32];
+			const char *valueText = NULL;
+
+			switch (item)
 			{
 			case MENU_ITEM_MUSIC_VOLUME:
 			{
@@ -1573,20 +1658,56 @@ JE_boolean JE_inGameSetup(void)
 				break;
 			}
 			case MENU_ITEM_DETAIL_LEVEL:
-			{
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, detailLevel[processorType-1], FONT_NORMAL, 15, -4 + (selected ? 2 : 0), false, 2);
+				valueText = detailLevel[processorType-1];
 				break;
-			}
 			case MENU_ITEM_GAME_SPEED:
-			{
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, gameSpeedText[gameSpeed-1], FONT_NORMAL, 15, -4 + (selected ? 2 : 0), false, 2);
+				valueText = gameSpeedText[gameSpeed-1];
+				break;
+			case MENU_ITEM_AUTO_FIRE:
+				valueText = autoFireToggle ? "On" : "Off";
+				break;
+			case MENU_ITEM_DISPLAY:
+				if (fullscreen_display >= 0)
+				{
+					snprintf(buffer, sizeof(buffer), "Display %d", fullscreen_display + 1);
+					valueText = buffer;
+				}
+				else
+				{
+					valueText = "Window";
+				}
+				break;
+			case MENU_ITEM_SCALER:
+				valueText = scalers[scaler].name;
+				break;
+			case MENU_ITEM_SCALING_MODE:
+				valueText = scaling_mode_names[scaling_mode];
+				break;
+			case MENU_ITEM_SHARP_BILINEAR:
+				valueText = sharp_bilinear_enabled ? "On" : "Off";
+				break;
+			case MENU_ITEM_VSYNC:
+				valueText = vsync_enabled ? "On" : "Off";
+				break;
+			case MENU_ITEM_BRIGHTNESS:
+				valueText = brightnessNames[gammaCorrection % COUNTOF(brightnessNames)];
+				break;
+			default:
 				break;
 			}
-			}
+
+			if (valueText != NULL)
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, valueText, FONT_NORMAL, 15, value, false, 2);
 		}
 
 		// Draw help text.
-		JE_outTextAdjust(VGAScreen, 10, 147, padHelpText(mainMenuHelp[helpIndexes[selectedIndex]]), 14, 6, TINY_FONT, true);
+		{
+			const int item = menuItems[selectedIndex];
+			const char *const help = item < MENU_ITEM_AUTO_FIRE
+				? padHelpText(mainMenuHelp[helpIndexes[item]])
+				: plusItems[item - MENU_ITEM_AUTO_FIRE].help;
+			JE_outTextAdjust(VGAScreen, 10, 147, help, 14, 6, TINY_FONT, true);
+		}
 
 		JE_mouseStart();
 		JE_showVGA();
@@ -1600,6 +1721,7 @@ JE_boolean JE_inGameSetup(void)
 		bool action = false;
 		bool leftAction = false;
 		bool rightAction = false;
+		bool back = false;
 
 		MouseInput mouseInput;
 		KeyboardInput keyboardInput;
@@ -1634,7 +1756,7 @@ JE_boolean JE_inGameSetup(void)
 							// Act on menu item via value.
 							else if (mouseInput.x >= xMenuItemValue && mouseInput.x < xMenuItemValue + wMenuItemValue)
 							{
-								switch (i)
+								switch (menuItems[i])
 								{
 								case MENU_ITEM_MUSIC_VOLUME:
 								{
@@ -1660,14 +1782,16 @@ JE_boolean JE_inGameSetup(void)
 									JE_playSampleNum(S_CURSOR);
 									break;
 								}
-								case MENU_ITEM_DETAIL_LEVEL:
-								case MENU_ITEM_GAME_SPEED:
+								case MENU_ITEM_RETURN_TO_GAME:
+								case MENU_ITEM_QUIT:
+								case MENU_ITEM_GRAPHICS:
+								case MENU_ITEM_DONE:
+									break;
+								default:
 								{
 									rightAction = true;
 									break;
 								}
-								default:
-									break;
 								}
 							}
 						}
@@ -1678,11 +1802,7 @@ JE_boolean JE_inGameSetup(void)
 			}
 
 			if (mouseInput.button == SDL_BUTTON_RIGHT)
-			{
-				JE_playSampleNum(S_SPRING);
-
-				done = true;
-			}
+				back = true;
 		}
 		else if (keyboardGetInput(&keyboardInput))
 		{
@@ -1724,14 +1844,12 @@ JE_boolean JE_inGameSetup(void)
 			}
 			case SDL_SCANCODE_ESCAPE:
 			{
-				JE_playSampleNum(S_SPRING);
-
-				done = true;
+				back = true;
 				break;
 			}
 			case SDL_SCANCODE_W:
 			{
-				if (selectedIndex == MENU_ITEM_DETAIL_LEVEL)
+				if (menuItems[selectedIndex] == MENU_ITEM_DETAIL_LEVEL)
 				{
 					processorType = 6;
 					JE_initProcessorType();
@@ -1743,9 +1861,27 @@ JE_boolean JE_inGameSetup(void)
 			}
 		}
 
-		if (action)
+		const int selectedItem = menuItems[selectedIndex];
+
+		if (back)
 		{
-			switch (selectedIndex)
+			JE_playSampleNum(S_SPRING);
+
+			if (graphicsPage)
+			{
+				// Back to the pause menu, on the Graphics item.
+				setMenuPage(false);
+				for (selectedIndex = 0; menuItems[selectedIndex] != MENU_ITEM_GRAPHICS; ++selectedIndex)
+					;
+			}
+			else
+			{
+				done = true;
+			}
+		}
+		else if (action)
+		{
+			switch (selectedItem)
 			{
 			case MENU_ITEM_MUSIC_VOLUME:
 			{
@@ -1786,24 +1922,50 @@ JE_boolean JE_inGameSetup(void)
 				done = true;
 				break;
 			}
-			default:
+			case MENU_ITEM_GRAPHICS:
+			{
+				JE_playSampleNum(S_SELECT);
+
+				setMenuPage(true);
+				selectedIndex = 0;
 				break;
 			}
+			case MENU_ITEM_DONE:
+			{
+				JE_playSampleNum(S_SELECT);
+
+				setMenuPage(false);
+				for (selectedIndex = 0; menuItems[selectedIndex] != MENU_ITEM_GRAPHICS; ++selectedIndex)
+					;
+				break;
+			}
+			case MENU_ITEM_DETAIL_LEVEL:
+			case MENU_ITEM_GAME_SPEED:
+				break;
+			default:
+			{
+				rightAction = true;  // Enter steps through the choices
+				break;
+			}
+			}
 		}
-		else if (leftAction)
+
+		if (leftAction || rightAction)
 		{
-			switch (selectedIndex)
+			const int step = rightAction ? 1 : -1;
+
+			switch (selectedItem)
 			{
 			case MENU_ITEM_MUSIC_VOLUME:
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				JE_changeVolume(&tyrMusicVolume, -12, &fxVolume, 0);
+				JE_changeVolume(&tyrMusicVolume, 12 * step, &fxVolume, 0);
 				break;
 			}
 			case MENU_ITEM_EFFECTS_VOLUME:
 			{
-				JE_changeVolume(&tyrMusicVolume, 0, &fxVolume, -12);
+				JE_changeVolume(&tyrMusicVolume, 0, &fxVolume, 12 * step);
 
 				JE_playSampleNum(S_CURSOR);
 				break;
@@ -1812,7 +1974,10 @@ JE_boolean JE_inGameSetup(void)
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				processorType = processorType > 1 ? processorType - 1 : 4;
+				if (rightAction)
+					processorType = processorType < 4 ? processorType + 1 : 1;
+				else
+					processorType = processorType > 1 ? processorType - 1 : 4;
 				JE_initProcessorType();
 				JE_setNewGameSpeed();
 				break;
@@ -1821,49 +1986,69 @@ JE_boolean JE_inGameSetup(void)
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				gameSpeed = gameSpeed > 1 ? gameSpeed - 1 : 5;
+				if (rightAction)
+					gameSpeed = gameSpeed < 5 ? gameSpeed + 1 : 1;
+				else
+					gameSpeed = gameSpeed > 1 ? gameSpeed - 1 : 5;
 				JE_initProcessorType();
 				JE_setNewGameSpeed();
 				break;
 			}
-			default:
-				break;
-			}
-		}
-		else if (rightAction)
-		{
-			switch (selectedIndex)
-			{
-			case MENU_ITEM_MUSIC_VOLUME:
+			case MENU_ITEM_AUTO_FIRE:
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				JE_changeVolume(&tyrMusicVolume, 12, &fxVolume, 0);
+				autoFireToggle = !autoFireToggle;
 				break;
 			}
-			case MENU_ITEM_EFFECTS_VOLUME:
-			{
-				JE_changeVolume(&tyrMusicVolume, 0, &fxVolume, 12);
-
-				JE_playSampleNum(S_CURSOR);
-				break;
-			}
-			case MENU_ITEM_DETAIL_LEVEL:
+			case MENU_ITEM_DISPLAY:
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				processorType = processorType < 4 ? processorType + 1 : 1;
-				JE_initProcessorType();
-				JE_setNewGameSpeed();
+				// -1 is the window, then each display
+				const int count = 1 + SDL_GetNumVideoDisplays();
+				reinit_fullscreen((fullscreen_display + 1 + count + step) % count - 1);
 				break;
 			}
-			case MENU_ITEM_GAME_SPEED:
+			case MENU_ITEM_SCALER:
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				gameSpeed = gameSpeed < 5 ? gameSpeed + 1 : 1;
-				JE_initProcessorType();
-				JE_setNewGameSpeed();
+				const int oldScaler = scaler;
+				if (!init_scaler((scaler + scalers_count + step) % scalers_count) &&  // try new scaler
+				    !init_scaler(oldScaler))                                        // revert on fail
+				{
+					exit(EXIT_FAILURE);
+				}
+				break;
+			}
+			case MENU_ITEM_SCALING_MODE:
+			{
+				JE_playSampleNum(S_CURSOR);
+
+				scaling_mode = (scaling_mode + ScalingMode_MAX + step) % ScalingMode_MAX;
+				break;
+			}
+			case MENU_ITEM_SHARP_BILINEAR:
+			{
+				JE_playSampleNum(S_CURSOR);
+
+				set_sharp_bilinear(!sharp_bilinear_enabled);
+				break;
+			}
+			case MENU_ITEM_VSYNC:
+			{
+				JE_playSampleNum(S_CURSOR);
+
+				set_vsync(!vsync_enabled);
+				break;
+			}
+			case MENU_ITEM_BRIGHTNESS:
+			{
+				JE_playSampleNum(S_CURSOR);
+
+				gammaCorrection = (gammaCorrection + COUNTOF(brightnessNames) + step) % COUNTOF(brightnessNames);
+				applyLevelGamma();
 				break;
 			}
 			default:
@@ -1871,6 +2056,8 @@ JE_boolean JE_inGameSetup(void)
 			}
 		}
 	}
+
+#undef setMenuPage
 
 	VGAScreen = temp_surface; /* side-effect of game_screen */
 

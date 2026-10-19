@@ -4,7 +4,8 @@ name: Build
 # The packages are on the run's page under "Artifacts".  Publishing a GitHub
 # release also attaches them to the release.  Only the release packages carry
 # the freeware game data (unchanged, see add_game_data.sh); the per-push
-# builds stay without it.
+# builds stay without it.  With the BUTLER_API_KEY secret set, a release is
+# also sent to the itch.io page (itch_push.sh).
 
 on:
   push:
@@ -81,6 +82,13 @@ jobs:
           chmod +x dist/Tyrian2000Plus-linux-x86_64/atualizar-tyrian.sh
           tar -czf "$asset" -C dist Tyrian2000Plus-linux-x86_64
           gh release upload "$tag" "$asset" --clobber
+      - name: Send to itch.io
+        # Skipped (with a note in the log) while the BUTLER_API_KEY secret is
+        # not set.  Runs after "Attach to release", so the package has the data.
+        if: github.event_name == 'release'
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: ./itch_push.sh dist/Tyrian2000Plus-linux-x86_64 linux "${{ github.event.release.tag_name }}"
 
   windows:
     name: Windows x64
@@ -116,3 +124,8 @@ jobs:
           ./add_game_data.sh dist/Tyrian2000Plus-windows-x64 crlf
           (cd dist && zip -qr "../$asset" Tyrian2000Plus-windows-x64)
           gh release upload "$tag" "$asset" --clobber
+      - name: Send to itch.io
+        if: github.event_name == 'release'
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: ./itch_push.sh dist/Tyrian2000Plus-windows-x64 windows "${{ github.event.release.tag_name }}"

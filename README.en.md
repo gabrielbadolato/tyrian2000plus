@@ -125,11 +125,12 @@ screen, F1 shows help and F11 changes the brightness.
 
 - On Windows, the game reads the Steam Controller directly, without Steam:
   buttons, button names and rumble all work.
-- **Close Steam before playing**, or add the game to Steam as a non-Steam
-  game and start it from your library. If Steam is open and the game is
-  started outside it, Steam also turns the controller into a keyboard and
-  mouse: buttons count twice and X opens Steam's on-screen keyboard. The game
-  cannot prevent this, because Steam itself does it.
+- **With Steam open**, keep the controller in Steam's **gamepad mode**: hold
+  the Start button until Steam shows its notice. Then everything works
+  normally. In Steam's keyboard and mouse mode, buttons count twice and X
+  opens Steam's on-screen keyboard; the game cannot prevent that.
+- Closing Steam before playing also works, as does adding the game to Steam
+  as a non-Steam game and starting it from your library.
 - On Linux and the Steam Deck, the 2026 Steam Controller only works when the
   game is started from Steam.
 

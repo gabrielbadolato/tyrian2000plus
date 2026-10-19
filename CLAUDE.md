@@ -81,8 +81,9 @@ Steam, o controle funciona e vibra (testado). Com a Steam aberta e o jogo
 fora dela, a Steam também gera teclado/mouse do controle (botões contam duas
 vezes, X abre o teclado virtual dela). Um filtro e outros remendos para isso
 foram tentados (PRs #9, #10, #17) e REMOVIDOS a pedido do Gabriel (2026-10-19):
-o jogo não sabe com certeza o que a Steam está fazendo. A orientação é fechar
-a Steam ou abrir o jogo por ela; não tentar de novo sem ele pedir. O Linux
+o jogo não sabe com certeza o que a Steam está fazendo. Com a Steam no modo
+gamepad (segurar Start) tudo funciona (testado pelo Gabriel); a orientação é
+essa, ou fechar a Steam ou abrir o jogo por ela; não tentar de novo sem ele pedir. O Linux
 continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
 está explicado no `README.md` (que vai no pacote como LEIA-ME.txt).
 

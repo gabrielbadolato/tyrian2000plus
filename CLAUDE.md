@@ -108,6 +108,14 @@ hora. Graphics fica escondido em jogo em rede.
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).
 
+About: item "About" na tela de título, antes do Quit (inserido em
+`menuText[6]` ao carregar o `tyrian.hdt`, `src/helptext.c`), e também em
+Setup > "About..." (`aboutScreen()` em `src/about.c`) mostra o que é o
+jogo, o recado do Gabriel, os créditos (os do jogo original são lidos do
+`tyrian.cdt`) e links que abrem no navegador com `SDL_OpenURL`. O mesmo texto,
+em português, está no `README.md` (e em inglês no `README.en.md`); mudou um, mude os outros. O README original
+do OpenTyrian2000 ficou em `doc/README-OpenTyrian2000`.
+
 Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
 ao investigar problemas no PC do Gabriel.
 

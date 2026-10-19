@@ -109,6 +109,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\about.c" />
     <ClCompile Include="..\src\animlib.c" />
     <ClCompile Include="..\src\arg_parse.c" />
     <ClCompile Include="..\src\backgrnd.c" />
@@ -164,6 +165,7 @@
     <ClCompile Include="..\src\xmas.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\about.h" />
     <ClInclude Include="..\src\animlib.h" />
     <ClInclude Include="..\src\arg_parse.h" />
     <ClInclude Include="..\src\backgrnd.h" />

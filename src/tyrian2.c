@@ -18,6 +18,7 @@
  */
 #include "tyrian2.h"
 
+#include "about.h"
 #include "animlib.h"
 #include "backgrnd.h"
 #include "demo.h"
@@ -3235,6 +3236,7 @@ bool titleScreen(void)
 		MENU_ITEM_INSTRUCTIONS,
 		MENU_ITEM_SETUP,
 		MENU_ITEM_DEMO,
+		MENU_ITEM_ABOUT,
 		MENU_ITEM_QUIT,
 	};
 
@@ -3247,8 +3249,8 @@ bool titleScreen(void)
 	size_t specialNameProgress[SA_ENGAGE] = { 0 };
 
 	const int xCenter = VGAScreen->w / 2;
-	const int yMenuItems = 104;
-	const int hMenuItem = 13;
+	const int yMenuItems = 100;
+	const int hMenuItem = 12;
 	int wMenuItem[COUNTOF(menuText)] = { 0 };
 
 	for (; ; )
@@ -3540,6 +3542,17 @@ bool titleScreen(void)
 
 				playDemo = true;
 				return true;
+			}
+			case MENU_ITEM_ABOUT:
+			{
+				fade_black(15);
+
+				aboutScreen();
+
+				fade_black(15);
+
+				restart = true;
+				break;
 			}
 			case MENU_ITEM_QUIT:
 			{

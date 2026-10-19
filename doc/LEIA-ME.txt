@@ -31,6 +31,8 @@ CONTROLES (Xbox / Steam Controller / Steam Deck)
 ONDE FICAM AS OPCOES
   Tela de titulo > Setup: video, brilho, som, controles, Auto Fire e o
   desenho do controle.
+  Tela de titulo > About (ou Setup > About...): o que e o jogo, de onde
+  veio, os creditos e os links (Enter ou A abre o link no navegador).
   Entre as fases (menu da nave) > Options > Setup...: o mesmo Setup.
   Durante a fase, Start/Esc: volume, nivel de detalhe, velocidade,
   Auto Fire e Graphics... (tela cheia, escala, Sharp Bilinear, VSync e

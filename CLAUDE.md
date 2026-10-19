@@ -44,7 +44,7 @@ pequenas e podem seguir as regras acima normalmente.
 - Windows x64: `./make_windows.sh` (no Linux) cross-compila com llvm-mingw +
   SDL2 2.32 e SDL2_net 2.4, baixando tudo em `build/win`, e gera
   `dist/Tyrian2000Plus-windows-x64.zip` (Tyrian2000Plus.exe + SDL2.dll e SDL3.dll do sdl2-compat +
-  SDL2_net.dll + LEIA-ME + licenças). O Makefile embute ícone e manifesto
+  SDL2_net.dll + LEIA-ME.txt (= README.md) e README.txt (= README.en.md) + licenças). O Makefile embute ícone e manifesto
   UTF-8 de `visualc/resources.rc`.
 - Linux x86_64 / Steam Deck: `./make_linux.sh` compila SDL2 estático (só
   depende da glibc) e gera `dist/Tyrian2000Plus-linux-x86_64.tar.gz`.
@@ -84,7 +84,7 @@ ignora teclado/mouse enquanto o estado de um controle Valve (28de) muda e
 nos 300 ms seguintes (só mudanças contam: o controle 2026 pode ter entrada
 sempre "apertada"; o log registra o que foi ignorado), só quando a Steam está rodando e não abriu o jogo. O Linux
 continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
-está explicado em `doc/LEIA-ME.txt`.
+está explicado no `README.md` (que vai no pacote como LEIA-ME.txt).
 
 Tiro automático: opção "Auto Fire" em Setup > Controls (seção "gameplay",
 `auto_fire` no opentyrian.cfg). Cada toque no tiro liga/desliga o disparo

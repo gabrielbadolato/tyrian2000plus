@@ -31,10 +31,26 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 
 ## Um recado do Gabriel
 
-Oi! Eu sou o Gabriel Badolato. Não sou desenvolvedor de jogos e sou iniciante
-em programação. O Tyrian marcou a minha infância, e fiz este projeto para poder
-jogá-lo melhor hoje, com controles e telas modernos. Fiz tudo com muita ajuda
-do Claude, um assistente de IA da Anthropic. Obrigado por jogar!
+Oi! Eu sou o Gabriel Badolato, do Brasil.
+
+O Tyrian 2000 fez parte da minha infância. Foi um dos jogos que me fizeram
+gostar de computadores, e anos depois eu trabalhei com eles. Eu queria jogá-lo
+de novo com um controle moderno, numa tela grande e no Steam Deck. Por isso
+comecei este projeto.
+
+Não sou desenvolvedor de jogos. Trabalhei com TI por anos, e agora estou
+terminando a graduação em biomedicina, com a ideia de trabalhar com
+bioinformática. Aprendi a programar na faculdade, mas nunca escrevi muito
+código. O Claude, um assistente de IA da Anthropic, escreveu a maior parte
+dele. Eu testei cada versão no meu PC e nos meus controles.
+
+Obrigado ao Jason Emery, ao Alexander Brandon, ao Daniel Cook e a todos da
+Eclipse Software, e aos desenvolvedores do OpenTyrian e do OpenTyrian2000, que
+mantiveram o jogo vivo.
+
+Este projeto é gratuito, e sempre será.
+
+Obrigado por jogar!
 
 ## Instalação
 

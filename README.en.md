@@ -31,11 +31,26 @@ the open-source port of Tyrian. What this version adds:
 
 ## A note from Gabriel
 
-Hi! I'm Gabriel Badolato. I'm not a game developer, and I'm just a beginner at
-programming. Tyrian marked my childhood, and I made this project so I could
-play it better today, with modern controllers and screens. I built it with a
-lot of help from Claude, an AI assistant made by Anthropic. Thank you for
-playing!
+Hi! I'm Gabriel Badolato, from Brazil.
+
+Tyrian 2000 was a big part of my childhood. It was one of the games that made
+me love computers, and years later I worked with them for a living. I wanted
+to play it again with a modern controller, on a big screen and on the Steam
+Deck. So I started this project.
+
+I'm not a game developer. I worked in IT for years, and now I'm finishing a
+degree in biomedicine, hoping to work in bioinformatics. I learned to program
+in college, but I never wrote much code. Claude, an AI assistant made by
+Anthropic, wrote most of it. I tested every build on my own PC and
+controllers.
+
+Thank you to Jason Emery, Alexander Brandon, Daniel Cook and everyone at
+Eclipse Software, and to the OpenTyrian and OpenTyrian2000 developers who kept
+the game alive.
+
+This project is free, and it always will be.
+
+Thank you for playing!
 
 ## Installation
 

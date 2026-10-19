@@ -36,6 +36,7 @@
 #include "mouse.h"
 #include "mtrand.h"
 #include "network.h"
+#include "padmap.h"
 #include "nortsong.h"
 #include "nortvars.h"
 #include "opentyrian_version.h"
@@ -216,6 +217,7 @@ void setupMenu(void)
 		MENU_ITEM_AUTO_FIRE,
 		MENU_ITEM_KEYBOARD,
 		MENU_ITEM_JOYSTICK,
+		MENU_ITEM_CONTROLLER_MAP,
 		MENU_ITEM_MOUSE,
 		MENU_ITEM_KEY,                                      // + action (0-7)
 		MENU_ITEM_KEY_LAST = MENU_ITEM_KEY + 7,
@@ -311,6 +313,7 @@ void setupMenu(void)
 			.items = {
 				{ MENU_ITEM_KEYBOARD, "Keyboard...", "Change the keyboard keys." },
 				{ MENU_ITEM_JOYSTICK, "Controller...", "Change the controller (gamepad) settings." },
+				{ MENU_ITEM_CONTROLLER_MAP, "Controller Map...", "See what each controller button does." },
 				{ MENU_ITEM_MOUSE, "Mouse...", "Change the mouse buttons." },
 				{ MENU_ITEM_AUTO_FIRE, "Auto Fire:", "Press fire once to start or stop firing.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
@@ -839,6 +842,20 @@ void setupMenu(void)
 				case MENU_ITEM_MOUSE:
 					subMenu = MENU_MOUSE;
 					break;
+				case MENU_ITEM_CONTROLLER_MAP:
+				{
+					JE_playSampleNum(S_SELECT);
+
+					fade_black(10);
+
+					// the controller chosen in Controller..., if it is a gamepad
+					controllerMapScreen(joy != NULL && joy->controller != NULL ? joystickIndex : joystick_first_gamepad());
+
+					fade_black(10);
+
+					restart = true;
+					break;
+				}
 				case MENU_ITEM_KEY:
 				{
 					JE_playSampleNum(S_CLICK);

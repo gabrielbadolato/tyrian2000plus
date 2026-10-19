@@ -143,6 +143,7 @@
     <ClCompile Include="..\src\nortvars.c" />
     <ClCompile Include="..\src\opentyr.c" />
     <ClCompile Include="..\src\opl.c" />
+    <ClCompile Include="..\src\padmap.c" />
     <ClCompile Include="..\src\palette.c" />
     <ClCompile Include="..\src\params.c" />
     <ClCompile Include="..\src\pcxload.c" />
@@ -198,6 +199,7 @@
     <ClInclude Include="..\src\opentyr.h" />
     <ClInclude Include="..\src\opentyrian_version.h" />
     <ClInclude Include="..\src\opl.h" />
+    <ClInclude Include="..\src\padmap.h" />
     <ClInclude Include="..\src\palette.h" />
     <ClInclude Include="..\src\params.h" />
     <ClInclude Include="..\src\pcxload.h" />

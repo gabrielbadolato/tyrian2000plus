@@ -1,4 +1,5 @@
-/* Headless test for the gamepad layer: virtual controllers, mapping, hotplug, config. */
+/* Headless test for the gamepad layer: virtual controllers (generic, Xbox,
+ * PlayStation, Switch), mapping, button names, hotplug, config. */
 #include "joystick.h"
 #include "helptext.h"
 #include "config.h"
@@ -26,6 +27,92 @@ static int attach_pad(const char *name)
 static void advance(Uint32 ms) { SDL_Delay(ms); }
 
 static void poll(void) { SDL_Delay(1); poll_joysticks(); }
+
+typedef struct
+{
+	const char *name;
+	Uint16 vendor, product;
+	SDL_GameControllerType type;
+	const char *labels[10];  // joystick_action_label() of each default action
+	const char *confirm, *cancel;
+	const char *escHelp;     // padHelpText("Press ESC to exit.")
+}
+Pad_model;
+
+static int attach_model(const Pad_model *m)
+{
+	SDL_VirtualJoystickDesc d;
+	SDL_zero(d);
+	d.version = SDL_VIRTUAL_JOYSTICK_DESC_VERSION;
+	d.type = SDL_JOYSTICK_TYPE_GAMECONTROLLER;
+	d.naxes = SDL_CONTROLLER_AXIS_MAX;
+	d.nbuttons = SDL_CONTROLLER_BUTTON_MAX;
+	d.vendor_id = m->vendor;
+	d.product_id = m->product;
+	d.name = m->name;
+	return SDL_JoystickAttachVirtualEx(&d);
+}
+
+// presses one default input of a connected pad and checks that exactly the
+// action it is assigned to (and nothing else) is triggered
+static bool press_only(int j, int action, const Joystick_assignment *in)
+{
+	SDL_Joystick *h = joystick[j].handle;
+	Sint16 value = in->negative_axis ? -32768 : 32767;
+
+	if (in->type == PAD_BUTTON)
+		SDL_JoystickSetVirtualButton(h, in->num, 1);
+	else
+		SDL_JoystickSetVirtualAxis(h, in->num, value);
+	poll();
+
+	bool ok = true;
+	for (int d = 0; d < 4; d++)
+		ok &= joystick[j].direction[d] == (d == action);
+	for (int a = 0; a < 6; a++)
+		ok &= joystick[j].action[a] == (a + 4 == action);
+	ok &= joystick[j].confirm == (in->type == PAD_BUTTON &&  // A and Start also confirm in menus
+	                             (in->num == SDL_CONTROLLER_BUTTON_A || in->num == SDL_CONTROLLER_BUTTON_START));
+
+	if (in->type == PAD_BUTTON)
+		SDL_JoystickSetVirtualButton(h, in->num, 0);
+	else
+		SDL_JoystickSetVirtualAxis(h, in->num, 0);
+	poll();
+
+	for (int d = 0; d < 4; d++)
+		ok &= !joystick[j].direction[d];
+	for (int a = 0; a < 6; a++)
+		ok &= !joystick[j].action[a];
+
+	if (!ok)
+		printf("       action %d input type %d num %d\n", action, in->type, in->num);
+	return ok;
+}
+
+static const Pad_model pad_models[] =
+{
+	{
+		"Xbox Wireless Controller", 0x045e, 0x0b13, SDL_CONTROLLER_TYPE_XBOXONE,
+		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
+		  "A/RT", "Y", "LB/LT", "RB/X", "MENU", "VIEW" },
+		"A", "B", "Press B to exit.",
+	},
+	{
+		"DualSense Wireless Controller", 0x054c, 0x0ce6, SDL_CONTROLLER_TYPE_PS5,
+		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
+		  "CROSS/R2", "TRI", "L1/L2", "R1/SQUARE", "OPTION", "CREATE" },
+		"CROSS", "CIRCLE", "Press CIRCLE to exit.",
+	},
+	{
+		// positional layout (SDL_GAMECONTROLLER_USE_BUTTON_LABELS=0): the
+		// bottom button fires, and on a Switch pad that one is labeled B
+		"Nintendo Switch Pro Controller", 0x057e, 0x2009, SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO,
+		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
+		  "B/ZR", "X", "L/ZL", "R/Y", "+", "-" },
+		"B", "A", "Press A to exit.",
+	},
+};
 
 int main(int argc, char *argv[])
 {
@@ -150,6 +237,60 @@ int main(int argc, char *argv[])
 	CHECK(joysticks == 0);
 	joysticks_rumble_all(0xFFFF, 0xFFFF, 100); // must be harmless with nothing connected
 	CHECK(strcmp(padHelpText("Press ESC to exit."), "Press ESC to exit.") == 0);  // keyboard texts again
+
+	printf("[6] Xbox, PlayStation and Switch controllers\n");
+	for (size_t m = 0; m < SDL_arraysize(pad_models); m++)
+	{
+		const Pad_model *model = &pad_models[m];
+		printf("     %s\n", model->name);
+
+		int dev = attach_model(model);
+		CHECK(dev >= 0);
+		advance(600);  // hotplug check + connect-time repeat guard
+		poll();
+		CHECK(joysticks == 1);
+		if (joysticks != 1)
+			continue;
+
+		CHECK(joystick[0].controller != NULL);
+		CHECK(SDL_GameControllerGetType(joystick[0].controller) == model->type);
+		CHECK(SDL_strstr(joystick_display_name(0), model->name) != NULL);
+		CHECK(joystick_first_gamepad() == 0);
+
+		bool labels = true;
+		for (int a = 0; a < 10; a++)
+		{
+			char label[30];
+			joystick_action_label(0, a, label, sizeof(label));
+			if (strcmp(label, model->labels[a]) != 0)
+			{
+				printf("       action %d: '%s', expected '%s'\n", a, label, model->labels[a]);
+				labels = false;
+			}
+		}
+		CHECK(labels);
+		CHECK(strcmp(joystick_button_label(0, SDL_CONTROLLER_BUTTON_A), model->confirm) == 0);
+		CHECK(strcmp(joystick_button_label(0, SDL_CONTROLLER_BUTTON_B), model->cancel) == 0);
+		CHECK(strcmp(padHelpText("Press ESC to exit."), model->escHelp) == 0);
+
+		bool actions = true;
+		for (int a = 0; a < 10; a++)
+			for (int i = 0; i < 2; i++)
+				if (joystick[0].assignment[a][i].type != NONE)
+					actions &= press_only(0, a, &joystick[0].assignment[a][i]);
+		CHECK(actions);  // every default button/trigger/stick does its own action only
+
+		SDL_JoystickSetVirtualButton(joystick[0].handle, SDL_CONTROLLER_BUTTON_B, 1);
+		poll();
+		CHECK(joystick[0].cancel && !joystick[0].confirm);
+		SDL_JoystickSetVirtualButton(joystick[0].handle, SDL_CONTROLLER_BUTTON_B, 0);
+		poll();
+
+		SDL_JoystickDetachVirtual(SDL_NumJoysticks() - 1);
+		advance(600);
+		poll();
+		CHECK(joysticks == 0);
+	}
 
 	deinit_joysticks();
 	printf(failures ? "\n%d FAILURE(S)\n" : "\nALL PASSED\n", failures);

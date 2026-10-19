@@ -50,7 +50,8 @@ pequenas e podem seguir as regras acima normalmente.
 - Os dados do jogo (freeware) ficam em `data/` ao lado do executável e não
   vão para o repositório.
 - Testes: `tests/run_tests.sh [pasta-do-jogo]` compila e roda
-  `tests/test_gamepad.c` (controles virtuais) e, se receber uma pasta com
+  `tests/test_gamepad.c` (controles virtuais: genérico, Xbox, PS5 e Switch
+  Pro, com tipo, nomes dos botões e ação de cada botão padrão) e, se receber uma pasta com
   data/, tyrian.sav e tyrian.cfg reais, `tests/test_saves.c` (carrega e
   regrava os saves; devem sair idênticos).
 - Pastas do usuário: portátil (ao lado do exe) se existir `opentyrian.cfg` lá;

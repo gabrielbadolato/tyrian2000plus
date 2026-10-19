@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "joystick.h"
+#include "logging.h"
 #include "mouse.h"
 #include "network.h"
 #include "nortsong.h"
@@ -432,7 +433,13 @@ static void releaseDelayedKeys(bool all)
 		if (fromSteam)
 			dropSteamKey(ev->key.keysym.scancode);
 		else if (keyEventPasses(ev, false))
+		{
+			if (ev->type == SDL_KEYDOWN && ev->key.windowID != JOYSTICK_PUSHED_KEY)
+				logInfo("Steam filter: key %s passed (repeat %d, controller changed %d ms before it).",
+				        SDL_GetScancodeName(ev->key.keysym.scancode), ev->key.repeat,
+				        (int)(ticks - joystick_valve_pad_last_change()));
 			processSdlEvent(*ev);
+		}
 
 		delayedKeysFront = (delayedKeysFront + 1) % COUNTOF(delayedKeys);
 		delayedKeysCount -= 1;
@@ -481,6 +488,10 @@ void handleSdlEvents(void)
 		{
 			joystick_note_filtered(false);
 			continue;
+		}
+		else if (ev.type == SDL_MOUSEWHEEL && joystick_steam_filter_enabled())
+		{
+			logInfo("Steam filter: mouse wheel %d,%d passed.", ev.wheel.x, ev.wheel.y);
 		}
 
 		processSdlEvent(ev);

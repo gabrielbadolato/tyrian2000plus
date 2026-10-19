@@ -413,8 +413,9 @@ void push_key(SDL_Scancode key)
 {
 	SDL_Event e;
 
-	memset(&e.key.keysym, 0, sizeof(e.key.keysym));
+	memset(&e, 0, sizeof(e));
 
+	e.key.windowID = JOYSTICK_PUSHED_KEY;  // lets the Steam filter tell these apart
 	e.key.keysym.scancode = key;
 	e.key.state = SDL_RELEASED;
 

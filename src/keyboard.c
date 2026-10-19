@@ -184,7 +184,8 @@ void handleSdlEvents(void)
 
 	while (SDL_PollEvent(&ev))
 	{
-		if (ev.type == SDL_KEYDOWN || ev.type == SDL_TEXTINPUT ||
+		if ((ev.type == SDL_KEYDOWN && ev.key.windowID != JOYSTICK_PUSHED_KEY) ||
+		    ev.type == SDL_TEXTINPUT ||
 		    ev.type == SDL_MOUSEMOTION || ev.type == SDL_MOUSEBUTTONDOWN)
 		{
 			if (filterSteam < 0)

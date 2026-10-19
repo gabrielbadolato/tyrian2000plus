@@ -131,8 +131,7 @@ screen, F1 shows help and F11 changes the brightness.
 - If a button counts twice, or X opens Steam's on-screen keyboard, **hold the
   Start button** until Steam shows its notice: Steam switches the controller
   from keyboard and mouse mode to gamepad mode (the "Gamepad" action set), and
-  X stops opening the keyboard. The title screen shows a reminder while Steam
-  is in keyboard and mouse mode. The on-screen keyboard is a Steam window
+  X stops opening the keyboard. The on-screen keyboard is a Steam window
   outside the game, so the game cannot stop it from opening.
 - Another option is to **add the game to Steam** as a non-Steam game and start
   it from your library.

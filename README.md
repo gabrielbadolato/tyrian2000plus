@@ -129,9 +129,7 @@ F1 mostra a ajuda e F11 muda o brilho.
 - Se algum botão contar duas vezes, ou o X abrir o teclado virtual da Steam,
   **segure o botão Start** até aparecer o aviso da Steam: ela troca o
   controle do modo teclado e mouse para o modo gamepad (o "action set"
-  Gamepad), e o X deixa de abrir o teclado. A tela de título mostra um
-  lembrete enquanto a Steam estiver no modo teclado e mouse. O teclado
-  virtual é uma janela da própria Steam, fora do jogo, por isso o jogo não
+  Gamepad), e o X deixa de abrir o teclado. O teclado virtual é uma janela da própria Steam, fora do jogo, por isso o jogo não
   consegue impedir que ele abra.
 - Outra opção é **adicionar o jogo na Steam** como jogo não-Steam e abri-lo
   pela biblioteca.

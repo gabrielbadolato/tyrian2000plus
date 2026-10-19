@@ -94,7 +94,6 @@ Uint32 joystick_valve_pad_last_change(void);
 bool joystick_valve_pad_changed_within(Uint32 ms);
 bool joystick_valve_pad_buttons_changed_within(Uint32 ms);
 void joystick_note_filtered(bool keyboard);
-bool joystick_steam_desktop_active(void);
 
 // windowID of the key events push_key() sends for controller input
 #define JOYSTICK_PUSHED_KEY 0xFFFFFFFFu

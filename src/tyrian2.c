@@ -3324,14 +3324,6 @@ bool titleScreen(void)
 		// Highlight selected menu item.
 		drawFontHvAligned(VGAScreen, VGAScreen->w / 2, yMenuItems + hMenuItem * selectedIndex, menuText[selectedIndex], FONT_NORMAL, ALIGN_CENTER, 15, -1);
 
-		// Steam's desktop layout is also using the controller (X opens its keyboard)
-		const bool steamHint = joystick_steam_desktop_active();
-		if (steamHint)
-		{
-			drawFontHvShadowAligned(VGAScreen, VGAScreen->w - 3, 184, "Steam desktop layout is on:", FONT_SMALL, ALIGN_RIGHT, 15, 0, false, 1);
-			drawFontHvShadowAligned(VGAScreen, VGAScreen->w - 3, 192, "hold Start for gamepad mode", FONT_SMALL, ALIGN_RIGHT, 15, 0, false, 1);
-		}
-
 		JE_mouseStartFilter(0xF0);
 		JE_showVGA();
 		JE_mouseReplace();
@@ -3353,9 +3345,6 @@ bool titleScreen(void)
 
 			if (hasInput(INPUT_ANY))
 				break;
-
-			if (joystick_steam_desktop_active() != steamHint)
-				break;  // show or hide the Steam hint
 
 			setFrameCount(1);
 		}

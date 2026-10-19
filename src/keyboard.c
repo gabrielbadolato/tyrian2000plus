@@ -191,7 +191,10 @@ void handleSdlEvents(void)
 			if (filterSteam < 0)
 				filterSteam = joystick_filter_steam_input();
 			if (filterSteam)
+			{
+				joystick_note_filtered(ev.type == SDL_KEYDOWN || ev.type == SDL_TEXTINPUT);
 				continue;
+			}
 		}
 
 		switch (ev.type)

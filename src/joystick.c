@@ -573,7 +573,7 @@ static bool joystick_lost = false;
  * the game was not started by Steam, Steam's desktop layout turns the same
  * controller into keyboard and mouse input, so every press arrives twice.
  * While that can happen, keyboard and mouse input that arrives while a Valve
- * controller is being used (or right after) is ignored.  Keyboard and mouse
+ * controller's state is changing (or right after) is ignored.  Keyboard and mouse
  * work normally while the controller is left alone.
  */
 static bool steam_filter_logged = false;
@@ -581,7 +581,9 @@ static Uint32 next_steam_check = 0;
 static bool steam_running_cached = false;
 static Uint32 valve_pad_last_active = 0;
 static bool valve_pad_ever_active = false;
-static const Uint32 steam_filter_grace = 200; // milliseconds after the controller goes idle
+static Uint32 valve_pad_hash = 0;
+static bool valve_pad_hash_valid = false;
+static const Uint32 steam_filter_grace = 300; // milliseconds after the controller last changed
 
 static bool launched_by_steam(void)
 {
@@ -633,38 +635,46 @@ static bool steam_running(void)
 	return running;
 }
 
-static bool valve_pad_in_use(const Joystick *js)
+// Mixes the controller's current state into a hash.  Only changes count as
+// "in use": an input that always reads as held (seen on the 2026 controller)
+// must not block the keyboard and mouse forever.
+static Uint32 valve_pad_state_hash(const Joystick *js, Uint32 hash)
 {
 	SDL_GameController *pad = js->controller;
 
+#define MIX(v) (hash = (hash ^ (Uint32)(v)) * 16777619u)
 	for (int b = 0; b < SDL_CONTROLLER_BUTTON_MAX; ++b)
-		if (SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)b))
-			return true;
+		MIX(SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)b));
 
 	// raw buttons too: grips and trackpad clicks are not standard buttons
 	for (int b = 0; b < SDL_JoystickNumButtons(js->handle); ++b)
-		if (SDL_JoystickGetButton(js->handle, b))
-			return true;
+		MIX(SDL_JoystickGetButton(js->handle, b));
 
+	// sticks and triggers, in coarse steps so noise does not count
 	for (int a = 0; a < SDL_CONTROLLER_AXIS_MAX; ++a)
-	{
-		int value = SDL_GameControllerGetAxis(pad, (SDL_GameControllerAxis)a);
-		if (value > 8000 || value < -8000)
-			return true;
-	}
+		MIX((SDL_GameControllerGetAxis(pad, (SDL_GameControllerAxis)a) + 32768) / 4096);
 
-	// a finger on a trackpad (Steam turns the right one into a mouse)
+	// fingers on the trackpads (Steam turns the right one into a mouse)
 	for (int t = 0; t < SDL_GameControllerGetNumTouchpads(pad); ++t)
 	{
 		for (int f = 0; f < SDL_GameControllerGetNumTouchpadFingers(pad, t); ++f)
 		{
 			Uint8 down = 0;
-			if (SDL_GameControllerGetTouchpadFinger(pad, t, f, &down, NULL, NULL, NULL) == 0 && down)
-				return true;
+			float x = 0, y = 0;
+			if (SDL_GameControllerGetTouchpadFinger(pad, t, f, &down, &x, &y, NULL) == 0)
+			{
+				MIX(down);
+				if (down)
+				{
+					MIX((int)(x * 64));
+					MIX((int)(y * 64));
+				}
+			}
 		}
 	}
+#undef MIX
 
-	return false;
+	return hash;
 }
 
 bool joystick_filter_steam_input(void)
@@ -680,20 +690,45 @@ bool joystick_filter_steam_input(void)
 
 	SDL_JoystickUpdate();
 
-	Uint32 now = SDL_GetTicks();
+	Uint32 hash = 2166136261u;
 	for (int j = 0; j < joysticks; j++)
 	{
 		if (joystick[j].controller != NULL &&
-		    SDL_JoystickGetVendor(joystick[j].handle) == 0x28de &&
-		    valve_pad_in_use(&joystick[j]))
-		{
-			valve_pad_last_active = now;
-			valve_pad_ever_active = true;
-			return true;
-		}
+		    SDL_JoystickGetVendor(joystick[j].handle) == 0x28de)
+			hash = valve_pad_state_hash(&joystick[j], hash);
 	}
 
+	Uint32 now = SDL_GetTicks();
+	if (valve_pad_hash_valid && hash != valve_pad_hash)
+	{
+		valve_pad_last_active = now;
+		valve_pad_ever_active = true;
+	}
+	valve_pad_hash = hash;
+	valve_pad_hash_valid = true;
+
 	return valve_pad_ever_active && !SDL_TICKS_PASSED(now, valve_pad_last_active + steam_filter_grace);
+}
+
+// logs, at most every 5 s, how much input the Steam filter dropped
+void joystick_note_filtered(bool keyboard)
+{
+	static unsigned keys = 0, mice = 0;
+	static Uint32 next_log = 0;
+
+	if (keyboard)
+		++keys;
+	else
+		++mice;
+
+	Uint32 now = SDL_GetTicks();
+	if (next_log == 0 || SDL_TICKS_PASSED(now, next_log))
+	{
+		logInfo("Steam filter: ignored %u keyboard and %u mouse events (controller last changed %u ms ago).",
+		        keys, mice, (unsigned)(now - valve_pad_last_active));
+		keys = mice = 0;
+		next_log = now + 5000;
+	}
 }
 
 bool joystick_take_lost(void)

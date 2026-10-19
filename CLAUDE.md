@@ -71,8 +71,9 @@ ver `make_windows.sh`); o código continua compilando contra o SDL2. Sem a
 Steam, o controle funciona e vibra (testado). Com a Steam aberta e o jogo
 fora dela, a Steam também gera teclado/mouse do controle;
 `joystick_filter_steam_input()` (`src/joystick.c`, usado em `src/keyboard.c`)
-ignora teclado/mouse enquanto um controle Valve (28de) está em uso ou nos
-200 ms seguintes, só quando a Steam está rodando e não abriu o jogo. O Linux
+ignora teclado/mouse enquanto o estado de um controle Valve (28de) muda e
+nos 300 ms seguintes (só mudanças contam: o controle 2026 pode ter entrada
+sempre "apertada"; o log registra o que foi ignorado), só quando a Steam está rodando e não abriu o jogo. O Linux
 continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
 está explicado em `doc/LEIA-ME.txt`.
 

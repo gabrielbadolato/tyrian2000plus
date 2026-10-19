@@ -473,6 +473,17 @@ void drawControllerMap(SDL_Surface *surface, int j)
 		drawLabel(surface, &controls[i], j, assignments, controlPressed(&controls[i], j));
 }
 
+static const int holdToExitMs = 1000;
+
+static bool anyGamepadButton(SDL_GameControllerButton button)
+{
+	for (int j = 0; j < joysticks; ++j)
+		if (joystick[j].controller != NULL && SDL_GameControllerGetButton(joystick[j].controller, button))
+			return true;
+
+	return false;
+}
+
 void controllerMapScreen(int j)
 {
 	JE_loadPic(VGAScreen2, 2, false);
@@ -480,6 +491,7 @@ void controllerMapScreen(int j)
 
 	bool fadeIn = true;
 	int oldJoysticks = joysticks;
+	Uint32 holdStart = 0;  // when B started being held, 0 if not held
 
 	for (; ; )
 	{
@@ -517,9 +529,17 @@ void controllerMapScreen(int j)
 		         joystick_button_label(j, SDL_CONTROLLER_BUTTON_A), joystick_button_label(j, SDL_CONTROLLER_BUTTON_B));
 		drawFontHvShadowAligned(VGAScreen, 160, 170, text, FONT_SMALL, ALIGN_CENTER, 15, 2, false, 1);
 
-		snprintf(text, sizeof(text), "Press buttons to test them. %s or Esc to return.",
+		snprintf(text, sizeof(text), "Press buttons to test. Hold %s or press Esc to exit.",
 		         joystick_button_label(j, SDL_CONTROLLER_BUTTON_B));
 		JE_textShade(VGAScreen, 45, 190, text, 15, 4, PART_SHADE);
+
+		// how long B has been held, as a bar that fills up
+		if (holdStart != 0)
+		{
+			const int w = MIN(60, (int)(SDL_GetTicks() - holdStart) * 60 / holdToExitMs);
+			JE_rectangle(VGAScreen, 129, 179, 190, 183, COLOR_OUTLINE);
+			fill_rectangle_xy(VGAScreen, 130, 180, 129 + MAX(1, w), 182, C(14, 12));
+		}
 
 		if (fadeIn)
 		{
@@ -535,12 +555,23 @@ void controllerMapScreen(int j)
 
 		bool done = false;
 
+		// B and Back also arrive as Esc, but push_joysticks_as_keyboard()
+		// leaves the key symbol empty; only a real Esc key exits right away
 		KeyboardInput keyboardInput;
 		while (keyboardGetInput(&keyboardInput))
 		{
-			if (keyboardInput.scancode == SDL_SCANCODE_ESCAPE)
+			if (keyboardInput.scancode == SDL_SCANCODE_ESCAPE && keyboardInput.sym == SDLK_ESCAPE)
 				done = true;
 		}
+
+		const bool bHeld = anyGamepadButton(SDL_CONTROLLER_BUTTON_B);
+
+		if (!bHeld)
+			holdStart = 0;
+		else if (holdStart == 0)
+			holdStart = MAX(1, SDL_GetTicks());
+		else if (SDL_GetTicks() - holdStart >= holdToExitMs)
+			done = true;
 
 		MouseInput mouseInput;
 		while (mouseGetInput(INPUT_NO_MOTION, &mouseInput))

@@ -24,7 +24,7 @@
 // draws the controller map of controller j (-1: none, shows the default layout)
 void drawControllerMap(SDL_Surface *surface, int j);
 
-// full screen controller map, until Esc (B on the controller) or a click
+// full screen controller map, until Esc, a click or holding B on the controller
 void controllerMapScreen(int j);
 
 #endif /* PADMAP_H */

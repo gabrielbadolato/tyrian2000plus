@@ -83,7 +83,7 @@ Mouse..., os mesmos ajustes do menu da nave, feitos no estilo do `setupMenu`
 Controller Map: Setup > Controls > "Controller Map..." mostra um controle
 genérico desenhado pixel a pixel (`src/padmap.c`, sem gráficos do jogo nem
 formato de marca), com a função de cada botão segundo o mapeamento atual
-(inclui "Auto Fire"). Os botões acendem quando apertados. Sem controle,
+(inclui "Auto Fire"). Os botões acendem quando apertados; sai segurando B por 1 s (assim B e View também podem ser testados), com Esc ou com clique. Sem controle,
 mostra o layout padrão (`joystick_default_gamepad_assignments()`).
 
 Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo

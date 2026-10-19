@@ -3792,7 +3792,7 @@ void JE_displayText(void)
 	if (warningRed)
 		tempW = 7 * 16 + 6;
 
-	JE_outCharGlow(JE_fontCenter(miscText[4], TINY_FONT), tempW, miscText[4]);
+	JE_outCharGlow(JE_fontCenter(padHelpText(miscText[4]), TINY_FONT), tempW, padHelpText(miscText[4]));
 
 	while (true)
 	{

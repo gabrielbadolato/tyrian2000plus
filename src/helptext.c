@@ -21,6 +21,7 @@
 #include "config.h"
 #include "file.h"
 #include "fonthand.h"
+#include "joystick.h"
 #include "logging.h"
 #include "menus.h"
 #include "opentyr.h"
@@ -117,6 +118,104 @@ void readEncryptedString(File *file, char *dst, size_t size)
 	dst[len] = '\0';
 }
 
+// replaces every occurrence of find in text (at most size - 1 characters are kept)
+static void replaceAll(char *text, size_t size, const char *find, const char *replacement)
+{
+	const size_t findLen = strlen(find);
+	const size_t replacementLen = strlen(replacement);
+
+	char *pos = text;
+	while ((pos = strstr(pos, find)) != NULL)
+	{
+		const size_t tailLen = strlen(pos + findLen);
+		if ((size_t)(pos - text) + replacementLen + tailLen >= size)
+			break;
+
+		memmove(pos + replacementLen, pos + findLen, tailLen + 1);
+		memcpy(pos, replacement, replacementLen);
+		pos += replacementLen;
+	}
+}
+
+/*
+ * The help texts in tyrian.hdt talk about the keyboard (Enter, ESC, arrow
+ * keys...).  When a gamepad is connected, swap those for the controller's own
+ * button names, read from the current controller settings.  Unknown text is
+ * returned unchanged, so this is safe with any version of the data files.
+ */
+const char *padHelpText(const char *text)
+{
+	static char buffer[2][256];
+	static unsigned int which = 0;
+
+	const int j = ignore_joystick ? -1 : joystick_first_gamepad();
+	if (j < 0 || text == NULL || text[0] == '\0')
+		return text;
+
+	char change[32], leftSidekick[32], rightSidekick[32];
+	joystick_action_label(j, 5, change, sizeof change);
+	joystick_action_label(j, 6, leftSidekick, sizeof leftSidekick);
+	joystick_action_label(j, 7, rightSidekick, sizeof rightSidekick);
+
+	const char *const confirm = joystick_button_label(j, SDL_CONTROLLER_BUTTON_A);
+	const char *const cancel = joystick_button_label(j, SDL_CONTROLLER_BUTTON_B);
+
+	char confirmButton[32], pressConfirm[32], PressConfirm[32], doneOrCancel[32], PressCancel[32];
+	char changeButton[64], changeKey[40], sidekickButtons[80];
+	snprintf(confirmButton, sizeof confirmButton, "the ~%s~ button", confirm);
+	snprintf(pressConfirm, sizeof pressConfirm, "press ~%s~", confirm);
+	snprintf(PressConfirm, sizeof PressConfirm, "Press %s", confirm);
+	snprintf(doneOrCancel, sizeof doneOrCancel, "done or ~%s~", cancel);
+	snprintf(PressCancel, sizeof PressCancel, "Press %s", cancel);
+	snprintf(changeButton, sizeof changeButton, "the ~%s~ button (~change fire~)", change);
+	snprintf(changeKey, sizeof changeKey, "[%s]", change);
+	snprintf(sidekickButtons, sizeof sidekickButtons, "fired with ~%s~ and ~%s~", leftSidekick, rightSidekick);
+
+	const struct { const char *find, *replacement; } rules[] =
+	{
+		// keys that have no controller equivalent
+		{ "  Use Alt-X for a quick way to quit the game.", "" },
+		{ "  (Shortcut is ALT-L)", "" },
+		{ "  (Shortcut is ALT-S)", "" },
+
+		// Enter / space bar confirm, ESC cancels
+		{ "the \"enter\" key or the space bar", confirmButton },
+		{ "press the Enter key or spacebar", pressConfirm },
+		{ "press Enter or hit the spacebar", pressConfirm },
+		{ "press Enter or the spacebar", pressConfirm },
+		{ "press Enter", pressConfirm },
+		{ "Press ENTER", PressConfirm },
+		{ "done or ESC", doneOrCancel },
+		{ "Press ESC", PressCancel },
+		{ "Press a key", "Press a button" },
+
+		// weapon buttons
+		{ "the keyboard command ~change fire~ or a joystick button assigned to ~Change rear weapon~", changeButton },
+		{ "usually fired with separate buttons", sidekickButtons },
+		{ "[/]", changeKey },
+
+		// arrow keys
+		{ "up/down arrow keys", "D-pad up/down" },
+		{ "right and left arrow keys", "D-pad right/left" },
+		{ "left and right arrow keys", "D-pad left/right" },
+		{ "left/right ~arrow keys~", "~D-pad~ left/right" },
+		{ "left/right arrow keys", "D-pad left/right" },
+		{ "Left/right arrow keys", "D-pad left/right" },
+		{ "Use arrow keys", "Use the D-pad" },
+		{ "arrow keys", "D-pad" },
+	};
+
+	char *out = buffer[which];
+	which = (which + 1) % COUNTOF(buffer);
+
+	SDL_strlcpy(out, text, sizeof buffer[0]);
+
+	for (size_t i = 0; i < COUNTOF(rules); ++i)
+		replaceAll(out, sizeof buffer[0], rules[i].find, rules[i].replacement);
+
+	return out;
+}
+
 void JE_helpBox(SDL_Surface *screen,  int x, int y, const char *message, JE_byte boxWidth, JE_byte verticalHeight, JE_byte color, JE_byte brightness, JE_byte shadeType)
 {
 	JE_byte startpos, endpos, pos;
@@ -171,7 +270,7 @@ void JE_helpBox(SDL_Surface *screen,  int x, int y, const char *message, JE_byte
 
 void JE_HBox(SDL_Surface *screen, int x, int y, JE_byte messageNum, JE_byte boxWidth, JE_byte verticalHeight, JE_byte color, JE_byte brightness)
 {
-	JE_helpBox(screen, x, y, helpTxt[messageNum-1], boxWidth, verticalHeight, color, brightness, FULL_SHADE);
+	JE_helpBox(screen, x, y, padHelpText(helpTxt[messageNum-1]), boxWidth, verticalHeight, color, brightness, FULL_SHADE);
 }
 
 void JE_loadHelpText(void)

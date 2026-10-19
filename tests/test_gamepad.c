@@ -1,5 +1,6 @@
 /* Headless test for the gamepad layer: virtual controllers, mapping, hotplug, config. */
 #include "joystick.h"
+#include "helptext.h"
 #include "config.h"
 #include "SDL.h"
 #include <stdio.h>
@@ -96,6 +97,15 @@ int main(int argc, char *argv[])
 	printf("       up:   '%s'\n", buf);
 	CHECK(strcmp(buf, "LS UP, D-UP") == 0);
 
+	printf("[3b] help texts\n");
+	CHECK(strcmp(padHelpText("Press ESC to exit."), "Press B to exit.") == 0);
+	CHECK(strcmp(padHelpText("Change volume with the left/right arrow keys."), "Change volume with the D-pad left/right.") == 0);
+	CHECK(strcmp(padHelpText("Load a saved game.  (Shortcut is ALT-L)"), "Load a saved game.") == 0);
+	CHECK(strcmp(padHelpText("[/] Rear Weapon Mode"), "[Y] Rear Weapon Mode") == 0);
+	CHECK(strcmp(padHelpText("press Enter or the spacebar."), "press ~A~.") == 0);
+	CHECK(strstr(padHelpText("usually fired with separate buttons."), "~LB/LT~ and ~RB/X~") != NULL);
+	CHECK(strcmp(padHelpText("Quit the game."), "Quit the game.") == 0);
+
 	printf("[4] config round trip\n");
 	save_joystick_assignments(&opentyrian_config, 0);
 	Joystick_assignment saved[10][2];
@@ -126,6 +136,7 @@ int main(int argc, char *argv[])
 	poll();
 	CHECK(joysticks == 0);
 	joysticks_rumble_all(0xFFFF, 0xFFFF, 100); // must be harmless with nothing connected
+	CHECK(strcmp(padHelpText("Press ESC to exit."), "Press ESC to exit.") == 0);  // keyboard texts again
 
 	deinit_joysticks();
 	printf(failures ? "\n%d FAILURE(S)\n" : "\nALL PASSED\n", failures);

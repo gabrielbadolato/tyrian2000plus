@@ -496,6 +496,13 @@ static void open_joysticks(void)
 			continue;
 		}
 
+		logInfo("Controller %d: vendor %04x, product %04x, type %d, rumble %s",
+			j,
+			SDL_JoystickGetVendor(joystick[j].handle),
+			SDL_JoystickGetProduct(joystick[j].handle),
+			(int)SDL_JoystickGetType(joystick[j].handle),
+			SDL_JoystickHasRumble(joystick[j].handle) ? "yes" : "no");
+
 		if (joystick[j].controller != NULL)
 		{
 			logInfo("Gamepad detected: %s", joystick_display_name(j));
@@ -619,7 +626,12 @@ void joystick_rumble(int j, Uint16 low, Uint16 high, Uint32 duration_ms)
 	if (!rumble_enabled || j < 0 || j >= joysticks || joystick[j].handle == NULL)
 		return;
 
-	SDL_JoystickRumble(joystick[j].handle, low, high, duration_ms);
+	if (SDL_JoystickRumble(joystick[j].handle, low, high, duration_ms) != 0 && !joystick[j].rumble_failed)
+	{
+		// only report the first failure per controller to keep the log short
+		logWarn("Rumble failed on %s: %s", joystick_display_name(j), SDL_GetError());
+		joystick[j].rumble_failed = true;
+	}
 }
 
 void joysticks_rumble_all(Uint16 low, Uint16 high, Uint32 duration_ms)
@@ -953,6 +965,46 @@ static const char *assignment_to_label(int j, const Joystick_assignment *assignm
 	return assignment_to_code(assignment);
 }
 
+// index of the first connected gamepad (SDL_GameController), or -1 if none
+int joystick_first_gamepad(void)
+{
+	for (int j = 0; j < joysticks; j++)
+		if (joystick[j].controller != NULL)
+			return j;
+
+	return -1;
+}
+
+// the name printed on the controller for a standardized button (ex. "A", "CROSS")
+const char *joystick_button_label(int j, SDL_GameControllerButton button)
+{
+	assert(j < joysticks);
+
+	Joystick_assignment assignment;
+	set_assignment(&assignment, PAD_BUTTON, button, false);
+	return assignment_to_label(j, &assignment);
+}
+
+// like joystick_assignments_to_string(), but compact: "A/RT"
+void joystick_action_label(int j, int action, char *buffer, size_t buffer_len)
+{
+	assert(j < joysticks);
+	assert(action >= 0 && (size_t)action < COUNTOF(joystick[j].assignment));
+
+	SDL_strlcpy(buffer, "", buffer_len);
+
+	for (uint i = 0; i < COUNTOF(joystick[j].assignment[action]); ++i)
+	{
+		const Joystick_assignment *assignment = &joystick[j].assignment[action][i];
+		if (assignment->type == NONE)
+			continue;
+
+		if (buffer[0] != '\0')
+			SDL_strlcat(buffer, "/", buffer_len);
+		SDL_strlcat(buffer, assignment_to_label(j, assignment), buffer_len);
+	}
+}
+
 // captures gamepad input for configuring assignments (standardized buttons/axes)
 static bool detect_gamepad_assignment(int j, Joystick_assignment *assignment)
 {
@@ -1123,6 +1175,47 @@ bool detect_joystick_assignment(int j, Joystick_assignment *assignment)
 	free(hat);
 
 	return detected;
+}
+
+// waits for a press on joystick j and toggles it in the assignments of an action
+// (0-3: up, right, down, left; 4-9: fire, mode swap, left fire, right fire, menu, pause)
+bool assign_joystick_action(int j, int action)
+{
+	Joystick_assignment temp;
+	if (!detect_joystick_assignment(j, &temp))
+		return false;
+
+	Joystick_assignment *const assignment = joystick[j].assignment[action];
+	const uint count = COUNTOF(*joystick->assignment);
+
+	// if the detected assignment was already set, unset it
+	for (uint i = 0; i < count; i++)
+	{
+		if (joystick_assignment_cmp(&temp, &assignment[i]))
+		{
+			assignment[i].type = NONE;
+			goto done;
+		}
+	}
+
+	// if there is an empty assignment, set it
+	for (uint i = 0; i < count; i++)
+	{
+		if (assignment[i].type == NONE)
+		{
+			assignment[i] = temp;
+			goto done;
+		}
+	}
+
+	// if no assignments are empty, shift them all forward and set the last one
+	for (uint i = 0; i < count - 1; i++)
+		assignment[i] = assignment[i + 1];
+	assignment[count - 1] = temp;
+
+done:
+	poll_joysticks();
+	return true;
 }
 
 // compares relevant parts of joystick assignments for equality

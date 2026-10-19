@@ -2385,7 +2385,7 @@ void JE_drawMainMenuHelpText(void)
 		memcpy(tempStr, mainMenuHelp[17 + curMenu - 3], sizeof(tempStr));
 	}
 	
-	JE_textShade(VGAScreen, 10, 187, tempStr, 14, 1, DARKEN);
+	JE_textShade(VGAScreen, 10, 187, padHelpText(tempStr), 14, 1, DARKEN);
 }
 
 JE_boolean JE_saveRequest(JE_byte slot, const char *savename)
@@ -3047,43 +3047,8 @@ void JE_menuFunction(JE_byte select)
 
 			JE_rectangle(VGAScreen, 235, 21 + select * 8, 310, 30 + select * 8, 248);
 
-			Joystick_assignment temp;
-			if (detect_joystick_assignment(joystick_config, &temp))
-			{
-				// if the detected assignment was already set, unset it
-				for (uint i = 0; i < COUNTOF(*joystick->assignment); i++)
-				{
-					if (joystick_assignment_cmp(&temp, &joystick[joystick_config].assignment[select - 6][i]))
-					{
-						joystick[joystick_config].assignment[select - 6][i].type = NONE;
-						goto joystick_assign_done;
-					}
-				}
-
-				// if there is an empty assignment, set it
-				for (uint i = 0; i < COUNTOF(*joystick->assignment); i++)
-				{
-					if (joystick[joystick_config].assignment[select - 6][i].type == NONE)
-					{
-						joystick[joystick_config].assignment[select - 6][i] = temp;
-						goto joystick_assign_done;
-					}
-				}
-
-				// if no assignments are empty, shift them all forward and set the last one
-				for (uint i = 0; i < COUNTOF(*joystick->assignment); i++)
-				{
-					if (i == COUNTOF(*joystick->assignment) - 1)
-						joystick[joystick_config].assignment[select - 6][i] = temp;
-					else
-						joystick[joystick_config].assignment[select - 6][i] = joystick[joystick_config].assignment[select - 6][i + 1];
-				}
-
-joystick_assign_done:
+			if (assign_joystick_action(joystick_config, select - 6))
 				curSelect++;
-
-				poll_joysticks();
-			}
 		}
 		break;
 
@@ -3156,7 +3121,7 @@ void JE_drawShipSpecs(SDL_Surface * screen, SDL_Surface * temp_screen)
 	JE_helpBox(screen, 100, 20, shipInfo[player[0].items.ship-1][0], 40, 9, 12, 1, FULL_SHADE);
 	JE_helpBox(screen, 100, 100, shipInfo[player[0].items.ship-1][1], 40, 9, 12, 1, FULL_SHADE);
 
-	JE_outText(screen, JE_fontCenter(miscText[4], TINY_FONT), 190, miscText[4], 12, 2);
+	JE_outText(screen, JE_fontCenter(padHelpText(miscText[4]), TINY_FONT), 190, padHelpText(miscText[4]), 12, 2);
 
 	//now draw the green ship over that.
 	//This hardcoded stuff is for positioning our little ship graphic
@@ -3263,7 +3228,7 @@ void JE_weaponSimUpdate(void)
 			&& (weaponSimTime >= 75))
 		{
 			// [/] Rear Weapon Mode
-			JE_outText(VGAScreen, 28, 137, miscText[70], 1, 4);
+			JE_outText(VGAScreen, 28, 137, padHelpText(miscText[70]), 1, 4);
 		}
 		else
 		{

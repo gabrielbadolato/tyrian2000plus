@@ -37,16 +37,22 @@ pequenas e podem seguir as regras acima normalmente.
 
 ## Build
 
-- Windows x64: cross-compile com clang/llvm-mingw + SDL2 2.32 e SDL2_net 2.4,
-  `make PLATFORM=WIN32 CC=x86_64-w64-mingw32-clang WINDRES=x86_64-w64-mingw32-windres`
-  (o Makefile já embute ícone e manifesto UTF-8 de `visualc/resources.rc`).
-  Entregar o exe como `Tyrian2000Plus.exe` junto com SDL2.dll e SDL2_net.dll.
+- Windows x64: `./make_windows.sh` (no Linux) cross-compila com llvm-mingw +
+  SDL2 2.32 e SDL2_net 2.4, baixando tudo em `build/win`, e gera
+  `dist/Tyrian2000Plus-windows-x64.zip` (Tyrian2000Plus.exe + SDL2.dll +
+  SDL2_net.dll + LEIA-ME + licenças). O Makefile embute ícone e manifesto
+  UTF-8 de `visualc/resources.rc`.
+- Linux x86_64 / Steam Deck: `./make_linux.sh` compila SDL2 estático (só
+  depende da glibc) e gera `dist/Tyrian2000Plus-linux-x86_64.tar.gz`.
+- GitHub Actions (`.github/workflows/build.yml`) roda os dois scripts e os
+  testes a cada push; os pacotes ficam em "Artifacts" da execução e são
+  anexados a uma release publicada. Os pacotes NUNCA levam os dados do jogo.
 - Os dados do jogo (freeware) ficam em `data/` ao lado do executável e não
   vão para o repositório.
-- Testes: `tests/test_gamepad.c` (controles virtuais) e `tests/test_saves.c`
-  (carrega e regrava um TYRIAN.SAV/TYRIAN.CFG reais; devem sair idênticos).
-  Compile todos os `src/*.c` com `-Dmain=opentyrian_main` em opentyr.c e
-  linke junto com o teste.
+- Testes: `tests/run_tests.sh [pasta-do-jogo]` compila e roda
+  `tests/test_gamepad.c` (controles virtuais) e, se receber uma pasta com
+  data/, tyrian.sav e tyrian.cfg reais, `tests/test_saves.c` (carrega e
+  regrava os saves; devem sair idênticos).
 - Pastas do usuário: portátil (ao lado do exe) se existir `opentyrian.cfg` lá;
   senão `%APPDATA%/OpenTyrian2000` ou `~/.config/opentyrian2000`.
 
@@ -56,3 +62,28 @@ pequenas e podem seguir as regras acima normalmente.
 (PAD_BUTTON/PAD_AXIS, seção "gamepad" no opentyrian.cfg) e cai para a API
 antiga de joystick (AXIS/BUTTON/HAT) caso contrário. Hotplug é verificado a
 cada 500 ms, inclusive durante as fases.
+
+Steam Controller (testado com o modelo 2026 via puck): fora da biblioteca da
+Steam, a Steam o converte em teclado/mouse e o jogo não vê controle (sem
+vibração, Y abre o teclado virtual). Adicionado como "jogo não-Steam", vira
+gamepad 28de:1302 e vibra. Isso está explicado em `doc/LEIA-ME.txt`.
+Pendente: jogadores com o controle 2026 sem a Steam (o jogo não será
+publicado na Steam no início).
+
+Tiro automático: opção "Auto Fire" em Setup > Controls (seção "gameplay",
+`auto_fire` no opentyrian.cfg). Cada toque no tiro liga/desliga o disparo
+contínuo, por jogador (`src/mainint.c`). O submenu Controls é onde entram as
+próximas opções de controle.
+
+Setup > Controls também tem Keyboard..., Controller... (com Buttons...) e
+Mouse..., os mesmos ajustes do menu da nave, feitos no estilo do `setupMenu`
+(`src/opentyr.c`). A captura de botão do controle fica em
+`assign_joystick_action()` (`src/joystick.c`), usada pelos dois menus.
+
+Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
+ao investigar problemas no PC do Gabriel.
+
+Telas de ajuda: `padHelpText()` em `src/helptext.c` troca, só quando há um
+controle conectado, as menções a teclas dos textos do `tyrian.hdt` (Enter, ESC,
+setas, Alt-X, "[/]") pelos nomes dos botões do controle (conforme o mapeamento
+atual). Texto que não reconhece fica igual.

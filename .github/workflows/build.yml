@@ -1,0 +1,113 @@
+name: Build
+
+# Builds Tyrian2000Plus for Windows and Linux (Steam Deck) on every push.
+# The packages are on the run's page under "Artifacts".  Publishing a GitHub
+# release also attaches them to the release.  The game data is never
+# packaged: the user copies it into data/ (see doc/LEIA-ME.txt).
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write        # needed to attach assets on release events
+
+jobs:
+  linux:
+    name: Linux x86_64 (Steam Deck)
+    # 22.04 on purpose: the binary needs a glibc no newer than the one it was
+    # built against, so building on the oldest supported runner is what lets
+    # it run on more machines.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # git describe --tags for the version string
+      - name: Install dependencies
+        # The distro libsdl2-dev is only for the -Werror compile check.  The
+        # release links a static SDL2 built from source
+        # (make_linux.sh), so the -dev packages after it are HEADERS for SDL's
+        # dlopen'ed backends - nothing from them is linked into the binary.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake pkg-config curl libsdl2-dev libsdl2-net-dev \
+            libasound2-dev libpulse-dev libx11-dev libxext-dev libxrandr-dev \
+            libxcursor-dev libxfixes-dev libxi-dev libxss-dev libwayland-dev \
+            libxkbcommon-dev libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
+            libgles2-mesa-dev libgbm-dev libdrm-dev libdbus-1-dev libudev-dev \
+            wayland-protocols libpipewire-0.3-dev
+      - name: Compile check (debug, -Werror, distro SDL2)
+        run: |
+          make -j"$(nproc)" debug
+          make clean
+      - name: Cache static SDL2 build
+        uses: actions/cache@v6
+        with:
+          path: build/sdl
+          key: sdl2-static-x86_64-${{ hashFiles('make_linux.sh') }}
+      - name: Build and package (make_linux.sh, static SDL2)
+        run: ./make_linux.sh
+      - name: Tests (against the static SDL2)
+        run: tests/run_tests.sh
+      - name: Verify the package is self-contained
+        # In a bare Debian container: no SDL, no libdecor, nothing installed.
+        # The runner itself proves nothing here - it has all of those, and a
+        # missing dependency would be silently satisfied.
+        run: |
+          mkdir -p pkgtest
+          tar -xzf dist/Tyrian2000Plus-linux-x86_64.tar.gz -C pkgtest
+          docker run --rm -v "$PWD/pkgtest:/pkg:ro" -w / debian:bookworm-slim \
+            /pkg/Tyrian2000Plus-linux-x86_64/Tyrian2000Plus --help
+      # The .tar.gz keeps the binary's executable permission, which a plain
+      # artifact zip would lose.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Tyrian2000Plus-linux-x86_64
+          path: dist/Tyrian2000Plus-linux-x86_64.tar.gz
+      - name: Attach to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          asset="Tyrian2000Plus-$tag-linux-x86_64.tar.gz"
+          mv dist/Tyrian2000Plus-linux-x86_64.tar.gz "$asset"
+          gh release upload "$tag" "$asset" --clobber
+
+  windows:
+    name: Windows x64
+    # Cross-compiled with llvm-mingw, the same way as the local builds.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends make curl xz-utils zip
+      - name: Cache toolchain and SDL2
+        uses: actions/cache@v6
+        with:
+          path: build/win
+          key: win-x64-${{ hashFiles('make_windows.sh') }}
+      - name: Build and package (make_windows.sh)
+        run: ./make_windows.sh
+      # Uploading the folder makes the artifact zip hold the files directly.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Tyrian2000Plus-windows-x64
+          path: dist/Tyrian2000Plus-windows-x64/
+      - name: Attach to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          asset="Tyrian2000Plus-$tag-windows-x64.zip"
+          mv dist/Tyrian2000Plus-windows-x64.zip "$asset"
+          gh release upload "$tag" "$asset" --clobber

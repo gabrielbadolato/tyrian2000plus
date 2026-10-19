@@ -52,6 +52,7 @@ typedef struct
 	SDL_Joystick *handle;
 	SDL_GameController *controller; // non-NULL when SDL recognizes the device as a gamepad
 	SDL_JoystickID instance_id;
+	bool rumble_failed; // already logged a rumble error for this controller
 	
 	Joystick_assignment assignment[10][2]; // 0-3: directions, 4-9: actions
 	
@@ -96,10 +97,14 @@ bool save_joystick_assignments(Config* config, int j);
 void joystick_assignments_to_string(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments);
 
 const char *joystick_display_name(int j);
+int joystick_first_gamepad(void);
+const char *joystick_button_label(int j, SDL_GameControllerButton button);
+void joystick_action_label(int j, int action, char *buffer, size_t buffer_len);
 void joystick_rumble(int j, Uint16 low, Uint16 high, Uint32 duration_ms);
 void joysticks_rumble_all(Uint16 low, Uint16 high, Uint32 duration_ms);
 
 bool detect_joystick_assignment(int j, Joystick_assignment *assignment);
 bool joystick_assignment_cmp(const Joystick_assignment *, const Joystick_assignment *);
+bool assign_joystick_action(int j, int action);
 
 #endif /* JOYSTICK_H */

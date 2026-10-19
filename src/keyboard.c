@@ -57,6 +57,10 @@ static bool mouseHasMotionInput;
 
 static bool mouseRelativeEnabled;
 
+// keys whose press the Steam filter dropped; their repeats are dropped too
+static bool steamDroppedKeys[SDL_NUM_SCANCODES];
+static int steamDroppedKeyCount;
+
 // Relative mouse position in window coordinates.
 static Sint32 mouseWindowXRelative;
 static Sint32 mouseWindowYRelative;
@@ -184,17 +188,36 @@ void handleSdlEvents(void)
 
 	while (SDL_PollEvent(&ev))
 	{
+		if (ev.type == SDL_KEYDOWN && ev.key.windowID != JOYSTICK_PUSHED_KEY &&
+		    ev.key.repeat && steamDroppedKeys[ev.key.keysym.scancode])
+		{
+			// Steam repeats a held key while the controller stays still
+			joystick_note_filtered(true);
+			continue;
+		}
+
 		if ((ev.type == SDL_KEYDOWN && ev.key.windowID != JOYSTICK_PUSHED_KEY) ||
 		    ev.type == SDL_TEXTINPUT ||
 		    ev.type == SDL_MOUSEMOTION || ev.type == SDL_MOUSEBUTTONDOWN)
 		{
 			if (filterSteam < 0)
 				filterSteam = joystick_filter_steam_input();
-			if (filterSteam)
+			if (filterSteam || (ev.type == SDL_TEXTINPUT && steamDroppedKeyCount > 0))
 			{
+				if (ev.type == SDL_KEYDOWN && !steamDroppedKeys[ev.key.keysym.scancode])
+				{
+					steamDroppedKeys[ev.key.keysym.scancode] = true;
+					steamDroppedKeyCount += 1;
+				}
 				joystick_note_filtered(ev.type == SDL_KEYDOWN || ev.type == SDL_TEXTINPUT);
 				continue;
 			}
+		}
+
+		if (ev.type == SDL_KEYUP && steamDroppedKeys[ev.key.keysym.scancode])
+		{
+			steamDroppedKeys[ev.key.keysym.scancode] = false;
+			steamDroppedKeyCount -= 1;
 		}
 
 		switch (ev.type)

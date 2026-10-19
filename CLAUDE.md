@@ -78,20 +78,11 @@ esse controle; o SDL3 (3.4+) tem driver próprio (`SDL_hidapi_steam_triton.c`).
 Por isso o pacote Windows leva o sdl2-compat (SDL2.dll por cima do SDL3.dll,
 ver `make_windows.sh`); o código continua compilando contra o SDL2. Sem a
 Steam, o controle funciona e vibra (testado). Com a Steam aberta e o jogo
-fora dela, a Steam também gera teclado/mouse do controle;
-`joystick_filter_steam_input()` (`src/joystick.c`, usado em `src/keyboard.c`)
-ignora teclado/mouse enquanto o estado de um controle Valve (28de) muda e
-nos 300 ms seguintes (teclas: atrasadas 60 ms e janela de 1 s, porque a Steam
-manda a tecla do direcional atrasada; só mudanças contam: o controle 2026 pode
-ter entrada sempre "apertada"; o log registra o que foi ignorado), só quando a
-Steam está rodando e não abriu o jogo. Nesse modo o X abre o teclado virtual da
-Steam (janela dela, o jogo não bloqueia); segurar Start troca a Steam para o
-action set Gamepad. Um aviso na tela de título foi testado e
-removido (o jogo não sabe com certeza o modo da Steam; o aviso ficava errado).
-Com o filtro ligado, Start só vale como toque rápido, ao soltar (< 600 ms,
-`pad_button()`), para segurar Start não mexer nos menus. O mouse que a Steam
-gera dos trackpads passa (o jogo não lê os trackpads); só é barrado quando
-botões, sticks ou gatilhos mudaram. O Linux
+fora dela, a Steam também gera teclado/mouse do controle (botões contam duas
+vezes, X abre o teclado virtual dela). Um filtro e outros remendos para isso
+foram tentados (PRs #9, #10, #17) e REMOVIDOS a pedido do Gabriel (2026-10-19):
+o jogo não sabe com certeza o que a Steam está fazendo. A orientação é fechar
+a Steam ou abrir o jogo por ela; não tentar de novo sem ele pedir. O Linux
 continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
 está explicado no `README.md` (que vai no pacote como LEIA-ME.txt).
 

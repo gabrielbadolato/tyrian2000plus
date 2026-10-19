@@ -68,10 +68,6 @@ typedef struct
 	
 	Uint32 joystick_delay;
 	bool input_pressed;
-	
-	// Start while Steam's desktop layout is on (see pad_button)
-	bool start_held, start_tap;
-	Uint32 start_down_since;
 }
 Joystick;
 
@@ -88,15 +84,6 @@ void poll_joystick(int j);
 void poll_joysticks(void);
 void check_joystick_hotplug(void);
 bool joystick_take_lost(void);
-bool joystick_filter_steam_input(void);
-bool joystick_steam_filter_enabled(void);
-Uint32 joystick_valve_pad_last_change(void);
-bool joystick_valve_pad_changed_within(Uint32 ms);
-bool joystick_valve_pad_buttons_changed_within(Uint32 ms);
-void joystick_note_filtered(bool keyboard);
-
-// windowID of the key events push_key() sends for controller input
-#define JOYSTICK_PUSHED_KEY 0xFFFFFFFFu
 
 void push_key(SDL_Scancode key);
 void push_joysticks_as_keyboard(void);

@@ -124,15 +124,11 @@ F1 mostra a ajuda e F11 muda o brilho.
 
 - No Windows, o jogo lê o Steam Controller direto, sem precisar da Steam:
   botões, nomes dos botões e vibração funcionam.
-- Com a Steam aberta, ela também transforma o controle em teclado e mouse. O
-  jogo percebe isso e ignora esse teclado e mouse enquanto você usa o controle.
-- Se algum botão contar duas vezes, ou o X abrir o teclado virtual da Steam,
-  **segure o botão Start** até aparecer o aviso da Steam: ela troca o
-  controle do modo teclado e mouse para o modo gamepad (o "action set"
-  Gamepad), e o X deixa de abrir o teclado. O teclado virtual é uma janela da própria Steam, fora do jogo, por isso o jogo não
-  consegue impedir que ele abra.
-- Outra opção é **adicionar o jogo na Steam** como jogo não-Steam e abri-lo
-  pela biblioteca.
+- **Feche a Steam antes de jogar**, ou adicione o jogo na Steam como jogo
+  não-Steam e abra-o pela biblioteca. Se a Steam estiver aberta e o jogo for
+  aberto fora dela, a Steam também transforma o controle em teclado e mouse:
+  os botões contam duas vezes e o X abre o teclado virtual da Steam. O jogo não
+  tem como impedir isso, porque é a própria Steam que faz.
 - No Linux e no Steam Deck, o Steam Controller 2026 só funciona com o jogo
   aberto pela Steam.
 

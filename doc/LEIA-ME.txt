@@ -1,5 +1,5 @@
-TYRIAN 2000 PLUS
-================
+TYRIAN 2000+
+============
 
 Projeto de fa, nao oficial. Tyrian foi criado pela Eclipse Software e
 publicado pela Epic MegaGames em 1995; Jason Emery liberou o jogo como

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 /*
- * About: what Tyrian2000 Plus is, where it came from and who made it.  The
+ * About: what Tyrian 2000+ is, where it came from and who made it.  The
  * original game's credits are read from tyrian.cdt, so they are the game's
  * own.  Link lines open in the browser with Enter (A on a controller).
  */
@@ -63,7 +63,7 @@ typedef struct
 
 static const AboutEntry aboutEntries[] =
 {
-	{ STYLE_HEADING, "Tyrian2000 Plus" },
+	{ STYLE_HEADING, "Tyrian 2000+" },
 	{ STYLE_TEXT, "A free, unofficial fan project. It is not made, sold or endorsed by Eclipse Software, Jason Emery or the original publishers. The game data is the original freeware release, unchanged." },
 	{ STYLE_BLANK },
 	{ STYLE_TEXT, "Tyrian is a vertical scrolling shooter set in the year 20,031, where you play as Trent Hawkins, a fighter pilot out to save the galaxy. It was made by Eclipse Software and published by Epic MegaGames in 1995. Tyrian 2000 (1999) added a fifth episode. Jason Emery later released the game as freeware." },
@@ -95,7 +95,7 @@ static const AboutEntry aboutEntries[] =
 	{ STYLE_TEXT, "The fork of OpenTyrian that recreates Tyrian 2000, which this project is built on. By:" },
 	{ STYLE_NAME, "Kaito Sinclaire (KScl)" },
 	{ STYLE_BLANK },
-	{ STYLE_HEADING, "Tyrian2000 Plus" },
+	{ STYLE_HEADING, "Tyrian 2000+" },
 	{ STYLE_NAME, "Gabriel Badolato, with help from Claude (Anthropic)" },
 	{ STYLE_BLANK },
 	{ STYLE_HEADING, "Also thanks to" },
@@ -105,7 +105,7 @@ static const AboutEntry aboutEntries[] =
 	{ STYLE_TEXT, "The program is free software under the GNU General Public License, version 2 or later; its source code is at the first link below. The game data is freeware: \"Feel free to play it all you want and share it with friends.\" This project is free and always will be." },
 	{ STYLE_BLANK },
 	{ STYLE_HEADING, "Links" },
-	{ STYLE_TEXT, "Tyrian2000 Plus (source code):" },
+	{ STYLE_TEXT, "Tyrian 2000+ (source code):" },
 	{ STYLE_LINK, "github.com/gabrielbadolato/tyrian2000plus", "https://github.com/gabrielbadolato/tyrian2000plus" },
 	{ STYLE_TEXT, "OpenTyrian2000:" },
 	{ STYLE_LINK, "github.com/KScl/opentyrian2000", "https://github.com/KScl/opentyrian2000" },
@@ -304,8 +304,30 @@ static void drawLines(int top, int cursor)
 		switch (line->style)
 		{
 		case STYLE_HEADING:
-			drawFontHvShadow(VGAScreen, TEXT_X, y - 1, line->text, FONT_NORMAL, 15, -1, false, 2);
+		{
+			// the normal font has no '+' ("Tyrian 2000+"): draw it as a small cross
+			char text[sizeof(line->text)];
+			strcpy(text, line->text);
+			const size_t len = strlen(text);
+			const bool plus = len > 0 && text[len - 1] == '+';
+			if (plus)
+				text[len - 1] = '\0';
+
+			drawFontHvShadow(VGAScreen, TEXT_X, y - 1, text, FONT_NORMAL, 15, -1, false, 2);
+
+			if (plus)
+			{
+				const int x = TEXT_X + JE_textWidth(text, FONT_NORMAL) + 1;
+				for (int shadow = 1; shadow >= 0; --shadow)
+				{
+					const Uint8 color = shadow ? 0 : 15 * 16 + 14;
+					const int d = shadow ? 2 : 0;
+					fill_rectangle_xy(VGAScreen, x + d + 3, y + d, x + d + 4, y + d + 7, color);
+					fill_rectangle_xy(VGAScreen, x + d, y + d + 3, x + d + 7, y + d + 4, color);
+				}
+			}
 			break;
+		}
 		case STYLE_NAME:
 			drawFontHvShadow(VGAScreen, TEXT_X, y, line->text, FONT_SMALL, 15, 6, false, 1);
 			break;

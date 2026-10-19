@@ -4,6 +4,10 @@ Fork pessoal do OpenTyrian2000 (Tyrian 2000 em C/SDL2), mantido por Gabriel
 Badolato. Objetivos, em ordem: controles modernos (feito), build nativo para
 Windows x64, melhorias de vídeo, e depois Steam Deck / Steam Machine (Linux).
 
+Nome exibido: "Tyrian 2000+" (título da janela, About, READMEs, LEIA-ME). Em
+nomes de arquivo, repositório, pastas e links continua tyrian2000plus /
+Tyrian2000Plus, porque o "+" não serve neles.
+
 O dono do projeto não é desenvolvedor de C nem usa git no dia a dia: explique
 em português, de forma simples, e entregue builds prontos para testar.
 

@@ -1,4 +1,4 @@
-# Tyrian2000 Plus
+# Tyrian 2000+
 
 [Português](README.md) | **English**
 
@@ -15,7 +15,7 @@ Tyrian is a vertical scrolling shooter released in 1995. It is set in the year
 was made by Eclipse Software and published by Epic MegaGames. Tyrian 2000
 (1999) added a fifth episode. Jason Emery later released the game as freeware.
 
-Tyrian2000 Plus is based on [OpenTyrian2000](https://github.com/KScl/opentyrian2000),
+Tyrian 2000+ is based on [OpenTyrian2000](https://github.com/KScl/opentyrian2000),
 which in turn comes from [OpenTyrian](https://github.com/opentyrian/opentyrian),
 the open-source port of Tyrian. What this version adds:
 
@@ -168,7 +168,7 @@ Rawlinson, mcpusc, norm2782, okkirikomi, Patryk Obara and AshTR.
 
 **OpenTyrian2000:** Kaito Sinclaire (KScl).
 
-**Tyrian2000 Plus:** Gabriel Badolato, with help from Claude (Anthropic).
+**Tyrian 2000+:** Gabriel Badolato, with help from Claude (Anthropic).
 
 **Thanks to:** Sam Lantinga and the [SDL](https://www.libsdl.org/) team,
 [camanis.net](https://www.camanis.net/tyrian/) for keeping the freeware data
@@ -176,7 +176,7 @@ available, and the Tyrian fans who kept the game alive.
 
 ## Links
 
-- Tyrian2000 Plus: <https://github.com/gabrielbadolato/tyrian2000plus>
+- Tyrian 2000+: <https://github.com/gabrielbadolato/tyrian2000plus>
 - OpenTyrian2000: <https://github.com/KScl/opentyrian2000>
 - OpenTyrian: <https://github.com/opentyrian/opentyrian>
 - Tyrian 2000 freeware data: <https://www.camanis.net/tyrian/>

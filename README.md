@@ -1,4 +1,4 @@
-# Tyrian2000 Plus
+# Tyrian 2000+
 
 **Português** | [English](README.en.md)
 
@@ -16,7 +16,7 @@ a galáxia. O jogo foi criado pela Eclipse Software e publicado pela Epic
 MegaGames. O Tyrian 2000 (1999) trouxe um quinto episódio. Depois, Jason Emery
 liberou o jogo como freeware.
 
-O Tyrian2000 Plus é baseado no [OpenTyrian2000](https://github.com/KScl/opentyrian2000),
+O Tyrian 2000+ é baseado no [OpenTyrian2000](https://github.com/KScl/opentyrian2000),
 que por sua vez vem do [OpenTyrian](https://github.com/opentyrian/opentyrian), a
 versão de código aberto do Tyrian. O que esta versão acrescenta:
 
@@ -166,7 +166,7 @@ Rawlinson, mcpusc, norm2782, okkirikomi, Patryk Obara e AshTR.
 
 **OpenTyrian2000:** Kaito Sinclaire (KScl).
 
-**Tyrian2000 Plus:** Gabriel Badolato, com ajuda do Claude (Anthropic).
+**Tyrian 2000+:** Gabriel Badolato, com ajuda do Claude (Anthropic).
 
 **Agradecimentos:** Sam Lantinga e a equipe do [SDL](https://www.libsdl.org/),
 o [camanis.net](https://www.camanis.net/tyrian/) por manter os dados freeware
@@ -174,7 +174,7 @@ disponíveis, e os fãs do Tyrian que mantêm o jogo vivo.
 
 ## Links
 
-- Tyrian2000 Plus: <https://github.com/gabrielbadolato/tyrian2000plus>
+- Tyrian 2000+: <https://github.com/gabrielbadolato/tyrian2000plus>
 - OpenTyrian2000: <https://github.com/KScl/opentyrian2000>
 - OpenTyrian: <https://github.com/opentyrian/opentyrian>
 - Dados freeware do Tyrian 2000: <https://www.camanis.net/tyrian/>

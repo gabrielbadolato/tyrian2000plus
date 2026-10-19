@@ -13,7 +13,7 @@
 # the binary needs a glibc no newer than the one it was built against.
 #
 # The Tyrian 2000 data is NOT included in the package; the user copies it
-# into the data/ folder next to the binary (see doc/LEIA-ME.txt).
+# into the data/ folder next to the binary (see README.md).
 #
 # Build requirements (headers only; nothing is linked from them):
 #   Debian/Ubuntu:  sudo apt install build-essential cmake pkg-config curl \
@@ -109,8 +109,7 @@ rm -rf "dist/$NAME" "dist/$NAME.tar.gz"
 mkdir -p "dist/$NAME/data" "dist/$NAME/licencas"
 cp opentyrian2000 "dist/$NAME/Tyrian2000Plus"
 strip "dist/$NAME/Tyrian2000Plus"
-cp doc/LEIA-ME.txt "dist/$NAME/"
-cp README.md "dist/$NAME/LEIA-ME-COMPLETO.txt"
+cp README.md "dist/$NAME/LEIA-ME.txt"
 cp README.en.md "dist/$NAME/README.txt"
 cp linux/icons/tyrian2000-128.png "dist/$NAME/Tyrian2000Plus.png"
 cp COPYING "dist/$NAME/licencas/GPL-2.0.txt"

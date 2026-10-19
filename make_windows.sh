@@ -10,7 +10,7 @@
 # x86_64-w64-mingw32-clang is already on the PATH, that one is used instead.
 #
 # The Tyrian 2000 data is NOT included in the package; the user copies it
-# into the data/ folder next to the exe (see doc/LEIA-ME.txt).
+# into the data/ folder next to the exe (see README.md).
 #
 # Build requirements: make, curl, tar, xz, zip, unzip.
 # Usage: ./make_windows.sh
@@ -77,8 +77,7 @@ mkdir -p "dist/$NAME/data" "dist/$NAME/licencas"
 cp opentyrian2000.exe "dist/$NAME/Tyrian2000Plus.exe"
 x86_64-w64-mingw32-strip "dist/$NAME/Tyrian2000Plus.exe"
 cp "$COMPAT/SDL2.dll" "$COMPAT/SDL3.dll" "$NET/bin/SDL2_net.dll" "dist/$NAME/"
-sed 's/$/\r/' doc/LEIA-ME.txt > "dist/$NAME/LEIA-ME.txt"
-sed 's/$/\r/' README.md > "dist/$NAME/LEIA-ME-COMPLETO.txt"
+sed 's/$/\r/' README.md > "dist/$NAME/LEIA-ME.txt"
 sed 's/$/\r/' README.en.md > "dist/$NAME/README.txt"
 sed 's/$/\r/' COPYING > "dist/$NAME/licencas/GPL-2.0.txt"
 sed 's/$/\r/' doc/tyrian-freeware-license.txt > "dist/$NAME/licencas/tyrian-freeware-license.txt"

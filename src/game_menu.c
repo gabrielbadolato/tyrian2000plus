@@ -107,7 +107,7 @@ static PlayerItems old_items[2];  // TODO: should not be global if possible
 
 static struct cube_struct cube[4];
 
-static const JE_MenuChoiceType menuChoicesDefault = { 7, 9, 9, 0, 0, 11, (SAVE_FILES_NUM / 2) + 2, 0, 0, 6, 4, 6, 7, 5, 6 };
+static const JE_MenuChoiceType menuChoicesDefault = { 7, 9, 10, 0, 0, 11, (SAVE_FILES_NUM / 2) + 2, 0, 0, 6, 4, 6, 7, 5, 6 };
 static const JE_byte menuEsc[MENU_MAX] = { 0, 1, 1, 1, 2, 3, 3, 1, 8, 0, 0, 11, 3, 0, 2 };
 static const JE_byte itemAvailMap[7] = { 1, 2, 3, 9, 4, 6, 7 };
 static const JE_word planetX[21] = { 200, 150, 240, 300, 270, 280, 320, 260, 220, 150, 160, 210, 80, 240, 220, 180, 310, 330, 150, 240, 200 };
@@ -154,6 +154,33 @@ JE_longint JE_cashLeft(void)
 	}
 
 	return tempL;
+}
+
+// redraws the ship menu after a full-screen detour (help, setup)
+static void returnToItemScreen(void)
+{
+	play_song(songBuy);
+
+	JE_loadPic(VGAScreen, 1, false);
+	newPal = 1;
+
+	switch (curMenu)
+	{
+	case 3:
+		newPal = 18;
+		break;
+	case 7:
+	case 8:
+		break;
+	}
+
+	memcpy(VGAScreen2->pixels, VGAScreen->pixels, VGAScreen2->pitch * VGAScreen2->h);
+
+	curPal = newPal;
+	memcpy(colors, palettes[newPal-1], sizeof(colors));
+	JE_showVGA();
+	newPal = 0;
+	backFromHelp = true;
 }
 
 void JE_itemScreen(void)
@@ -1273,28 +1300,7 @@ void JE_itemScreen(void)
 					fade_black(10);
 					JE_helpSystem(2);
 
-					play_song(songBuy);
-
-					JE_loadPic(VGAScreen, 1, false);
-					newPal = 1;
-
-					switch (curMenu)
-					{
-					case 3:
-						newPal = 18;
-						break;
-					case 7:
-					case 8:
-						break;
-					}
-
-					memcpy(VGAScreen2->pixels, VGAScreen->pixels, VGAScreen2->pitch * VGAScreen2->h);
-
-					curPal = newPal;
-					memcpy(colors, palettes[newPal-1], sizeof(colors));
-					JE_showVGA();
-					newPal = 0;
-					backFromHelp = true;
+					returnToItemScreen();
 				}
 				break;
 
@@ -2362,6 +2368,10 @@ void JE_drawMainMenuHelpText(void)
 		const int help[16] = { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 24, 11 };
 		memcpy(tempStr, mainMenuHelp[help[curSel[curMenu] - 2]], sizeof(tempStr));
 	}
+	else if (curMenu == MENU_OPTIONS && curSel[curMenu] == 9)  // Setup... (Tyrian2000 Plus)
+	{
+		strcpy(tempStr, "Graphics, sound and all control settings.");
+	}
 	else if (curMenu < MENU_PLAY_NEXT_LEVEL || curMenu >= MENU_2_PLAYER_ARCADE)
 	{
 		memcpy(tempStr, mainMenuHelp[(menuHelp[curMenu][temp])-1], sizeof(tempStr));
@@ -2761,7 +2771,12 @@ void JE_menuFunction(JE_byte select)
 		case 8:
 			curMenu = MENU_MOUSE_CONFIG;
 			break;
-		case 9:
+		case 9:  // Setup... (Tyrian2000 Plus)
+			fade_black(10);
+			setupMenu();
+			returnToItemScreen();
+			break;
+		case 10:
 			curMenu = MENU_FULL_GAME;
 			break;
 		}

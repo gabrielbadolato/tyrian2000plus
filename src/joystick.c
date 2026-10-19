@@ -545,6 +545,17 @@ static void close_joysticks(bool save)
 	joysticks = 0;
 }
 
+// set by check_joystick_hotplug() when a controller goes away
+static bool joystick_lost = false;
+
+// returns true (once) when a controller went away since the last call
+bool joystick_take_lost(void)
+{
+	bool lost = joystick_lost;
+	joystick_lost = false;
+	return lost;
+}
+
 // rebuilds the device list when something was connected or disconnected
 void check_joystick_hotplug(void)
 {
@@ -559,19 +570,28 @@ void check_joystick_hotplug(void)
 	SDL_JoystickUpdate();  // lets SDL notice added/removed devices
 
 	bool changed = SDL_NumJoysticks() != joysticks;
-	for (int j = 0; !changed && j < joysticks; j++)
+	bool lost = false;
+	for (int j = 0; j < joysticks; j++)
 	{
-		changed = SDL_JoystickGetDeviceInstanceID(j) != joystick[j].instance_id ||
-		          (joystick[j].handle != NULL && !SDL_JoystickGetAttached(joystick[j].handle));
+		if (joystick[j].handle != NULL && !SDL_JoystickGetAttached(joystick[j].handle))
+			lost = true;
+		else if (SDL_JoystickGetDeviceInstanceID(j) != joystick[j].instance_id)
+			changed = true;
 	}
 
-	if (!changed)
+	if (!changed && !lost)
 		return;
 
 	logInfo("Controller connected or disconnected; rescanning.");
 
+	const int oldJoysticks = joysticks;
+
 	close_joysticks(true);
 	open_joysticks();
+
+	if (joysticks < oldJoysticks)
+		lost = true;
+	joystick_lost |= lost;
 
 	if (joysticks == 0)
 		logInfo("No controllers connected.");

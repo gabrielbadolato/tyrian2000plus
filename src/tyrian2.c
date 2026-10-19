@@ -722,6 +722,8 @@ start_level_first:
 	JE_gammaCorrect(&colors, gammaCorrection);
 	fade_palette(colors, 50, 0, 255);
 
+	joystick_take_lost();  // only controllers lost during the level pause it
+
 	if (explosionSpriteSheet.data == NULL)
 		JE_loadCompShapes(&explosionSpriteSheet, '6');
 

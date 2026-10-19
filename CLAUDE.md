@@ -87,6 +87,15 @@ formato de marca), com a função de cada botão segundo o mapeamento atual
 (inclui "Auto Fire"). Os botões acendem quando apertados; sai segurando B por 1 s (assim B e View também podem ser testados), com Esc ou com clique. Sem controle,
 mostra o layout padrão (`joystick_default_gamepad_assignments()`).
 
+Menu da nave: Options tem "Setup..." (antes do Done), que abre o mesmo
+`setupMenu()` da tela de título e volta com `returnToItemScreen()`
+(`src/game_menu.c`). O texto do item é inserido em `menuInt[3]` ao carregar
+o `tyrian.hdt` (`src/helptext.c`); o menu de arcade (MENU_LIMITED_OPTIONS)
+não tem o item.
+
+Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
+perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).
+
 Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
 ao investigar problemas no PC do Gabriel.
 
@@ -103,6 +112,12 @@ desligada por padrão) amplia primeiro por um número inteiro (pixels nítidos)
 e depois encaixa na janela com filtro bilinear, para os pixels ficarem do
 mesmo tamanho quando a ampliação não é inteira (`sharp_bilinear_prescale()`
 em `src/video.c`). Em múltiplos exatos nada muda.
+
+Brilho: Setup > Graphics > Brightness é o mesmo `gammaCorrection` da tecla
+F11 (salvo no tyrian.cfg); só vale dentro das fases.
+
+Análise de usabilidade dos menus (o que falta, como "vídeo na pausa"):
+`/mnt/project-files/analises/usabilidade-menus.md` no projeto.
 
 Steam Deck: o modo "Integer" já dá o encaixe exato 4x (1280x800, pixels
 quadrados), então não há opção nova para isso. O jogo não muda a taxa da tela

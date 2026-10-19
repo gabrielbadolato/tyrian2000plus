@@ -25,6 +25,14 @@ CONTROLES (Xbox / Steam Controller / Steam Deck)
   Setup > Controls > Controller Map mostra um desenho do controle com a
   funcao de cada botao (ja com as suas trocas de botoes). Aperte os botoes
   para ve-los acender; segure B (ou aperte Esc) para sair.
+  Se o controle desconectar no meio da fase (bateria, Bluetooth), o jogo
+  pausa sozinho. Reconecte e aperte qualquer botao para continuar.
+
+ONDE FICAM AS OPCOES
+  Tela de titulo > Setup: video, brilho, som, controles, Auto Fire e o
+  desenho do controle.
+  Entre as fases (menu da nave) > Options > Setup...: o mesmo Setup.
+  Durante a fase, Start/Esc: volume, nivel de detalhe e velocidade.
 
 STEAM CONTROLLER
   Com a Steam aberta, ela transforma o Steam Controller em teclado e mouse
@@ -70,5 +78,6 @@ PROBLEMAS
   %APPDATA%\OpenTyrian2000 no Windows e ~/.config/opentyrian2000 no
   Linux). Envie esse arquivo ao relatar um problema.
 
-Atalhos: Alt+Enter = tela cheia.
+Atalhos de teclado: Alt+Enter = tela cheia; P = pausa; Esc = menu do jogo;
+F1 = ajuda; F11 = brilho (durante a fase).
 Codigo-fonte (GPL v2): https://github.com/gabrielbadolato/tyrian2000plus

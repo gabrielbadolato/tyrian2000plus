@@ -226,10 +226,13 @@ int main(int argc, char *argv[])
 	advance(600);
 	poll();
 	CHECK(joysticks == 2);
+	CHECK(!joystick_take_lost());          // connecting does not pause the game
 	SDL_JoystickDetachVirtual(dev0);
 	advance(600);
 	poll();
 	CHECK(joysticks == 1);
+	CHECK(joystick_take_lost());           // disconnecting pauses the game...
+	CHECK(!joystick_take_lost());          // ...once
 	CHECK(strcmp(joystick_display_name(0), "Virtual Second Pad") == 0);
 	SDL_JoystickDetachVirtual(SDL_NumJoysticks() > 0 ? 0 : 0);
 	advance(600);

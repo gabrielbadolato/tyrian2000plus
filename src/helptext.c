@@ -34,7 +34,7 @@ const JE_byte menuHelp[MENU_MAX][11] = /* [1..maxmenu, 1..11] */
 {
 	{  1, 34,  2,  3,  4,  5,                  0, 0, 0, 0, 0 },
 	{  6,  7,  8,  9, 10, 11, 11, 12,                0, 0, 0 },
-	{ 13, 14, 15, 15, 16, 17, 35, 12,                0, 0, 0 },
+	{ 13, 14, 15, 15, 16, 17, 35,  0, 12,               0, 0 },  // 0: Setup..., text in game_menu.c
 	{                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	{                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	{                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -368,6 +368,9 @@ void JE_loadHelpText(void)
 	for (size_t i = 0; i < menuInt_entries[3]; ++i)
 		readEncryptedString(&file, menuInt[3][i], sizeof menuInt[3][i]);
 	readEncryptedString(&file, NULL, 0);
+	// Tyrian2000 Plus: "Setup..." (the title screen setup menu) goes before "Done"
+	strcpy(menuInt[3][9], menuInt[3][8]);
+	strcpy(menuInt[3][8], "Setup...");
 
 	/*InGame Menu*/
 	readEncryptedString(&file, NULL, 0);

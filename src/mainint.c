@@ -3523,6 +3523,8 @@ redo:
 
 				/* joystick input */
 				check_joystick_hotplug();  // pick up controllers connected mid-level
+				if (joystick_take_lost() && !playDemo)
+					pause_pressed = true;  // a controller went away: don't let the ship die meanwhile
 				if ((inputDevice == 0 || inputDevice >= 3) && joysticks > 0)
 				{
 					int j = inputDevice  == 0 ? 0 : inputDevice - 3;

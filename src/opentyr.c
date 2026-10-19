@@ -100,6 +100,20 @@ static const char *getOffOnPickerItem(size_t i, char *buffer, size_t bufferSize)
 	return i == 0 ? "Off" : "On";
 }
 
+static const char *const brightnessNames[] = { "Normal", "Bright", "Brighter", "Brightest" };
+
+static size_t getBrightnessPickerItemsCount(void)
+{
+	return COUNTOF(brightnessNames);
+}
+
+static const char *getBrightnessPickerItem(size_t i, char *buffer, size_t bufferSize)
+{
+	(void)buffer, (void)bufferSize;
+
+	return brightnessNames[i];
+}
+
 static const char *const mouseActionNames[] =
 {
 	"Fire Main Weapon",
@@ -214,6 +228,7 @@ void setupMenu(void)
 		MENU_ITEM_SCALING_MODE,
 		MENU_ITEM_VSYNC,
 		MENU_ITEM_SHARP_BILINEAR,
+		MENU_ITEM_BRIGHTNESS,
 		MENU_ITEM_AUTO_FIRE,
 		MENU_ITEM_KEYBOARD,
 		MENU_ITEM_JOYSTICK,
@@ -283,7 +298,7 @@ void setupMenu(void)
 				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
 				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
-				{ MENU_ITEM_DONE, "Done", "Return to the main menu." },
+				{ MENU_ITEM_DONE, "Done", "Return to the previous screen." },
 				{ -1 }
 			},
 		},
@@ -295,6 +310,7 @@ void setupMenu(void)
 				{ MENU_ITEM_SCALING_MODE, "Scaling Mode:", "Change the scaling mode.", getScalingModePickerItemsCount, getScalingModePickerItem },
 				{ MENU_ITEM_SHARP_BILINEAR, "Sharp Bilinear:", "Keep pixels even when the scale is not exact.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getOffOnPickerItemsCount, getOffOnPickerItem },
+				{ MENU_ITEM_BRIGHTNESS, "Brightness:", "Brighten the levels (F11 also works in game).", getBrightnessPickerItemsCount, getBrightnessPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -508,6 +524,10 @@ void setupMenu(void)
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, vsync_enabled ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
+			case MENU_ITEM_BRIGHTNESS:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, brightnessNames[gammaCorrection % COUNTOF(brightnessNames)], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
 			case MENU_ITEM_AUTO_FIRE:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, autoFireToggle ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
@@ -671,6 +691,7 @@ void setupMenu(void)
 									case MENU_ITEM_SCALING_MODE:
 									case MENU_ITEM_SHARP_BILINEAR:
 									case MENU_ITEM_VSYNC:
+									case MENU_ITEM_BRIGHTNESS:
 									case MENU_ITEM_AUTO_FIRE:
 									case MENU_ITEM_KEY:
 									case MENU_ITEM_JOYSTICK_NUMBER:
@@ -1025,6 +1046,14 @@ void setupMenu(void)
 					pickerSelectedIndex = vsync_enabled ? 1 : 0;
 					break;
 				}
+				case MENU_ITEM_BRIGHTNESS:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = gammaCorrection % COUNTOF(brightnessNames);
+					break;
+				}
 				case MENU_ITEM_AUTO_FIRE:
 				{
 					JE_playSampleNum(S_CLICK);
@@ -1212,6 +1241,11 @@ void setupMenu(void)
 				case MENU_ITEM_VSYNC:
 				{
 					set_vsync(pickerSelectedIndex == 1);
+					break;
+				}
+				case MENU_ITEM_BRIGHTNESS:
+				{
+					gammaCorrection = pickerSelectedIndex;  // applied when a level starts
 					break;
 				}
 				case MENU_ITEM_AUTO_FIRE:

@@ -60,7 +60,7 @@
 #include <string.h>
 #include <time.h>
 
-const char *opentyrian_str = "OpenTyrian2000";
+const char *opentyrian_str = "Tyrian 2000+";
 const char *opentyrian_version = OPENTYRIAN_VERSION;
 
 static size_t getDisplayPickerItemsCount(void)

@@ -6,6 +6,8 @@ publicado pela Epic MegaGames em 1995; Jason Emery liberou o jogo como
 freeware. Veja tyrian-freeware-license.txt.
 
 COMO RODAR
+Se a pasta "data" ja tem os arquivos do jogo (pacotes das versoes publicadas,
+como no itch.io), pule para o passo 3. Senao:
 1. Baixe os dados do jogo (freeware): https://www.camanis.net/tyrian/tyrian2000.zip
 2. Descompacte o zip e copie TODOS os arquivos de dentro da pasta "tyrian2000"
    (tyrian.hdt, tyrian1.lvl, music.mus etc.) para uma subpasta chamada "data"
@@ -57,13 +59,16 @@ LINUX / STEAM DECK
   1. No Modo Desktop, descompacte Tyrian2000Plus-linux-x86_64.tar.gz
      (clique com o botao direito > Extrair aqui) numa pasta sua, por
      exemplo /home/deck/Jogos.
-  2. Copie os dados do jogo para a pasta "data", como no passo 2 acima.
+  2. Se a pasta "data" estiver vazia, copie os dados do jogo para ela,
+     como no passo 2 acima.
   3. Na Steam: "Adicionar um jogo" > "Adicionar um jogo nao-Steam" >
      "Procurar", escolha o arquivo Tyrian2000Plus e confirme.
   4. Volte ao Modo de Jogo e abra o Tyrian2000Plus pela biblioteca.
   O arquivo Tyrian2000Plus.png pode ser usado como icone na Steam.
-  Atalho: o atualizar-tyrian.sh faz os passos 1 e 2 sozinho (baixa a versao
-  mais nova e os dados) e cria o icone "Atualizar Tyrian2000Plus" no menu.
+  Atalho: o atualizar-tyrian.sh (Modo Desktop: botao direito > Executar)
+  faz os passos 1 e 2 sozinho (baixa a versao mais nova do GitHub e os
+  dados) e cria o icone "Atualizar Tyrian2000Plus" no menu. Use esse icone
+  de vez em quando para pegar a versao nova.
   No Linux, saves e configuracoes ficam em ~/.config/opentyrian2000
   (ou ao lado do jogo, se existir um opentyrian.cfg na pasta dele).
 

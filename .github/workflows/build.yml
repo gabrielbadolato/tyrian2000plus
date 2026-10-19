@@ -2,8 +2,9 @@ name: Build
 
 # Builds Tyrian2000Plus for Windows and Linux (Steam Deck) on every push.
 # The packages are on the run's page under "Artifacts".  Publishing a GitHub
-# release also attaches them to the release.  The game data is never
-# packaged: the user copies it into data/ (see doc/LEIA-ME.txt).
+# release also attaches them to the release.  Only the release packages carry
+# the freeware game data (unchanged, see add_game_data.sh); the per-push
+# builds stay without it.
 
 on:
   push:
@@ -75,7 +76,10 @@ jobs:
         run: |
           tag="${{ github.event.release.tag_name }}"
           asset="Tyrian2000Plus-$tag-linux-x86_64.tar.gz"
-          mv dist/Tyrian2000Plus-linux-x86_64.tar.gz "$asset"
+          ./add_game_data.sh dist/Tyrian2000Plus-linux-x86_64
+          cp linux/atualizar-tyrian.sh dist/Tyrian2000Plus-linux-x86_64/
+          chmod +x dist/Tyrian2000Plus-linux-x86_64/atualizar-tyrian.sh
+          tar -czf "$asset" -C dist Tyrian2000Plus-linux-x86_64
           gh release upload "$tag" "$asset" --clobber
 
   windows:
@@ -89,7 +93,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends make curl xz-utils zip unzip
+          sudo apt-get install -y --no-install-recommends make curl xz-utils zip unzip python3
       - name: Cache toolchain and SDL2
         uses: actions/cache@v6
         with:
@@ -109,5 +113,6 @@ jobs:
         run: |
           tag="${{ github.event.release.tag_name }}"
           asset="Tyrian2000Plus-$tag-windows-x64.zip"
-          mv dist/Tyrian2000Plus-windows-x64.zip "$asset"
+          ./add_game_data.sh dist/Tyrian2000Plus-windows-x64 crlf
+          (cd dist && zip -qr "../$asset" Tyrian2000Plus-windows-x64)
           gh release upload "$tag" "$asset" --clobber

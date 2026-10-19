@@ -50,7 +50,12 @@ pequenas e podem seguir as regras acima normalmente.
   depende da glibc) e gera `dist/Tyrian2000Plus-linux-x86_64.tar.gz`.
 - GitHub Actions (`.github/workflows/build.yml`) roda os dois scripts e os
   testes a cada push; os pacotes ficam em "Artifacts" da execução e são
-  anexados a uma release publicada. Os pacotes NUNCA levam os dados do jogo.
+  anexados a uma release publicada. Só os pacotes da release levam os dados
+  do jogo (originais, sem alteração, baixados por `add_game_data.sh`, com
+  LEIA-ME-DADOS.txt de licença/créditos); os builds de cada push não levam.
+- Steam Deck: `linux/atualizar-tyrian.sh` instala/atualiza pela última
+  Release (sem chave, repositório público); com uma chave do GitHub em
+  ~/.config/tyrian2000plus/github-token pega o build mais novo do Actions.
 - Os dados do jogo (freeware) ficam em `data/` ao lado do executável e não
   vão para o repositório.
 - Testes: `tests/run_tests.sh [pasta-do-jogo]` compila e roda

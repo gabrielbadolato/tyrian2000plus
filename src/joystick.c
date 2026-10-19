@@ -688,6 +688,11 @@ Uint32 joystick_valve_pad_last_change(void)
 	return valve_pad_last_active;
 }
 
+bool joystick_valve_pad_changed_within(Uint32 ms)
+{
+	return valve_pad_ever_active && !SDL_TICKS_PASSED(SDL_GetTicks(), valve_pad_last_active + ms);
+}
+
 bool joystick_filter_steam_input(void)
 {
 	if (!joystick_steam_filter_enabled())

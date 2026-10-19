@@ -375,6 +375,7 @@ static void processSdlEvent(SDL_Event ev)
 // could apply, key events wait a few milliseconds; a press is dropped if the
 // controller changed meanwhile.
 #define KEY_DELAY_MS 60
+#define STEAM_KEY_GRACE_MS 1000
 static SDL_Event delayedKeys[64];
 static Uint32 delayedKeyTicks[64];
 static size_t delayedKeysFront, delayedKeysCount;
@@ -429,7 +430,8 @@ static void releaseDelayedKeys(bool all)
 		// did the controller change after this key arrived?
 		bool fromSteam = ev->type == SDL_KEYDOWN && ev->key.windowID != JOYSTICK_PUSHED_KEY &&
 		                 joystick_steam_filter_enabled() &&
-		                 !SDL_TICKS_PASSED(ticks, joystick_valve_pad_last_change() + 1);
+		                 (!SDL_TICKS_PASSED(ticks, joystick_valve_pad_last_change() + 1) ||
+		                  joystick_valve_pad_changed_within(STEAM_KEY_GRACE_MS));
 		if (fromSteam)
 			dropSteamKey(ev->key.keysym.scancode);
 		else if (keyEventPasses(ev, false))
@@ -468,7 +470,11 @@ void handleSdlEvents(void)
 
 		if (keyEvent)
 		{
-			if (!keyEventPasses(&ev, filterSteam > 0))
+			// Steam can send a d-pad key half a second after the press, so keys
+			// get a longer window than the mouse
+			bool filterKeys = filterSteam > 0 ||
+			                  (filterSteam >= 0 && joystick_valve_pad_changed_within(STEAM_KEY_GRACE_MS));
+			if (!keyEventPasses(&ev, filterKeys))
 				continue;
 
 			// wait a moment in case the controller reports the same press

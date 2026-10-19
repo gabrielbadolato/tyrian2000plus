@@ -41,6 +41,8 @@ LINUX / STEAM DECK
      "Procurar", escolha o arquivo Tyrian2000Plus e confirme.
   4. Volte ao Modo de Jogo e abra o Tyrian2000Plus pela biblioteca.
   O arquivo Tyrian2000Plus.png pode ser usado como icone na Steam.
+  Atalho: o atualizar-tyrian.sh faz os passos 1 e 2 sozinho (baixa a versao
+  mais nova e os dados) e cria o icone "Atualizar Tyrian2000Plus" no menu.
   No Linux, saves e configuracoes ficam em ~/.config/opentyrian2000
   (ou ao lado do jogo, se existir um opentyrian.cfg na pasta dele).
 

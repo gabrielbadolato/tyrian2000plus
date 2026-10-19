@@ -7,7 +7,8 @@
 #
 # O repositório é privado, então o download usa uma chave do GitHub
 # (fine-grained token, só leitura de Actions deste repositório). Ela é pedida
-# na primeira vez e guardada em ~/.config/tyrian2000plus/github-token.
+# na primeira vez (ou lida de um github-token.txt ao lado do script) e
+# guardada em ~/.config/tyrian2000plus/github-token.
 #
 #   bash atualizar-tyrian.sh
 set -euo pipefail
@@ -32,6 +33,13 @@ fail() {
 
 # ---- chave do GitHub ----
 mkdir -p "$CONF"
+# A chave pode vir num arquivo github-token.txt ao lado do script (enviado do
+# PC); ele é movido para a pasta de configuração, para não ficar em Downloads.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -s "$SCRIPT_DIR/github-token.txt" ]; then
+    (umask 077; sed '1s/^\xEF\xBB\xBF//' "$SCRIPT_DIR/github-token.txt" | tr -d '[:space:]' > "$TOKEN_FILE"; echo >> "$TOKEN_FILE")
+    rm -f "$SCRIPT_DIR/github-token.txt"
+fi
 if [ ! -s "$TOKEN_FILE" ]; then
     msg="Cole a chave do GitHub (começa com github_pat_):"
     if have_gui; then

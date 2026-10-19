@@ -80,6 +80,12 @@ Mouse..., os mesmos ajustes do menu da nave, feitos no estilo do `setupMenu`
 (`src/opentyr.c`). A captura de botão do controle fica em
 `assign_joystick_action()` (`src/joystick.c`), usada pelos dois menus.
 
+Controller Map: Setup > Controls > "Controller Map..." mostra um controle
+genérico desenhado pixel a pixel (`src/padmap.c`, sem gráficos do jogo nem
+formato de marca), com a função de cada botão segundo o mapeamento atual
+(inclui "Auto Fire"). Os botões acendem quando apertados. Sem controle,
+mostra o layout padrão (`joystick_default_gamepad_assignments()`).
+
 Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
 ao investigar problemas no PC do Gabriel.
 

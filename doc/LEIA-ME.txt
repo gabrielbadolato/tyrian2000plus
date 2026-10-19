@@ -22,6 +22,9 @@ CONTROLES (Xbox / Steam Controller / Steam Deck)
   Back (View) ..................... pausa
   Nos menus: A/Start confirma, B/Back volta.
   PS5 e Switch Pro usam os botoes nas mesmas posicoes (Cruz = A, etc.).
+  Setup > Controls > Controller Map mostra um desenho do controle com a
+  funcao de cada botao (ja com as suas trocas de botoes). Aperte os botoes
+  para ve-los acender; B ou Esc volta.
 
 STEAM CONTROLLER
   Com a Steam aberta, ela transforma o Steam Controller em teclado e mouse

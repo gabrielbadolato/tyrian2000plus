@@ -97,6 +97,19 @@ int main(int argc, char *argv[])
 	printf("       up:   '%s'\n", buf);
 	CHECK(strcmp(buf, "LS UP, D-UP") == 0);
 
+	printf("[3a] controller map\n");
+	Joystick_assignment defaults[10][2];
+	joystick_default_gamepad_assignments(defaults);
+	bool sameDefaults = true;
+	for (int a = 0; a < 10; a++)
+		for (int i = 0; i < 2; i++)
+			if (defaults[a][i].type != joystick[0].assignment[a][i].type ||
+			    (defaults[a][i].type != NONE && !joystick_assignment_cmp(&defaults[a][i], &joystick[0].assignment[a][i])))
+				sameDefaults = false;
+	CHECK(sameDefaults);  // the map without a controller shows the real default layout
+	CHECK(strcmp(joystick_assignment_label(-1, &defaults[4][1]), "RT") == 0);  // no controller: Xbox names
+	CHECK(strcmp(joystick_button_label(-1, SDL_CONTROLLER_BUTTON_B), "B") == 0);
+
 	printf("[3b] help texts\n");
 	CHECK(strcmp(padHelpText("Press ESC to exit."), "Press B to exit.") == 0);
 	CHECK(strcmp(padHelpText("Change volume with the left/right arrow keys."), "Change volume with the D-pad left/right.") == 0);

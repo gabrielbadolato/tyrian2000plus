@@ -648,6 +648,40 @@ static void set_assignment(Joystick_assignment *a, Joystick_assignment_types typ
 	a->negative_axis = negative;
 }
 
+// the default layout of a standardized gamepad (also shown by the controller map)
+void joystick_default_gamepad_assignments(Joystick_assignment as[10][2])
+{
+	for (uint a = 0; a < 10; a++)
+		for (uint i = 0; i < 2; i++)
+			as[a][i].type = NONE;
+
+	// directions: left stick + d-pad
+	set_assignment(&as[0][0], PAD_AXIS, SDL_CONTROLLER_AXIS_LEFTY, true);
+	set_assignment(&as[0][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_DPAD_UP, false);
+	set_assignment(&as[1][0], PAD_AXIS, SDL_CONTROLLER_AXIS_LEFTX, false);
+	set_assignment(&as[1][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, false);
+	set_assignment(&as[2][0], PAD_AXIS, SDL_CONTROLLER_AXIS_LEFTY, false);
+	set_assignment(&as[2][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_DPAD_DOWN, false);
+	set_assignment(&as[3][0], PAD_AXIS, SDL_CONTROLLER_AXIS_LEFTX, true);
+	set_assignment(&as[3][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_DPAD_LEFT, false);
+
+	// fire: A or right trigger
+	set_assignment(&as[4][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_A, false);
+	set_assignment(&as[4][1], PAD_AXIS, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, false);
+	// change rear weapon mode: Y
+	set_assignment(&as[5][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_Y, false);
+	// left sidekick: LB or left trigger
+	set_assignment(&as[6][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, false);
+	set_assignment(&as[6][1], PAD_AXIS, SDL_CONTROLLER_AXIS_TRIGGERLEFT, false);
+	// right sidekick: RB or X
+	set_assignment(&as[7][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, false);
+	set_assignment(&as[7][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_X, false);
+	// in-game menu: Start
+	set_assignment(&as[8][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_START, false);
+	// pause: Back/View
+	set_assignment(&as[9][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_BACK, false);
+}
+
 void reset_joystick_assignments(int j)
 {
 	assert(j < joysticks);
@@ -659,33 +693,7 @@ void reset_joystick_assignments(int j)
 
 	if (joystick[j].controller != NULL)
 	{
-		Joystick_assignment (*as)[2] = joystick[j].assignment;
-
-		// directions: left stick + d-pad
-		set_assignment(&as[0][0], PAD_AXIS, SDL_CONTROLLER_AXIS_LEFTY, true);
-		set_assignment(&as[0][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_DPAD_UP, false);
-		set_assignment(&as[1][0], PAD_AXIS, SDL_CONTROLLER_AXIS_LEFTX, false);
-		set_assignment(&as[1][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, false);
-		set_assignment(&as[2][0], PAD_AXIS, SDL_CONTROLLER_AXIS_LEFTY, false);
-		set_assignment(&as[2][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_DPAD_DOWN, false);
-		set_assignment(&as[3][0], PAD_AXIS, SDL_CONTROLLER_AXIS_LEFTX, true);
-		set_assignment(&as[3][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_DPAD_LEFT, false);
-
-		// fire: A or right trigger
-		set_assignment(&as[4][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_A, false);
-		set_assignment(&as[4][1], PAD_AXIS, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, false);
-		// change rear weapon mode: Y
-		set_assignment(&as[5][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_Y, false);
-		// left sidekick: LB or left trigger
-		set_assignment(&as[6][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, false);
-		set_assignment(&as[6][1], PAD_AXIS, SDL_CONTROLLER_AXIS_TRIGGERLEFT, false);
-		// right sidekick: RB or X
-		set_assignment(&as[7][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, false);
-		set_assignment(&as[7][1], PAD_BUTTON, SDL_CONTROLLER_BUTTON_X, false);
-		// in-game menu: Start
-		set_assignment(&as[8][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_START, false);
-		// pause: Back/View
-		set_assignment(&as[9][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_BACK, false);
+		joystick_default_gamepad_assignments(joystick[j].assignment);
 
 		// analog stick gives proportional movement (and aims the Link gun)
 		joystick[j].analog = true;
@@ -944,7 +952,7 @@ static const char *assignment_to_code(const Joystick_assignment *assignment)
 // like assignment_to_code(), but uses the labels printed on the player's controller
 static const char *assignment_to_label(int j, const Joystick_assignment *assignment)
 {
-	Pad_family family = pad_family(&joystick[j]);
+	Pad_family family = j >= 0 ? pad_family(&joystick[j]) : FAMILY_XBOX;
 
 	switch (assignment->type)
 	{
@@ -983,6 +991,15 @@ const char *joystick_button_label(int j, SDL_GameControllerButton button)
 	Joystick_assignment assignment;
 	set_assignment(&assignment, PAD_BUTTON, button, false);
 	return assignment_to_label(j, &assignment);
+}
+
+// the name printed on the controller for one assignment (ex. "A", "RT");
+// with j < 0 (no controller), the names of an Xbox-style controller
+const char *joystick_assignment_label(int j, const Joystick_assignment *assignment)
+{
+	assert(j < joysticks);
+
+	return assignment_to_label(j, assignment);
 }
 
 // like joystick_assignments_to_string(), but compact: "A/RT"

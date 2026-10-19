@@ -39,7 +39,7 @@ pequenas e podem seguir as regras acima normalmente.
 
 - Windows x64: `./make_windows.sh` (no Linux) cross-compila com llvm-mingw +
   SDL2 2.32 e SDL2_net 2.4, baixando tudo em `build/win`, e gera
-  `dist/Tyrian2000Plus-windows-x64.zip` (Tyrian2000Plus.exe + SDL2.dll +
+  `dist/Tyrian2000Plus-windows-x64.zip` (Tyrian2000Plus.exe + SDL2.dll e SDL3.dll do sdl2-compat +
   SDL2_net.dll + LEIA-ME + licenças). O Makefile embute ícone e manifesto
   UTF-8 de `visualc/resources.rc`.
 - Linux x86_64 / Steam Deck: `./make_linux.sh` compila SDL2 estático (só
@@ -64,12 +64,17 @@ pequenas e podem seguir as regras acima normalmente.
 antiga de joystick (AXIS/BUTTON/HAT) caso contrário. Hotplug é verificado a
 cada 500 ms, inclusive durante as fases.
 
-Steam Controller (testado com o modelo 2026 via puck): fora da biblioteca da
-Steam, a Steam o converte em teclado/mouse e o jogo não vê controle (sem
-vibração, Y abre o teclado virtual). Adicionado como "jogo não-Steam", vira
-gamepad 28de:1302 e vibra. Isso está explicado em `doc/LEIA-ME.txt`.
-Pendente: jogadores com o controle 2026 sem a Steam (o jogo não será
-publicado na Steam no início).
+Steam Controller (testado com o modelo 2026 via puck): o SDL2 não conhece
+esse controle; o SDL3 (3.4+) tem driver próprio (`SDL_hidapi_steam_triton.c`).
+Por isso o pacote Windows leva o sdl2-compat (SDL2.dll por cima do SDL3.dll,
+ver `make_windows.sh`); o código continua compilando contra o SDL2. Sem a
+Steam, o controle funciona e vibra (testado). Com a Steam aberta e o jogo
+fora dela, a Steam também gera teclado/mouse do controle;
+`joystick_filter_steam_input()` (`src/joystick.c`, usado em `src/keyboard.c`)
+ignora teclado/mouse enquanto um controle Valve (28de) está em uso ou nos
+200 ms seguintes, só quando a Steam está rodando e não abriu o jogo. O Linux
+continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
+está explicado em `doc/LEIA-ME.txt`.
 
 Tiro automático: opção "Auto Fire" em Setup > Controls (seção "gameplay",
 `auto_fire` no opentyrian.cfg). Cada toque no tiro liga/desliga o disparo

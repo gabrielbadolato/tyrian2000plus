@@ -89,7 +89,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends make curl xz-utils zip
+          sudo apt-get install -y --no-install-recommends make curl xz-utils zip unzip
       - name: Cache toolchain and SDL2
         uses: actions/cache@v6
         with:

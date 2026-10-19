@@ -37,13 +37,19 @@ ONDE FICAM AS OPCOES
   brilho, aplicados na hora).
 
 STEAM CONTROLLER
-  Com a Steam aberta, ela transforma o Steam Controller em teclado e mouse
-  para programas que nao estao na biblioteca dela. Assim o jogo nao ve um
-  controle: a vibracao nao funciona e o Y abre o teclado virtual.
-  Solucao: adicione o jogo na Steam e abra sempre por la.
+  No Windows, o jogo le o Steam Controller (2026) direto, sem precisar da
+  Steam: botoes, nomes dos botoes e vibracao funcionam.
+  Se a Steam estiver aberta, ela tambem transforma o controle em teclado e
+  mouse. O jogo percebe isso e ignora esse teclado/mouse enquanto voce usa o
+  controle, para nada contar duas vezes. Teclado e mouse de verdade
+  funcionam normalmente quando o controle esta parado.
+  Se algum botao ainda contar duas vezes, ou o Y abrir o teclado virtual da
+  Steam, segure o botao Start ate aparecer o aviso da Steam: isso desliga o
+  modo teclado/mouse dela. Outra opcao e adicionar o jogo na Steam:
   1. Na Steam, clique em "Adicionar um jogo" > "Adicionar um jogo nao-Steam".
   2. Clique em "Procurar", escolha o Tyrian2000Plus.exe e confirme.
   3. Abra o jogo pela biblioteca da Steam.
+  No Linux, o controle 2026 so funciona com a Steam (adicione o jogo nela).
 
 LINUX / STEAM DECK
   1. No Modo Desktop, descompacte Tyrian2000Plus-linux-x86_64.tar.gz

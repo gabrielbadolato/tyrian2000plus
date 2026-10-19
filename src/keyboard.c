@@ -178,8 +178,21 @@ void handleSdlEvents(void)
 {
 	SDL_Event ev;
 
+	// keyboard/mouse that Steam makes from the controller (see joystick.c);
+	// checked after SDL_PollEvent has read the controller along with the events
+	int filterSteam = -1;
+
 	while (SDL_PollEvent(&ev))
 	{
+		if (ev.type == SDL_KEYDOWN || ev.type == SDL_TEXTINPUT ||
+		    ev.type == SDL_MOUSEMOTION || ev.type == SDL_MOUSEBUTTONDOWN)
+		{
+			if (filterSteam < 0)
+				filterSteam = joystick_filter_steam_input();
+			if (filterSteam)
+				continue;
+		}
+
 		switch (ev.type)
 		{
 			case SDL_WINDOWEVENT:

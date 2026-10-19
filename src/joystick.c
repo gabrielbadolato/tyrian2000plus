@@ -30,7 +30,17 @@
 #include <assert.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <signal.h>
+#include <sys/types.h>
+#endif
 
 /*
  * Input devices are opened through SDL's GameController API whenever SDL
@@ -64,6 +74,8 @@ static const int joystick_analog_max = 32767;
 
 static const Uint32 hotplug_check_interval = 500; // milliseconds
 static Uint32 next_hotplug_check = 0;
+
+static bool valve_pad_connected = false; // a Valve controller is open (see joystick_filter_steam_input)
 
 static bool rumble_enabled = true;
 
@@ -476,6 +488,8 @@ static void open_joysticks(void)
 	if (joystick == NULL)
 		exit(EXIT_FAILURE);  // out of memory
 
+	valve_pad_connected = false;
+
 	for (int j = 0; j < joysticks; j++)
 	{
 		joystick[j].instance_id = SDL_JoystickGetDeviceInstanceID(j);
@@ -506,6 +520,8 @@ static void open_joysticks(void)
 		if (joystick[j].controller != NULL)
 		{
 			logInfo("Gamepad detected: %s", joystick_display_name(j));
+			if (SDL_JoystickGetVendor(joystick[j].handle) == 0x28de)
+				valve_pad_connected = true;
 		}
 		else
 		{
@@ -549,6 +565,136 @@ static void close_joysticks(bool save)
 static bool joystick_lost = false;
 
 // returns true (once) when a controller went away since the last call
+/*
+ * Steam double-input filter.
+ *
+ * SDL3 reads the 2026 Steam Controller directly.  When Steam is also open and
+ * the game was not started by Steam, Steam's desktop layout turns the same
+ * controller into keyboard and mouse input, so every press arrives twice.
+ * While that can happen, keyboard and mouse input that arrives while a Valve
+ * controller is being used (or right after) is ignored.  Keyboard and mouse
+ * work normally while the controller is left alone.
+ */
+static bool steam_filter_logged = false;
+static Uint32 next_steam_check = 0;
+static bool steam_running_cached = false;
+static Uint32 valve_pad_last_active = 0;
+static bool valve_pad_ever_active = false;
+static const Uint32 steam_filter_grace = 200; // milliseconds after the controller goes idle
+
+static bool launched_by_steam(void)
+{
+	// Steam sets these for games (and non-Steam shortcuts) it starts; then it
+	// uses the game's controller layout instead of the desktop one.
+	return getenv("SteamGameId") != NULL || getenv("SteamAppId") != NULL ||
+	       getenv("SteamClientLaunch") != NULL;
+}
+
+static bool steam_running(void)
+{
+	Uint32 now = SDL_GetTicks();
+	if (next_steam_check != 0 && !SDL_TICKS_PASSED(now, next_steam_check))
+		return steam_running_cached;
+	next_steam_check = now + 2000;
+
+	bool running = false;
+#ifdef _WIN32
+	DWORD pid = 0, size = sizeof(pid);
+	if (RegGetValueA(HKEY_CURRENT_USER, "Software\\Valve\\Steam\\ActiveProcess", "pid",
+	                 RRF_RT_REG_DWORD, NULL, &pid, &size) == ERROR_SUCCESS && pid != 0)
+	{
+		HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+		if (process != NULL)
+		{
+			DWORD code = 0;
+			running = GetExitCodeProcess(process, &code) && code == STILL_ACTIVE;
+			CloseHandle(process);
+		}
+	}
+#else
+	const char *home = getenv("HOME");
+	if (home != NULL)
+	{
+		char path[1024];
+		snprintf(path, sizeof(path), "%s/.steam/steam.pid", home);
+		FILE *f = fopen(path, "r");
+		if (f != NULL)
+		{
+			long pid = 0;
+			if (fscanf(f, "%ld", &pid) == 1 && pid > 0)
+				running = kill((pid_t)pid, 0) == 0;
+			fclose(f);
+		}
+	}
+#endif
+
+	steam_running_cached = running;
+	return running;
+}
+
+static bool valve_pad_in_use(const Joystick *js)
+{
+	SDL_GameController *pad = js->controller;
+
+	for (int b = 0; b < SDL_CONTROLLER_BUTTON_MAX; ++b)
+		if (SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)b))
+			return true;
+
+	// raw buttons too: grips and trackpad clicks are not standard buttons
+	for (int b = 0; b < SDL_JoystickNumButtons(js->handle); ++b)
+		if (SDL_JoystickGetButton(js->handle, b))
+			return true;
+
+	for (int a = 0; a < SDL_CONTROLLER_AXIS_MAX; ++a)
+	{
+		int value = SDL_GameControllerGetAxis(pad, (SDL_GameControllerAxis)a);
+		if (value > 8000 || value < -8000)
+			return true;
+	}
+
+	// a finger on a trackpad (Steam turns the right one into a mouse)
+	for (int t = 0; t < SDL_GameControllerGetNumTouchpads(pad); ++t)
+	{
+		for (int f = 0; f < SDL_GameControllerGetNumTouchpadFingers(pad, t); ++f)
+		{
+			Uint8 down = 0;
+			if (SDL_GameControllerGetTouchpadFinger(pad, t, f, &down, NULL, NULL, NULL) == 0 && down)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+bool joystick_filter_steam_input(void)
+{
+	if (ignore_joystick || !valve_pad_connected || launched_by_steam() || !steam_running())
+		return false;
+
+	if (!steam_filter_logged)
+	{
+		logInfo("Steam is open: ignoring keyboard/mouse input that comes with Steam Controller input.");
+		steam_filter_logged = true;
+	}
+
+	SDL_JoystickUpdate();
+
+	Uint32 now = SDL_GetTicks();
+	for (int j = 0; j < joysticks; j++)
+	{
+		if (joystick[j].controller != NULL &&
+		    SDL_JoystickGetVendor(joystick[j].handle) == 0x28de &&
+		    valve_pad_in_use(&joystick[j]))
+		{
+			valve_pad_last_active = now;
+			valve_pad_ever_active = true;
+			return true;
+		}
+	}
+
+	return valve_pad_ever_active && !SDL_TICKS_PASSED(now, valve_pad_last_active + steam_filter_grace);
+}
+
 bool joystick_take_lost(void)
 {
 	bool lost = joystick_lost;

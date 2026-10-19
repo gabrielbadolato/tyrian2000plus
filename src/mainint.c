@@ -74,6 +74,7 @@ JE_boolean jumpSection;
 JE_boolean useLastBank; /* See if I want to use the last 16 colors for DisplayText */
 
 bool pause_pressed = false, ingamemenu_pressed = false;
+static bool autoFireWaitRelease = false;  // Auto Fire: ignore a fire press still held from the pause menu
 
 /* Draws a message at the bottom text window on the playing screen */
 void JE_drawTextWindow(const char *text)
@@ -1407,6 +1408,9 @@ void JE_doInGameSetup(void)
 			playerEndLevel = true;
 		}
 		quitRequested = false;
+
+		// The button that closed the menu (A is also fire) may still be held.
+		autoFireWaitRelease = true;
 
 		keysactive[SDL_SCANCODE_ESCAPE] = false;
 
@@ -3808,6 +3812,13 @@ redo:
 				{
 					static bool autoFiring[2], fireWasHeld[2];
 					const int p = this_player == &player[1] ? 1 : 0;
+
+					// After the pause menu, a fire press counts only once fire is released.
+					if (autoFireWaitRelease)
+					{
+						fireWasHeld[0] = fireWasHeld[1] = true;
+						autoFireWaitRelease = false;
+					}
 
 					if (button[0] && !fireWasHeld[p])
 						autoFiring[p] = !autoFiring[p];

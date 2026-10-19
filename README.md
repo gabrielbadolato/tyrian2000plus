@@ -54,7 +54,9 @@ Obrigado por jogar!
 
 ## Instalação
 
-Os pacotes não trazem os dados do jogo. Baixe-os à parte (são gratuitos):
+Os pacotes das versões publicadas (página Releases do GitHub e itch.io) já
+trazem os dados originais do jogo: é só descompactar e jogar (pule o passo 2).
+Se a pasta `data` estiver vazia, baixe os dados à parte (são gratuitos):
 <https://www.camanis.net/tyrian/tyrian2000.zip>
 
 ### Windows
@@ -69,7 +71,8 @@ Os pacotes não trazem os dados do jogo. Baixe-os à parte (são gratuitos):
 
 1. No Modo Desktop, descompacte o `Tyrian2000Plus-linux-x86_64.tar.gz`
    (botão direito > Extrair aqui) numa pasta sua, por exemplo `/home/deck/Jogos`.
-2. Copie os dados do jogo para a pasta `data`, como no passo 2 do Windows.
+2. Se a pasta `data` estiver vazia, copie os dados do jogo para ela, como no
+   passo 2 do Windows.
 3. Na Steam: "Adicionar um jogo" > "Adicionar um jogo não-Steam" > "Procurar",
    escolha o arquivo `Tyrian2000Plus` e confirme.
 4. Volte ao Modo de Jogo e abra o Tyrian2000Plus pela biblioteca.

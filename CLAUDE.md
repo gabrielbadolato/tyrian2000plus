@@ -44,7 +44,7 @@ pequenas e podem seguir as regras acima normalmente.
 - Windows x64: `./make_windows.sh` (no Linux) cross-compila com llvm-mingw +
   SDL2 2.32 e SDL2_net 2.4, baixando tudo em `build/win`, e gera
   `dist/Tyrian2000Plus-windows-x64.zip` (Tyrian2000Plus.exe + SDL2.dll e SDL3.dll do sdl2-compat +
-  SDL2_net.dll + LEIA-ME + licenças). O Makefile embute ícone e manifesto
+  SDL2_net.dll + LEIA-ME, LEIA-ME-COMPLETO e README.txt (os READMEs) + licenças). O Makefile embute ícone e manifesto
   UTF-8 de `visualc/resources.rc`.
 - Linux x86_64 / Steam Deck: `./make_linux.sh` compila SDL2 estático (só
   depende da glibc) e gera `dist/Tyrian2000Plus-linux-x86_64.tar.gz`.

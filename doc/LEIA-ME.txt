@@ -4,6 +4,7 @@ TYRIAN 2000+
 Projeto de fa, nao oficial. Tyrian foi criado pela Eclipse Software e
 publicado pela Epic MegaGames em 1995; Jason Emery liberou o jogo como
 freeware. Veja tyrian-freeware-license.txt.
+Guia completo: LEIA-ME-COMPLETO.txt. English: README.txt.
 
 COMO RODAR
 Se a pasta "data" ja tem os arquivos do jogo (pacotes das versoes publicadas,

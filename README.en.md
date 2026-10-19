@@ -1,0 +1,175 @@
+# Tyrian2000 Plus
+
+[Português](README.md) | **English**
+
+Tyrian 2000 with modern controllers, for Windows, Linux and the Steam Deck.
+
+**A free, unofficial fan project.** It is not made, sold or endorsed by
+Eclipse Software, Jason Emery or the original publishers. The game data is the
+original freeware release, unchanged.
+
+## What it is
+
+Tyrian is a vertical scrolling shooter released in 1995. It is set in the year
+20,031: you are Trent Hawkins, a fighter pilot out to save the galaxy. The game
+was made by Eclipse Software and published by Epic MegaGames. Tyrian 2000
+(1999) added a fifth episode. Jason Emery later released the game as freeware.
+
+Tyrian2000 Plus is based on [OpenTyrian2000](https://github.com/KScl/opentyrian2000),
+which in turn comes from [OpenTyrian](https://github.com/opentyrian/opentyrian),
+the open-source port of Tyrian. What this version adds:
+
+- Modern controller support: Xbox, PlayStation, Switch Pro, Steam Controller
+  and others, with rumble and hot-plugging.
+- A drawing of the controller showing what each button does (Controller Map).
+- Auto Fire.
+- Controller button names in the help screens.
+- More graphics options, including in the pause menu, and a Sharp Bilinear
+  filter.
+- Ready-to-play builds for Windows, Linux and the Steam Deck.
+- An About screen with the story of the project and the credits.
+
+## A note from Gabriel
+
+Hi! I'm Gabriel Badolato. I'm not a game developer, and I'm just a beginner at
+programming. Tyrian marked my childhood, and I made this project so I could
+play it better today, with modern controllers and screens. I built it with a
+lot of help from Claude, an AI assistant made by Anthropic. Thank you for
+playing!
+
+## Installation
+
+The packages do not include the game data. Download it separately (it's free):
+<https://www.camanis.net/tyrian/tyrian2000.zip>
+
+### Windows
+
+1. Download `Tyrian2000Plus-windows-x64.zip` and extract it to a folder.
+2. Extract `tyrian2000.zip` and copy **all** the files inside its `tyrian2000`
+   folder (tyrian.hdt, tyrian1.lvl, music.mus etc.) into the `data` folder,
+   next to `Tyrian2000Plus.exe`.
+3. Plug in your controller and run `Tyrian2000Plus.exe`.
+
+### Steam Deck and Linux
+
+1. In Desktop Mode, extract `Tyrian2000Plus-linux-x86_64.tar.gz` (right click >
+   Extract here) to a folder, for example `/home/deck/Games`.
+2. Copy the game data into the `data` folder, as in step 2 for Windows.
+3. In Steam: "Add a Game" > "Add a Non-Steam Game" > "Browse", pick the
+   `Tyrian2000Plus` file and confirm.
+4. Go back to Game Mode and start Tyrian2000Plus from your library.
+
+`Tyrian2000Plus.png` can be used as the icon in Steam. The
+`atualizar-tyrian.sh` script does steps 1 and 2 for you and adds a menu
+shortcut.
+
+**Deck screen:** the default is "Fit 4:3", true to 1995 monitors. For full
+screen with sharp pixels, use Setup > Graphics > Scaling Mode > "Integer". The
+game runs at 35 frames per second: on the Deck OLED, set the refresh rate to
+70 Hz (per-game profile); on the Deck LCD, leave it at 60 Hz. Don't turn on
+Steam's frame limit.
+
+## Controls
+
+| Controller (Xbox)     | Action                              |
+|-----------------------|-------------------------------------|
+| Left stick or D-pad   | Move the ship                       |
+| A or RT               | Fire                                |
+| Y                     | Change the rear weapon mode         |
+| LB or LT              | Left sidekick                       |
+| RB or X               | Right sidekick                      |
+| Start (Menu)          | Game menu                           |
+| Back (View)           | Pause                               |
+
+In menus, A confirms and B goes back. On PlayStation and Switch Pro
+controllers, the buttons in the same positions do the same thing. Buttons can
+be changed in Setup > Controls > Controller... > Buttons.
+
+Keyboard: arrows move, Space fires, Enter changes the rear weapon, Ctrl and
+Alt fire the sidekicks, Esc opens the menu, P pauses, Alt+Enter toggles full
+screen, F1 shows help and F11 changes the brightness.
+
+## Where each option is
+
+- **Title screen > About:** what the game is, where it came from, the credits
+  and the links (Enter or A opens a link in your browser).
+- **Title screen > Setup:** Graphics, Sound, Controls, Jukebox and About.
+- **Setup > Controls:** keyboard, controller, mouse, Auto Fire and the
+  Controller Map.
+- **Ship menu (between levels) > Options > Setup...:** the same Setup.
+- **During a level, Start or Esc:** volume, detail level, game speed, Auto
+  Fire and Graphics... (full screen, scaling, Sharp Bilinear, VSync and
+  brightness, applied right away).
+- **Setup > About:** the same About screen, to see it in the middle of a
+  saved game.
+
+## Steam Controller tips
+
+- On Windows, the game reads the Steam Controller directly, without Steam:
+  buttons, button names and rumble all work.
+- With Steam open, Steam also turns the controller into a keyboard and mouse.
+  The game notices this and ignores that keyboard and mouse while you use the
+  controller.
+- If a button counts twice, or Y opens Steam's on-screen keyboard, **hold the
+  Start button** until Steam shows its notice: that turns off its keyboard and
+  mouse mode.
+- Another option is to **add the game to Steam** as a non-Steam game and start
+  it from your library.
+- On Linux and the Steam Deck, the 2026 Steam Controller only works when the
+  game is started from Steam.
+
+## Problems
+
+The game writes `opentyrian.log` in the game folder (or in
+`%APPDATA%\OpenTyrian2000` on Windows and `~/.config/opentyrian2000` on Linux).
+Please send that file when reporting a problem.
+
+## License
+
+- The program is free software under the GNU General Public License, version 2
+  or later (see `COPYING`). The source code is in this repository.
+- The Tyrian 2000 data is freeware. Jason Emery's license says: *"Feel free to
+  play it all you want and share it with friends."* See
+  `doc/tyrian-freeware-license.txt`.
+- This project is free and always will be.
+
+## Credits
+
+**Tyrian and Tyrian 2000** (from the game's own credits): Eclipse Software.
+Jason Emery (programming, level design and everything else), Alexander Brandon
+(story and music), Andreas Molnar (LOUDNESS sound system), Daniel Cook (game
+and interface artwork), Cayenne Mandua (Tyrian 2000 artwork), Devon Tackett,
+John Calcagno, Andrew Paquette, Arturo Sinclair, Bruce Hsu, Markus Mueller,
+Susan Aldworth, Nando Eweg, producer Robert Allen and betatesters Aaron
+Hartman, Lee Cheramie and Andy Lehrfeld. The full list is in the game's About
+screen.
+
+**OpenTyrian:** The OpenTyrian Development Team and contributors: Carl Reinke,
+Yuri Kunde Schlesner, mvcixT, syntaxglitch, Alex Rodionov, Stephan T. Lavavej,
+emacs.hacker, Miro Kropacek, Alexandre Detiste, sweetlilmre, Sander van Dijk,
+a.h.vandijk, qon, Adam Vandenberg, Dmitry Marakasov, Jan Alexander Steffens,
+Jeff Smith, Kane, Pedro Catalão, Renato Alves, Sergii Pylypenko, George
+Rawlinson, mcpusc, norm2782, okkirikomi, Patryk Obara and AshTR.
+
+**OpenTyrian2000:** Kaito Sinclaire (KScl).
+
+**Tyrian2000 Plus:** Gabriel Badolato, with help from Claude (Anthropic).
+
+**Thanks to:** Sam Lantinga and the [SDL](https://www.libsdl.org/) team,
+[camanis.net](https://www.camanis.net/tyrian/) for keeping the freeware data
+available, and the Tyrian fans who kept the game alive.
+
+## Links
+
+- Tyrian2000 Plus: <https://github.com/gabrielbadolato/tyrian2000plus>
+- OpenTyrian2000: <https://github.com/KScl/opentyrian2000>
+- OpenTyrian: <https://github.com/opentyrian/opentyrian>
+- Tyrian 2000 freeware data: <https://www.camanis.net/tyrian/>
+
+## Building
+
+- Windows x64 (from Linux): `./make_windows.sh`
+- Linux x86_64 / Steam Deck: `./make_linux.sh`
+- Tests: `tests/run_tests.sh [game-folder]`
+
+The original OpenTyrian2000 README is in `doc/README-OpenTyrian2000`.

@@ -1,5 +1,7 @@
 # Tyrian2000 Plus
 
+**Português** | [English](README.en.md)
+
 Tyrian 2000 com controles modernos, para Windows, Linux e Steam Deck.
 
 **Projeto de fã, gratuito e não oficial.** Não é feito, vendido nem apoiado

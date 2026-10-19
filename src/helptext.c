@@ -54,7 +54,7 @@ char pName[21][16];                                                      /* [1..
 char miscText[HELPTEXT_MISCTEXT_COUNT][42];                              /* [1..68] of string [41] */
 char miscTextB[HELPTEXT_MISCTEXTB_COUNT][HELPTEXT_MISCTEXTB_SIZE];       /* [1..5] of string [10] */
 char keyName[8][18];                                                     /* [1..8] of string [17] */
-char menuText[7][HELPTEXT_MENUTEXT_SIZE];                                /* [1..7] of string [20] */
+char menuText[8][HELPTEXT_MENUTEXT_SIZE];                                /* [1..7] of string [20], + About */
 char outputs[9][31];                                                     /* [1..9] of string [30] */
 char topicName[6][21];                                                   /* [1..6] of string [20] */
 char mainMenuHelp[HELPTEXT_MAINMENUHELP_COUNT][66];                      /* [1..34] of string [65] */
@@ -324,7 +324,7 @@ void JE_loadHelpText(void)
 
 	/*Main Menu*/
 	readEncryptedString(&file, NULL, 0);
-	for (size_t i = 0; i < COUNTOF(menuText); ++i)
+	for (size_t i = 0; i < 7; ++i)
 		readEncryptedString(&file, menuText[i], sizeof menuText[i]);
 	readEncryptedString(&file, NULL, 0);
 
@@ -332,6 +332,10 @@ void JE_loadHelpText(void)
 	strcpy(menuText[6], menuText[5]);
 	strcpy(menuText[5], menuText[4]);
 	strcpy(menuText[4], "Setup");
+
+	// Tyrian2000 Plus: About before Quit
+	strcpy(menuText[7], menuText[6]);
+	strcpy(menuText[6], "About");
 
 	/*Event text*/
 	readEncryptedString(&file, NULL, 0);

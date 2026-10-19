@@ -87,6 +87,8 @@ F1 mostra a ajuda e F11 muda o brilho.
 
 ## Onde fica cada opção
 
+- **Tela de título > About:** o que é o jogo, de onde veio, os créditos e os
+  links (Enter ou A abre o link no navegador).
 - **Tela de título > Setup:** vídeo (Graphics), som (Sound), controles
   (Controls), Jukebox e About.
 - **Setup > Controls:** teclado, controle, mouse, Auto Fire e o desenho do
@@ -95,8 +97,7 @@ F1 mostra a ajuda e F11 muda o brilho.
 - **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire e
   Graphics... (tela cheia, escala, Sharp Bilinear, VSync e brilho, aplicados
   na hora).
-- **Setup > About:** o que é o jogo, de onde veio, os créditos e os links
-  (Enter ou A abre o link no navegador).
+- **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
 
 ## Dicas do Steam Controller
 
@@ -135,8 +136,8 @@ Jason Emery (programação, design das fases e tudo mais), Alexander Brandon
 (arte do jogo e da interface), Cayenne Mandua (arte do Tyrian 2000), Devon
 Tackett, John Calcagno, Andrew Paquette, Arturo Sinclair, Bruce Hsu, Markus
 Mueller, Susan Aldworth, Nando Eweg, o produtor Robert Allen e os testadores
-Aaron Hartman, Lee Cheramie e Andy Lehrfeld. A lista completa aparece em
-Setup > About.
+Aaron Hartman, Lee Cheramie e Andy Lehrfeld. A lista completa aparece na
+tela About do jogo.
 
 **OpenTyrian:** The OpenTyrian Development Team e colaboradores: Carl Reinke,
 Yuri Kunde Schlesner, mvcixT, syntaxglitch, Alex Rodionov, Stephan T. Lavavej,

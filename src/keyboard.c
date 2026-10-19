@@ -178,6 +178,267 @@ void mouseGetRelativePosition(Sint32 *const out_x, Sint32 *const out_y)
 	mouseWindowYRelative = 0;
 }
 
+static void processSdlEvent(SDL_Event ev)
+{
+	switch (ev.type)
+	{
+		case SDL_WINDOWEVENT:
+			switch (ev.window.event)
+			{
+			case SDL_WINDOWEVENT_FOCUS_LOST:
+				windowHasFocus = false;
+
+				mouseSetRelative(mouseRelativeEnabled);
+				break;
+
+			case SDL_WINDOWEVENT_FOCUS_GAINED:
+				windowHasFocus = true;
+
+				mouseSetRelative(mouseRelativeEnabled);
+				break;
+
+			case SDL_WINDOWEVENT_RESIZED:
+				video_on_win_resize();
+				break;
+			}
+			break;
+
+		case SDL_KEYDOWN:
+			if (ev.key.keysym.mod & KMOD_ALT &&
+			    ev.key.keysym.scancode == SDL_SCANCODE_RETURN)
+			{
+				toggle_fullscreen();
+				break;
+			}
+
+			if (!ev.key.repeat)
+				keysactive[ev.key.keysym.scancode] = true;
+
+			for (size_t i = 0; i < COUNTOF(lordKeySyms); ++i)
+				lordKeySymsDown[i] |= ev.key.keysym.sym == lordKeySyms[i];
+
+			if (keyboardInputsCount < COUNTOF(keyboardInputs))
+			{
+				assert(keyboardInputsBack < COUNTOF(keyboardInputs));
+				KeyboardInput *const input = &keyboardInputs[keyboardInputsBack];
+				input->sym = ev.key.keysym.sym;
+				input->scancode = ev.key.keysym.scancode;
+				input->mod = ev.key.keysym.mod;
+				input->ch = 0;
+				keyboardInputsBack = keyboardInputsBack == COUNTOF(keyboardInputs) - 1 ? 0 : keyboardInputsBack + 1;
+				keyboardInputsCount += 1;
+			}
+
+			mouseInactive = true;
+			break;
+
+		case SDL_KEYUP:
+			keysactive[ev.key.keysym.scancode] = false;
+
+			for (size_t i = 0; i < COUNTOF(lordKeySyms); ++i)
+				lordKeySymsDown[i] &= ev.key.keysym.sym != lordKeySyms[i];
+			break;
+
+		case SDL_TEXTINPUT:
+			for (size_t i = 0; i < COUNTOF(ev.text.text); ++i)
+			{
+				// Decode codepoint from UTF-8.
+				Uint16 cp = (unsigned char)ev.text.text[i];
+				if (cp == 0)
+				{
+					break;
+				}
+				else if (cp < 0x80)
+				{
+					// ASCII.
+				}
+				else if (cp < 0xC0)
+				{
+					// Invalid.
+					continue;
+				}
+				else if (cp < 0xE0)
+				{
+					if (i + 1 >= COUNTOF(ev.text.text))
+						continue;
+
+					cp &= 0x1F;
+					cp = (cp << 6) | (ev.text.text[++i] & 0x3F);
+				}
+				else if (cp < 0xF0)
+				{
+					if (i + 2 >= COUNTOF(ev.text.text))
+						continue;
+
+					cp &= 0x0F;
+					cp = (cp << 6) | (ev.text.text[++i] & 0x3F);
+					cp = (cp << 6) | (ev.text.text[++i] & 0x3F);
+				}
+				else
+				{
+					// Outside the BMP.
+					continue;
+				}
+
+				// Map codepoint to CP437 character.
+				Uint8 ch = 0;
+				if (cp < 0x80)
+				{
+					ch = cp;
+				}
+				else
+				{
+					for (size_t j = 0; j < COUNTOF(ucsMap); ++j)
+					{
+						if (cp == ucsMap[j])
+						{
+							ch = 0x80 + j;
+							break;
+						}
+					}
+
+					if (ch == 0)
+						continue;
+				}
+
+				if (keyboardInputsCount < COUNTOF(keyboardInputs))
+				{
+					assert(keyboardInputsBack < COUNTOF(keyboardInputs));
+					KeyboardInput *const input = &keyboardInputs[keyboardInputsBack];
+					input->sym = -1;  // Text; not a key.
+					input->scancode = -1;  // Text; not a key.
+					input->mod = KMOD_NONE;
+					input->ch = ch;
+					keyboardInputsBack = keyboardInputsBack == COUNTOF(keyboardInputs) - 1 ? 0 : keyboardInputsBack + 1;
+					keyboardInputsCount += 1;
+				}
+			}
+			break;
+
+		case SDL_MOUSEMOTION:
+			mouseX = ev.motion.x;
+			mouseY = ev.motion.y;
+			mapWindowPointToScreen(&mouseX, &mouseY);
+
+			if (mouseRelativeEnabled && windowHasFocus)
+			{
+				mouseWindowXRelative += ev.motion.xrel;
+				mouseWindowYRelative += ev.motion.yrel;
+			}
+
+			// Show system mouse pointer if outside screen.
+			SDL_ShowCursor(mouseX < 0 || mouseX >= vga_width ||
+			               mouseY < 0 || mouseY >= vga_height ? SDL_ENABLE : SDL_DISABLE);
+
+			if (ev.motion.xrel != 0 || ev.motion.yrel != 0)
+			{
+				mouseHasMotionInput = true;
+
+				mouseInactive = false;
+			}
+			break;
+
+		case SDL_MOUSEBUTTONDOWN:
+			mapWindowPointToScreen(&ev.button.x, &ev.button.y);
+
+			if (mouseInputsCount < COUNTOF(mouseInputs))
+			{
+				assert(mouseInputsBack < COUNTOF(mouseInputs));
+				MouseInput *const input = &mouseInputs[mouseInputsBack];
+				input->button = ev.button.button;
+				input->x = ev.button.x;
+				input->y = ev.button.y;
+				mouseInputsBack = mouseInputsBack == COUNTOF(mouseInputs) - 1 ? 0 : mouseInputsBack + 1;
+				mouseInputsCount += 1;
+			}
+
+			mouseButtonsDown |= SDL_BUTTON(ev.button.button);
+
+			mouseInactive = false;
+			break;
+
+		case SDL_MOUSEBUTTONUP:
+			mapWindowPointToScreen(&ev.button.x, &ev.button.y);
+
+			mouseButtonsDown &= ~SDL_BUTTON(ev.button.button);
+			break;
+
+		case SDL_QUIT:
+			exit(0);
+			break;
+	}
+}
+
+// Steam filter (see joystick.c): a key press from Steam can arrive a moment
+// before SDL reads the same press from the controller.  While the filter
+// could apply, key events wait a few milliseconds; a press is dropped if the
+// controller changed meanwhile.
+#define KEY_DELAY_MS 60
+static SDL_Event delayedKeys[64];
+static Uint32 delayedKeyTicks[64];
+static size_t delayedKeysFront, delayedKeysCount;
+
+static void dropSteamKey(SDL_Scancode scancode)
+{
+	if (!steamDroppedKeys[scancode])
+	{
+		steamDroppedKeys[scancode] = true;
+		steamDroppedKeyCount += 1;
+	}
+	joystick_note_filtered(true);
+}
+
+// returns false if the event was dropped
+static bool keyEventPasses(const SDL_Event *ev, bool filterSteam)
+{
+	if (ev->type == SDL_KEYDOWN && ev->key.windowID != JOYSTICK_PUSHED_KEY)
+	{
+		if (filterSteam || (ev->key.repeat && steamDroppedKeys[ev->key.keysym.scancode]))
+		{
+			dropSteamKey(ev->key.keysym.scancode);
+			return false;
+		}
+	}
+	else if (ev->type == SDL_TEXTINPUT)
+	{
+		if (filterSteam || steamDroppedKeyCount > 0)
+		{
+			joystick_note_filtered(true);
+			return false;
+		}
+	}
+	else if (ev->type == SDL_KEYUP && steamDroppedKeys[ev->key.keysym.scancode])
+	{
+		steamDroppedKeys[ev->key.keysym.scancode] = false;
+		steamDroppedKeyCount -= 1;
+	}
+	return true;
+}
+
+static void releaseDelayedKeys(bool all)
+{
+	Uint32 now = SDL_GetTicks();
+	while (delayedKeysCount > 0)
+	{
+		const SDL_Event *ev = &delayedKeys[delayedKeysFront];
+		Uint32 ticks = delayedKeyTicks[delayedKeysFront];
+		if (!all && !SDL_TICKS_PASSED(now, ticks + KEY_DELAY_MS))
+			break;
+
+		// did the controller change after this key arrived?
+		bool fromSteam = ev->type == SDL_KEYDOWN && ev->key.windowID != JOYSTICK_PUSHED_KEY &&
+		                 joystick_steam_filter_enabled() &&
+		                 !SDL_TICKS_PASSED(ticks, joystick_valve_pad_last_change() + 1);
+		if (fromSteam)
+			dropSteamKey(ev->key.keysym.scancode);
+		else if (keyEventPasses(ev, false))
+			processSdlEvent(*ev);
+
+		delayedKeysFront = (delayedKeysFront + 1) % COUNTOF(delayedKeys);
+		delayedKeysCount -= 1;
+	}
+}
+
 void handleSdlEvents(void)
 {
 	SDL_Event ev;
@@ -188,13 +449,7 @@ void handleSdlEvents(void)
 
 	while (SDL_PollEvent(&ev))
 	{
-		if (ev.type == SDL_KEYDOWN && ev.key.windowID != JOYSTICK_PUSHED_KEY &&
-		    ev.key.repeat && steamDroppedKeys[ev.key.keysym.scancode])
-		{
-			// Steam repeats a held key while the controller stays still
-			joystick_note_filtered(true);
-			continue;
-		}
+		bool keyEvent = ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP || ev.type == SDL_TEXTINPUT;
 
 		if ((ev.type == SDL_KEYDOWN && ev.key.windowID != JOYSTICK_PUSHED_KEY) ||
 		    ev.type == SDL_TEXTINPUT ||
@@ -202,211 +457,39 @@ void handleSdlEvents(void)
 		{
 			if (filterSteam < 0)
 				filterSteam = joystick_filter_steam_input();
-			if (filterSteam || (ev.type == SDL_TEXTINPUT && steamDroppedKeyCount > 0))
+		}
+
+		if (keyEvent)
+		{
+			if (!keyEventPasses(&ev, filterSteam > 0))
+				continue;
+
+			// wait a moment in case the controller reports the same press
+			if (joystick_steam_filter_enabled() &&
+			    (delayedKeysCount > 0 || (ev.type == SDL_KEYDOWN && ev.key.windowID != JOYSTICK_PUSHED_KEY)))
 			{
-				if (ev.type == SDL_KEYDOWN && !steamDroppedKeys[ev.key.keysym.scancode])
-				{
-					steamDroppedKeys[ev.key.keysym.scancode] = true;
-					steamDroppedKeyCount += 1;
-				}
-				joystick_note_filtered(ev.type == SDL_KEYDOWN || ev.type == SDL_TEXTINPUT);
+				if (delayedKeysCount == COUNTOF(delayedKeys))
+					releaseDelayedKeys(true);
+				size_t back = (delayedKeysFront + delayedKeysCount) % COUNTOF(delayedKeys);
+				delayedKeys[back] = ev;
+				delayedKeyTicks[back] = SDL_GetTicks();
+				delayedKeysCount += 1;
 				continue;
 			}
 		}
-
-		if (ev.type == SDL_KEYUP && steamDroppedKeys[ev.key.keysym.scancode])
+		else if (filterSteam > 0 && (ev.type == SDL_MOUSEMOTION || ev.type == SDL_MOUSEBUTTONDOWN))
 		{
-			steamDroppedKeys[ev.key.keysym.scancode] = false;
-			steamDroppedKeyCount -= 1;
+			joystick_note_filtered(false);
+			continue;
 		}
 
-		switch (ev.type)
-		{
-			case SDL_WINDOWEVENT:
-				switch (ev.window.event)
-				{
-				case SDL_WINDOWEVENT_FOCUS_LOST:
-					windowHasFocus = false;
+		processSdlEvent(ev);
+	}
 
-					mouseSetRelative(mouseRelativeEnabled);
-					break;
-
-				case SDL_WINDOWEVENT_FOCUS_GAINED:
-					windowHasFocus = true;
-
-					mouseSetRelative(mouseRelativeEnabled);
-					break;
-
-				case SDL_WINDOWEVENT_RESIZED:
-					video_on_win_resize();
-					break;
-				}
-				break;
-
-			case SDL_KEYDOWN:
-				if (ev.key.keysym.mod & KMOD_ALT &&
-				    ev.key.keysym.scancode == SDL_SCANCODE_RETURN)
-				{
-					toggle_fullscreen();
-					break;
-				}
-
-				if (!ev.key.repeat)
-					keysactive[ev.key.keysym.scancode] = true;
-
-				for (size_t i = 0; i < COUNTOF(lordKeySyms); ++i)
-					lordKeySymsDown[i] |= ev.key.keysym.sym == lordKeySyms[i];
-
-				if (keyboardInputsCount < COUNTOF(keyboardInputs))
-				{
-					assert(keyboardInputsBack < COUNTOF(keyboardInputs));
-					KeyboardInput *const input = &keyboardInputs[keyboardInputsBack];
-					input->sym = ev.key.keysym.sym;
-					input->scancode = ev.key.keysym.scancode;
-					input->mod = ev.key.keysym.mod;
-					input->ch = 0;
-					keyboardInputsBack = keyboardInputsBack == COUNTOF(keyboardInputs) - 1 ? 0 : keyboardInputsBack + 1;
-					keyboardInputsCount += 1;
-				}
-
-				mouseInactive = true;
-				break;
-
-			case SDL_KEYUP:
-				keysactive[ev.key.keysym.scancode] = false;
-
-				for (size_t i = 0; i < COUNTOF(lordKeySyms); ++i)
-					lordKeySymsDown[i] &= ev.key.keysym.sym != lordKeySyms[i];
-				break;
-
-			case SDL_TEXTINPUT:
-				for (size_t i = 0; i < COUNTOF(ev.text.text); ++i)
-				{
-					// Decode codepoint from UTF-8.
-					Uint16 cp = (unsigned char)ev.text.text[i];
-					if (cp == 0)
-					{
-						break;
-					}
-					else if (cp < 0x80)
-					{
-						// ASCII.
-					}
-					else if (cp < 0xC0)
-					{
-						// Invalid.
-						continue;
-					}
-					else if (cp < 0xE0)
-					{
-						if (i + 1 >= COUNTOF(ev.text.text))
-							continue;
-
-						cp &= 0x1F;
-						cp = (cp << 6) | (ev.text.text[++i] & 0x3F);
-					}
-					else if (cp < 0xF0)
-					{
-						if (i + 2 >= COUNTOF(ev.text.text))
-							continue;
-
-						cp &= 0x0F;
-						cp = (cp << 6) | (ev.text.text[++i] & 0x3F);
-						cp = (cp << 6) | (ev.text.text[++i] & 0x3F);
-					}
-					else
-					{
-						// Outside the BMP.
-						continue;
-					}
-
-					// Map codepoint to CP437 character.
-					Uint8 ch = 0;
-					if (cp < 0x80)
-					{
-						ch = cp;
-					}
-					else
-					{
-						for (size_t j = 0; j < COUNTOF(ucsMap); ++j)
-						{
-							if (cp == ucsMap[j])
-							{
-								ch = 0x80 + j;
-								break;
-							}
-						}
-
-						if (ch == 0)
-							continue;
-					}
-
-					if (keyboardInputsCount < COUNTOF(keyboardInputs))
-					{
-						assert(keyboardInputsBack < COUNTOF(keyboardInputs));
-						KeyboardInput *const input = &keyboardInputs[keyboardInputsBack];
-						input->sym = -1;  // Text; not a key.
-						input->scancode = -1;  // Text; not a key.
-						input->mod = KMOD_NONE;
-						input->ch = ch;
-						keyboardInputsBack = keyboardInputsBack == COUNTOF(keyboardInputs) - 1 ? 0 : keyboardInputsBack + 1;
-						keyboardInputsCount += 1;
-					}
-				}
-				break;
-
-			case SDL_MOUSEMOTION:
-				mouseX = ev.motion.x;
-				mouseY = ev.motion.y;
-				mapWindowPointToScreen(&mouseX, &mouseY);
-
-				if (mouseRelativeEnabled && windowHasFocus)
-				{
-					mouseWindowXRelative += ev.motion.xrel;
-					mouseWindowYRelative += ev.motion.yrel;
-				}
-
-				// Show system mouse pointer if outside screen.
-				SDL_ShowCursor(mouseX < 0 || mouseX >= vga_width ||
-				               mouseY < 0 || mouseY >= vga_height ? SDL_ENABLE : SDL_DISABLE);
-
-				if (ev.motion.xrel != 0 || ev.motion.yrel != 0)
-				{
-					mouseHasMotionInput = true;
-
-					mouseInactive = false;
-				}
-				break;
-
-			case SDL_MOUSEBUTTONDOWN:
-				mapWindowPointToScreen(&ev.button.x, &ev.button.y);
-
-				if (mouseInputsCount < COUNTOF(mouseInputs))
-				{
-					assert(mouseInputsBack < COUNTOF(mouseInputs));
-					MouseInput *const input = &mouseInputs[mouseInputsBack];
-					input->button = ev.button.button;
-					input->x = ev.button.x;
-					input->y = ev.button.y;
-					mouseInputsBack = mouseInputsBack == COUNTOF(mouseInputs) - 1 ? 0 : mouseInputsBack + 1;
-					mouseInputsCount += 1;
-				}
-
-				mouseButtonsDown |= SDL_BUTTON(ev.button.button);
-
-				mouseInactive = false;
-				break;
-
-			case SDL_MOUSEBUTTONUP:
-				mapWindowPointToScreen(&ev.button.x, &ev.button.y);
-
-				mouseButtonsDown &= ~SDL_BUTTON(ev.button.button);
-				break;
-
-			case SDL_QUIT:
-				exit(0);
-				break;
-		}
+	if (delayedKeysCount > 0)
+	{
+		joystick_filter_steam_input();  // notices controller changes since the keys arrived
+		releaseDelayedKeys(!joystick_steam_filter_enabled());
 	}
 }
 

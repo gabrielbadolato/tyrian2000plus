@@ -3236,7 +3236,7 @@ static bool drawUpdateNotice(SDL_Surface *surface)
 
 	char text[64];
 	snprintf(text, sizeof(text), "%s is out! See About.", version);
-	drawFontHvShadowAligned(surface, 318, 192, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, false, 1);
+	drawFontHvFullShadowAligned(surface, 318, 192, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, true, 1);  // black outline: readable on the light and dark parts
 	return true;
 }
 

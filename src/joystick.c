@@ -677,9 +677,25 @@ static Uint32 valve_pad_state_hash(const Joystick *js, Uint32 hash)
 	return hash;
 }
 
+// true when Steam may be turning a directly read Valve controller into keyboard/mouse
+bool joystick_steam_filter_enabled(void)
+{
+	return !ignore_joystick && valve_pad_connected && !launched_by_steam() && steam_running();
+}
+
+Uint32 joystick_valve_pad_last_change(void)
+{
+	return valve_pad_last_active;
+}
+
+bool joystick_valve_pad_changed_within(Uint32 ms)
+{
+	return valve_pad_ever_active && !SDL_TICKS_PASSED(SDL_GetTicks(), valve_pad_last_active + ms);
+}
+
 bool joystick_filter_steam_input(void)
 {
-	if (ignore_joystick || !valve_pad_connected || launched_by_steam() || !steam_running())
+	if (!joystick_steam_filter_enabled())
 		return false;
 
 	if (!steam_filter_logged)

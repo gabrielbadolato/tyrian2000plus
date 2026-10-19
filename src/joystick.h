@@ -85,6 +85,9 @@ void poll_joysticks(void);
 void check_joystick_hotplug(void);
 bool joystick_take_lost(void);
 bool joystick_filter_steam_input(void);
+bool joystick_steam_filter_enabled(void);
+Uint32 joystick_valve_pad_last_change(void);
+bool joystick_valve_pad_changed_within(Uint32 ms);
 void joystick_note_filtered(bool keyboard);
 
 // windowID of the key events push_key() sends for controller input

@@ -12,8 +12,13 @@ cd "$(dirname "$0")/.."
 OUT=build/tests
 mkdir -p "$OUT/obj"
 
+# The tests need SDL 2.24 or newer (virtual joysticks).  Prefer the static SDL
+# built by make_linux.sh, since distro SDL2 can be older than that.
+if [ -f build/sdl/lib/pkgconfig/sdl2.pc ]; then
+    export PKG_CONFIG_PATH="$PWD/build/sdl/lib/pkgconfig"
+fi
 CFLAGS="-std=iso9899:1999 -O1 -g -DTARGET_UNIX -DNDEBUG $(pkg-config --cflags sdl2)"
-LIBS="$(pkg-config --libs sdl2) -lm"
+LIBS="$(pkg-config --static --libs sdl2) -lm"
 
 for f in src/*.c; do
     o="$OUT/obj/$(basename "${f%.c}").o"

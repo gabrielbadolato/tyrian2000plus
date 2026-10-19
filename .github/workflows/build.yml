@@ -27,8 +27,8 @@ jobs:
         with:
           fetch-depth: 0   # git describe --tags for the version string
       - name: Install dependencies
-        # The distro libsdl2-dev is only for the -Werror compile check and the
-        # tests.  The release links a static SDL2 built from source
+        # The distro libsdl2-dev is only for the -Werror compile check.  The
+        # release links a static SDL2 built from source
         # (make_linux.sh), so the -dev packages after it are HEADERS for SDL's
         # dlopen'ed backends - nothing from them is linked into the binary.
         run: |
@@ -44,8 +44,6 @@ jobs:
         run: |
           make -j"$(nproc)" debug
           make clean
-      - name: Tests
-        run: tests/run_tests.sh
       - name: Cache static SDL2 build
         uses: actions/cache@v6
         with:
@@ -53,6 +51,8 @@ jobs:
           key: sdl2-static-x86_64-${{ hashFiles('make_linux.sh') }}
       - name: Build and package (make_linux.sh, static SDL2)
         run: ./make_linux.sh
+      - name: Tests (against the static SDL2)
+        run: tests/run_tests.sh
       - name: Verify the package is self-contained
         # In a bare Debian container: no SDL, no libdecor, nothing installed.
         # The runner itself proves nothing here - it has all of those, and a

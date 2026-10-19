@@ -265,6 +265,10 @@ static void loadOpenTyrianConfig(void)
 		bool vsync;
 		if (config_get_bool_option(section, "vsync", &vsync))
 			vsync_enabled = vsync;
+
+		bool sharpBilinear;
+		if (config_get_bool_option(section, "sharp_bilinear", &sharpBilinear))
+			sharp_bilinear_enabled = sharpBilinear;
 	}
 
 	section = config_find_section(config, "gameplay", NULL);
@@ -328,6 +332,8 @@ static void saveOpenTyrianConfig(void)
 	config_set_string_option(section, "scaling_mode", scaling_mode_names[scaling_mode]);
 
 	config_set_bool_option(section, "vsync", vsync_enabled, OFF_ON);
+
+	config_set_bool_option(section, "sharp_bilinear", sharp_bilinear_enabled, OFF_ON);
 
 	section = config_find_or_add_section(config, "gameplay", NULL);
 	if (section == NULL)

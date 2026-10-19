@@ -157,9 +157,13 @@ static void deinit_prescale_texture(void)
 	prescale_w = prescale_h = 0;
 }
 
+// the prescale texture could not be made; draw without it until the option is set again
+static bool prescale_failed = false;
+
 void set_sharp_bilinear(bool enabled)
 {
 	sharp_bilinear_enabled = enabled;
+	prescale_failed = false;
 
 	if (!enabled)
 		deinit_prescale_texture();
@@ -414,7 +418,7 @@ static void calc_dst_render_rect(SDL_Surface *const src_surface, SDL_Rect *const
 /** Returns the texture to draw at dst_rect: the scaler output, or its sharp bilinear prescale. */
 static SDL_Texture *sharp_bilinear_prescale(const SDL_Rect *const dst_rect)
 {
-	if (!sharp_bilinear_enabled)
+	if (!sharp_bilinear_enabled || prescale_failed)
 		return main_window_texture;
 
 	int tex_w, tex_h;
@@ -452,7 +456,7 @@ static SDL_Texture *sharp_bilinear_prescale(const SDL_Rect *const dst_rect)
 		if (prescale_texture == NULL)
 		{
 			logWarn("Failed to create sharp bilinear texture (%dx%d): %s", w, h, SDL_GetError());
-			sharp_bilinear_enabled = false;
+			prescale_failed = true;  // not saved: the setting stays as the player chose
 			return main_window_texture;
 		}
 		SDL_SetTextureScaleMode(prescale_texture, SDL_ScaleModeLinear);

@@ -17,7 +17,7 @@ mkdir -p "$OUT/obj"
 if [ -f build/sdl/lib/pkgconfig/sdl2.pc ]; then
     export PKG_CONFIG_PATH="$PWD/build/sdl/lib/pkgconfig"
 fi
-CFLAGS="-std=iso9899:1999 -O1 -g -DTARGET_UNIX -DNDEBUG $(pkg-config --cflags sdl2)"
+CFLAGS="-std=iso9899:1999 -O1 -g -DTARGET_UNIX $(pkg-config --cflags sdl2)"
 LIBS="$(pkg-config --static --libs sdl2) -lm"
 
 for f in src/*.c; do

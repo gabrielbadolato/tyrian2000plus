@@ -891,6 +891,36 @@ static void writeT2KHighScores(MemWriter *writer)
 
 static bool decryptSaveData(Uint8 *data);
 
+// copies an unreadable tyrian.sav to tyrian.sav.bak before it is replaced
+static void backUpInvalidSaves(void)
+{
+	static const char *const backupFilename = "tyrian.sav.bak";
+
+	File file = userFileOpen(tyrianSaveFilename, "rb");
+	if (file.error)
+		return;
+
+	static Uint8 data[64 * 1024];  // tyrian.sav is about 4 KB
+	const size_t size = fileReadAtMost(&file, data, sizeof data);
+	fileClose(&file);
+	if (size == 0)
+		return;
+
+	File backup = userFileOpen(backupFilename, "wb");
+	if (!backup.error)
+	{
+		fileWrite(&backup, data, size);
+		fileFlush(&backup);
+	}
+
+	if (backup.error)
+		logError("Failed to back up '%s' to '%s': %s", tyrianSaveFilename, backupFilename, fileGetError(&backup));
+	else
+		logWarn("Kept a copy of the unreadable '%s' as '%s'.", tyrianSaveFilename, backupFilename);
+
+	fileClose(&backup);
+}
+
 void loadSaves(void)
 {
 	bool invalid = false;
@@ -970,6 +1000,9 @@ void loadSaves(void)
 	if (invalid)
 	{
 		logWarn("'%s' is invalid or missing.", tyrianSaveFilename);
+
+		if (userFileExists(tyrianSaveFilename))
+			backUpInvalidSaves();
 
 		memset(saveFiles, 0, sizeof(saveFiles));
 

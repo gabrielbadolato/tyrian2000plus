@@ -75,6 +75,14 @@ JE_boolean useLastBank; /* See if I want to use the last 16 colors for DisplayTe
 
 bool pause_pressed = false, ingamemenu_pressed = false;
 static bool autoFireWaitRelease = false;  // Auto Fire: ignore a fire press still held from the pause menu
+static bool autoFiring[2], fireWasHeld[2];  // Auto Fire: per player
+
+// stops Auto Fire, so a level does not start firing on its own
+void resetAutoFire(void)
+{
+	autoFiring[0] = autoFiring[1] = false;
+	autoFireWaitRelease = true;
+}
 
 /* Draws a message at the bottom text window on the playing screen */
 void JE_drawTextWindow(const char *text)
@@ -3527,6 +3535,9 @@ void JE_pauseGame(void)
 
 	VGAScreen = temp_surface; /* side-effect of game_screen */
 
+	// The button that ended the pause (A is also fire) may still be held.
+	autoFireWaitRelease = true;
+
 	mouseSetRelative(true);
 }
 
@@ -3808,9 +3819,9 @@ redo:
 				}
 
 				// Auto Fire: each press of the fire button starts or stops constant fire.
-				if (autoFireToggle && !playDemo && !constantPlay)
+				// Not while recording a demo: the demo stores the keys as pressed.
+				if (autoFireToggle && !playDemo && !recordDemo && !constantPlay)
 				{
-					static bool autoFiring[2], fireWasHeld[2];
 					const int p = this_player == &player[1] ? 1 : 0;
 
 					// After the pause menu, a fire press counts only once fire is released.
@@ -3824,6 +3835,11 @@ redo:
 						autoFiring[p] = !autoFiring[p];
 					fireWasHeld[p] = button[0];
 					button[0] = autoFiring[p];
+				}
+				else
+				{
+					// turning the option back on later must not resume firing
+					autoFiring[0] = autoFiring[1] = false;
 				}
 
 				if (smoothies[9-1])

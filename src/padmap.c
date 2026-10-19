@@ -422,6 +422,11 @@ static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Jo
 		break;
 	}
 
+	// custom layouts can give a button long action lists; keep them on screen
+	const int wMax = align == ALIGN_RIGHT ? xText - 1 : 320 - 1 - xText;
+	for (size_t len = strlen(actions); len > 4 && JE_textWidth(actions, FONT_SMALL) > wMax; --len)
+		strcpy(&actions[len - 4], "...");
+
 	if (control->side == SIDE_TOP_LEFT || control->side == SIDE_TOP_RIGHT)
 		drawLeader(surface, xLineStart, y + 18, xLineStart, y + 18, control->xAnchor, control->yAnchor);
 	else
@@ -580,6 +585,18 @@ void controllerMapScreen(int j)
 		if (done)
 		{
 			JE_playSampleNum(S_SPRING);
+
+			// Wait for B to be let go: while held it keeps sending Esc, which
+			// would also leave the menu this screen returns to.
+			while (anyGamepadButton(SDL_CONTROLLER_BUTTON_B))
+			{
+				setFrameCount(1);
+				waitUntilElapsed();
+				while (keyboardGetInput(&keyboardInput))
+					;
+			}
+			while (keyboardGetInput(&keyboardInput))
+				;
 			return;
 		}
 	}

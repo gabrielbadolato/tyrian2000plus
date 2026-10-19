@@ -87,7 +87,11 @@ ter entrada sempre "apertada"; o log registra o que foi ignorado), só quando a
 Steam está rodando e não abriu o jogo. Nesse modo o X abre o teclado virtual da
 Steam (janela dela, o jogo não bloqueia); segurar Start troca a Steam para o
 action set Gamepad. Enquanto o filtro descartou algo nos últimos 15 s
-(`joystick_steam_desktop_active()`), a tela de título mostra esse lembrete. O Linux
+(`joystick_steam_desktop_active()`), a tela de título mostra esse lembrete.
+Com o filtro ligado, Start só vale como toque rápido, ao soltar (< 600 ms,
+`pad_button()`), para segurar Start não mexer nos menus. O mouse que a Steam
+gera dos trackpads passa (o jogo não lê os trackpads); só é barrado quando
+botões, sticks ou gatilhos mudaram. O Linux
 continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
 está explicado no `README.md` (que vai no pacote como LEIA-ME.txt).
 

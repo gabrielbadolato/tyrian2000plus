@@ -376,6 +376,7 @@ static void processSdlEvent(SDL_Event ev)
 // controller changed meanwhile.
 #define KEY_DELAY_MS 60
 #define STEAM_KEY_GRACE_MS 1000
+#define STEAM_MOUSE_GRACE_MS 300  // same as the filter's own grace (joystick.c)
 static SDL_Event delayedKeys[64];
 static Uint32 delayedKeyTicks[64];
 static size_t delayedKeysFront, delayedKeysCount;
@@ -490,7 +491,8 @@ void handleSdlEvents(void)
 				continue;
 			}
 		}
-		else if (filterSteam > 0 && (ev.type == SDL_MOUSEMOTION || ev.type == SDL_MOUSEBUTTONDOWN))
+		else if (filterSteam > 0 && (ev.type == SDL_MOUSEMOTION || ev.type == SDL_MOUSEBUTTONDOWN) &&
+		         joystick_valve_pad_buttons_changed_within(STEAM_MOUSE_GRACE_MS))
 		{
 			joystick_note_filtered(false);
 			continue;

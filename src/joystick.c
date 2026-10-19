@@ -258,6 +258,32 @@ bool joystick_analog_angle(int j, float *angle)
  * buttons has been pressed or that one of the assigned axes/hats has been moved
  * in the assigned direction
  */
+/* Holding Start is how Steam switches its desktop layout to gamepad mode, so
+ * while Steam may be using the controller (see joystick_steam_filter_enabled),
+ * Start only counts as a quick press, on release.  Holding it does nothing here.
+ */
+static const Uint32 start_hold_ms = 600;
+
+static bool pad_button(const Joystick *js, SDL_GameControllerButton button)
+{
+	if (button == SDL_CONTROLLER_BUTTON_START && joystick_steam_filter_enabled())
+		return js->start_tap;
+	return SDL_GameControllerGetButton(js->controller, button);
+}
+
+static void update_start_button(Joystick *js)
+{
+	bool down = SDL_GameControllerGetButton(js->controller, SDL_CONTROLLER_BUTTON_START);
+	Uint32 now = SDL_GetTicks();
+
+	js->start_tap = false;
+	if (down && !js->start_held)
+		js->start_down_since = now;
+	else if (!down && js->start_held)
+		js->start_tap = !SDL_TICKS_PASSED(now, js->start_down_since + start_hold_ms);
+	js->start_held = down;
+}
+
 static int check_assigned(const Joystick *js, const Joystick_assignment assignment[2])
 {
 	int result = 0;
@@ -301,7 +327,7 @@ static int check_assigned(const Joystick *js, const Joystick_assignment assignme
 		case PAD_BUTTON:
 			if (js->controller == NULL)
 				continue;
-			temp = SDL_GameControllerGetButton(js->controller, (SDL_GameControllerButton)assignment[i].num) ? joystick_analog_max : 0;
+			temp = pad_button(js, (SDL_GameControllerButton)assignment[i].num) ? joystick_analog_max : 0;
 			break;
 
 		case PAD_AXIS:
@@ -333,6 +359,9 @@ void poll_joystick(int j)
 		return;
 
 	SDL_JoystickUpdate();
+
+	if (joystick[j].controller != NULL)
+		update_start_button(&joystick[j]);
 
 	// indicates that a direction/action was pressed since last poll
 	joystick[j].input_pressed = false;
@@ -378,7 +407,7 @@ void poll_joystick(int j)
 		     old_cancel = joystick[j].cancel;
 
 		joystick[j].confirm = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_A) ||
-		                      SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_START);
+		                      pad_button(&joystick[j], SDL_CONTROLLER_BUTTON_START);
 		joystick[j].cancel = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_B) ||
 		                     SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_BACK);
 
@@ -582,6 +611,11 @@ static bool steam_running_cached = false;
 static Uint32 valve_pad_last_active = 0;
 static bool valve_pad_ever_active = false;
 static Uint32 valve_pad_hash = 0;
+// the same with only the standard buttons, sticks and triggers the game reads:
+// the mouse Steam makes from the trackpads is not doubled, so it is let through
+static Uint32 valve_pad_buttons_hash = 0;
+static Uint32 valve_pad_buttons_last_active = 0;
+static bool valve_pad_buttons_ever_active = false;
 static bool valve_pad_hash_valid = false;
 static const Uint32 steam_filter_grace = 300; // milliseconds after the controller last changed
 
@@ -638,16 +672,17 @@ static bool steam_running(void)
 // Mixes the controller's current state into a hash.  Only changes count as
 // "in use": an input that always reads as held (seen on the 2026 controller)
 // must not block the keyboard and mouse forever.
-static Uint32 valve_pad_state_hash(const Joystick *js, Uint32 hash)
+static Uint32 valve_pad_state_hash(const Joystick *js, Uint32 hash, bool touchpads)
 {
 	SDL_GameController *pad = js->controller;
 
 #define MIX(v) (hash = (hash ^ (Uint32)(v)) * 16777619u)
 	for (int b = 0; b < SDL_CONTROLLER_BUTTON_MAX; ++b)
-		MIX(SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)b));
+		if (touchpads || b != SDL_CONTROLLER_BUTTON_TOUCHPAD)
+			MIX(SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)b));
 
 	// raw buttons too: grips and trackpad clicks are not standard buttons
-	for (int b = 0; b < SDL_JoystickNumButtons(js->handle); ++b)
+	for (int b = 0; touchpads && b < SDL_JoystickNumButtons(js->handle); ++b)
 		MIX(SDL_JoystickGetButton(js->handle, b));
 
 	// sticks and triggers, in coarse steps so noise does not count
@@ -655,7 +690,7 @@ static Uint32 valve_pad_state_hash(const Joystick *js, Uint32 hash)
 		MIX((SDL_GameControllerGetAxis(pad, (SDL_GameControllerAxis)a) + 32768) / 4096);
 
 	// fingers on the trackpads (Steam turns the right one into a mouse)
-	for (int t = 0; t < SDL_GameControllerGetNumTouchpads(pad); ++t)
+	for (int t = 0; touchpads && t < SDL_GameControllerGetNumTouchpads(pad); ++t)
 	{
 		for (int f = 0; f < SDL_GameControllerGetNumTouchpadFingers(pad, t); ++f)
 		{
@@ -693,6 +728,11 @@ bool joystick_valve_pad_changed_within(Uint32 ms)
 	return valve_pad_ever_active && !SDL_TICKS_PASSED(SDL_GetTicks(), valve_pad_last_active + ms);
 }
 
+bool joystick_valve_pad_buttons_changed_within(Uint32 ms)
+{
+	return valve_pad_buttons_ever_active && !SDL_TICKS_PASSED(SDL_GetTicks(), valve_pad_buttons_last_active + ms);
+}
+
 bool joystick_filter_steam_input(void)
 {
 	if (!joystick_steam_filter_enabled())
@@ -706,12 +746,15 @@ bool joystick_filter_steam_input(void)
 
 	SDL_JoystickUpdate();
 
-	Uint32 hash = 2166136261u;
+	Uint32 hash = 2166136261u, buttons_hash = 2166136261u;
 	for (int j = 0; j < joysticks; j++)
 	{
 		if (joystick[j].controller != NULL &&
 		    SDL_JoystickGetVendor(joystick[j].handle) == 0x28de)
-			hash = valve_pad_state_hash(&joystick[j], hash);
+		{
+			hash = valve_pad_state_hash(&joystick[j], hash, true);
+			buttons_hash = valve_pad_state_hash(&joystick[j], buttons_hash, false);
+		}
 	}
 
 	Uint32 now = SDL_GetTicks();
@@ -720,7 +763,13 @@ bool joystick_filter_steam_input(void)
 		valve_pad_last_active = now;
 		valve_pad_ever_active = true;
 	}
+	if (valve_pad_hash_valid && buttons_hash != valve_pad_buttons_hash)
+	{
+		valve_pad_buttons_last_active = now;
+		valve_pad_buttons_ever_active = true;
+	}
 	valve_pad_hash = hash;
+	valve_pad_buttons_hash = buttons_hash;
 	valve_pad_hash_valid = true;
 
 	return valve_pad_ever_active && !SDL_TICKS_PASSED(now, valve_pad_last_active + steam_filter_grace);

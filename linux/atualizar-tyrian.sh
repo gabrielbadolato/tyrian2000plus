@@ -1,14 +1,15 @@
 #!/bin/bash
 # atualizar-tyrian.sh — instala ou atualiza o Tyrian2000Plus no Linux / Steam Deck.
 #
-# Baixa o build Linux mais recente que passou no GitHub Actions, instala em
-# ~/Jogos/Tyrian2000Plus (mantendo dados e saves) e, na primeira vez, baixa os
-# dados freeware do Tyrian 2000 do site original (camanis.net).
+# Baixa a versão mais recente publicada em Releases no GitHub, instala em
+# ~/Jogos/Tyrian2000Plus (mantendo saves e configurações) e, se os dados do
+# Tyrian 2000 ainda não estiverem lá, baixa-os do site original (camanis.net).
 #
-# O repositório é privado, então o download usa uma chave do GitHub
-# (fine-grained token, só leitura de Actions deste repositório). Ela é pedida
-# na primeira vez (ou lida de um github-token.txt ao lado do script) e
-# guardada em ~/.config/tyrian2000plus/github-token.
+# Para testar builds novos antes de virarem versão: guarde uma chave do GitHub
+# (fine-grained token, só leitura de Actions deste repositório) em
+# ~/.config/tyrian2000plus/github-token, ou num github-token.txt ao lado do
+# script. Com a chave, o script pega o build mais recente que passou no
+# GitHub Actions em vez da última versão publicada.
 #
 #   bash atualizar-tyrian.sh
 set -euo pipefail
@@ -31,7 +32,7 @@ fail() {
     exit 1
 }
 
-# ---- chave do GitHub ----
+# ---- chave do GitHub (opcional, só para testar builds) ----
 mkdir -p "$CONF"
 # A chave pode vir num arquivo github-token.txt ao lado do script (enviado do
 # PC); ele é movido para a pasta de configuração, para não ficar em Downloads.
@@ -40,62 +41,73 @@ if [ -s "$SCRIPT_DIR/github-token.txt" ]; then
     (umask 077; sed '1s/^\xEF\xBB\xBF//' "$SCRIPT_DIR/github-token.txt" | tr -d '[:space:]' > "$TOKEN_FILE"; echo >> "$TOKEN_FILE")
     rm -f "$SCRIPT_DIR/github-token.txt"
 fi
-if [ ! -s "$TOKEN_FILE" ]; then
-    msg="Cole a chave do GitHub (começa com github_pat_):"
-    if have_gui; then
-        token=$(kdialog --title "Tyrian2000Plus" --password "$msg") || exit 1
-    else
-        read -r -s -p "$msg " token; echo
-    fi
-    [ -n "$token" ] || fail "nenhuma chave informada"
-    (umask 077; printf '%s\n' "$token" > "$TOKEN_FILE")
-fi
-TOKEN=$(tr -d '[:space:]' < "$TOKEN_FILE")
+TOKEN=""
+[ -s "$TOKEN_FILE" ] && TOKEN=$(tr -d '[:space:]' < "$TOKEN_FILE")
 
 api() {  # $1 = caminho da API
-    curl -fsSL -H "Authorization: Bearer $TOKEN" \
+    curl -fsSL ${TOKEN:+-H "Authorization: Bearer $TOKEN"} \
         -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/$1"
 }
 
-# ---- build mais recente que passou ----
-runs=$(api "actions/workflows/build.yml/runs?status=success&event=push&per_page=1") || {
-    rm -f "$TOKEN_FILE"
-    fail "o GitHub recusou a chave. Rode de novo e cole uma chave válida."
-}
-read -r run_id run_desc < <(python3 -c '
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+mkdir -p "$TMP/x"
+
+if [ -n "$TOKEN" ]; then
+    # ---- build mais recente que passou (para testes) ----
+    runs=$(api "actions/workflows/build.yml/runs?status=success&event=push&per_page=1") || {
+        rm -f "$TOKEN_FILE"
+        fail "o GitHub recusou a chave (apagada). Rode de novo para usar a versão publicada."
+    }
+    read -r versao run_desc < <(python3 -c '
 import json, sys
 r = json.load(sys.stdin)["workflow_runs"]
 if not r: sys.exit(1)
 print(r[0]["id"], r[0]["head_sha"][:7] + " (" + r[0]["head_branch"] + ")")
 ' <<<"$runs") || fail "nenhum build pronto no GitHub"
+else
+    # ---- última versão publicada (Releases) ----
+    rel=$(api "releases/latest") || fail "não consegui consultar as versões no GitHub (sem internet?)"
+    read -r versao url < <(python3 -c '
+import json, sys
+r = json.load(sys.stdin)
+for a in r["assets"]:
+    if a["name"].endswith("-linux-x86_64.tar.gz"):
+        print(r["tag_name"], a["browser_download_url"]); break
+else:
+    sys.exit(1)
+' <<<"$rel") || fail "a última versão publicada não tem o pacote Linux"
+    run_desc="$versao"
+fi
 
-if [ -f "$DEST/.versao" ] && [ "$(cat "$DEST/.versao")" = "$run_id" ] && [ -x "$DEST/Tyrian2000Plus" ]; then
+if [ -f "$DEST/.versao" ] && [ "$(cat "$DEST/.versao")" = "$versao" ] && [ -x "$DEST/Tyrian2000Plus" ]; then
     say "O Tyrian2000Plus já está na versão mais nova ($run_desc)."
     exit 0
 fi
 
-url=$(api "actions/runs/$run_id/artifacts" | python3 -c '
+echo "Baixando a versão $run_desc ..."
+if [ -n "$TOKEN" ]; then
+    url=$(api "actions/runs/$versao/artifacts" | python3 -c '
 import json, sys
 for a in json.load(sys.stdin)["artifacts"]:
     if a["name"] == sys.argv[1] and not a["expired"]:
         print(a["archive_download_url"]); break
 ' "$ARTIFACT")
-[ -n "$url" ] || fail "o build $run_desc não tem o pacote Linux"
-
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
-
-echo "Baixando a versão $run_desc ..."
-curl -fsSL -H "Authorization: Bearer $TOKEN" -o "$TMP/artifact.zip" "$url"
-python3 -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' \
-    "$TMP/artifact.zip" "$TMP/x"
-tar -xzf "$TMP/x/$ARTIFACT.tar.gz" -C "$TMP/x"
+    [ -n "$url" ] || fail "o build $run_desc não tem o pacote Linux"
+    curl -fsSL -H "Authorization: Bearer $TOKEN" -o "$TMP/artifact.zip" "$url"
+    python3 -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' \
+        "$TMP/artifact.zip" "$TMP/x"
+    tar -xzf "$TMP/x/$ARTIFACT.tar.gz" -C "$TMP/x"
+else
+    curl -fsSL -o "$TMP/pacote.tar.gz" "$url"
+    tar -xzf "$TMP/pacote.tar.gz" -C "$TMP/x"
+fi
 
 # Copia o pacote por cima da instalação: dados, saves e configurações
 # não fazem parte do pacote, então ficam como estão.
 mkdir -p "$DEST"
 cp -r "$TMP/x/$ARTIFACT/." "$DEST/"
-cp "$0" "$DEST/atualizar-tyrian.sh" 2>/dev/null || true
+[ -f "$TMP/x/$ARTIFACT/atualizar-tyrian.sh" ] || cp "$0" "$DEST/atualizar-tyrian.sh" 2>/dev/null || true
 chmod +x "$DEST/Tyrian2000Plus" "$DEST/atualizar-tyrian.sh"
 
 # ---- dados do jogo (só na primeira vez) ----
@@ -117,7 +129,7 @@ for n in names:
 EOF
 fi
 
-echo "$run_id" > "$DEST/.versao"
+echo "$versao" > "$DEST/.versao"
 
 # ---- atalhos no menu do Modo Desktop ----
 apps="$HOME/.local/share/applications"

@@ -130,7 +130,7 @@ Aviso de atualização: ao abrir, `update_check_start()` (`src/update_check.c`)
 consulta em segundo plano a última Release do GitHub (API pública, sem token;
 WinHTTP no Windows, `curl` no Linux) e compara com `opentyrian_version` (o
 `git describe`, ex. v1.0.2). Se houver mais nova, a tela de título mostra
-"vX is out! See About." no canto e o About ganha o link de download. Opção
+"vX is out! See About." no canto e o About ganha os links de download (itch.io e GitHub). Opção
 Setup > "Check Updates" (`check` na seção "updates", ligada por padrão).
 Build sem tag de versão não consulta. Para testar o aviso, compile com
 `VCS_IDREV='echo v1.0.1'`.

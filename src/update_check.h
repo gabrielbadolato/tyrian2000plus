@@ -33,6 +33,7 @@ void update_check_start(void);
 const char *update_check_newer_version(void);
 
 // where the newer release can be downloaded
+#define UPDATE_CHECK_ITCH_URL "https://gabrielbadolato.itch.io/tyrian2000plus"
 #define UPDATE_CHECK_RELEASES_URL "https://github.com/gabrielbadolato/tyrian2000plus/releases/latest"
 
 #endif /* UPDATE_CHECK_H */

@@ -121,7 +121,7 @@ F1 mostra a ajuda e F11 muda o brilho.
 - **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
 - **Setup > Check Updates:** ao abrir, o jogo pergunta ao GitHub qual é a
   última versão publicada. Se houver uma mais nova, aparece um aviso no canto
-  da tela de título, e o About mostra o link para baixar. Nenhum dado seu é
+  da tela de título, e o About mostra os links para baixar (itch.io e GitHub). Nenhum dado seu é
   enviado; sem internet, nada aparece. Coloque em "Off" para desligar.
 
 ## Dicas do Steam Controller
@@ -181,6 +181,7 @@ disponíveis, e os fãs do Tyrian que mantêm o jogo vivo.
 ## Links
 
 - Tyrian 2000+: <https://github.com/gabrielbadolato/tyrian2000plus>
+- Tyrian 2000+ no itch.io: <https://gabrielbadolato.itch.io/tyrian2000plus>
 - OpenTyrian2000: <https://github.com/KScl/opentyrian2000>
 - OpenTyrian: <https://github.com/opentyrian/opentyrian>
 - Dados freeware do Tyrian 2000: <https://www.camanis.net/tyrian/>

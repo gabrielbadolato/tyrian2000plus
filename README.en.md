@@ -128,9 +128,10 @@ screen, F1 shows help and F11 changes the brightness.
 - With Steam open, Steam also turns the controller into a keyboard and mouse.
   The game notices this and ignores that keyboard and mouse while you use the
   controller.
-- If a button counts twice, or Y opens Steam's on-screen keyboard, **hold the
+- If a button counts twice, or X opens Steam's on-screen keyboard, **hold the
   Start button** until Steam shows its notice: that turns off its keyboard and
-  mouse mode.
+  mouse mode. The on-screen keyboard is a Steam window outside the game, so the
+  game cannot stop it from opening.
 - Another option is to **add the game to Steam** as a non-Steam game and start
   it from your library.
 - On Linux and the Steam Deck, the 2026 Steam Controller only works when the

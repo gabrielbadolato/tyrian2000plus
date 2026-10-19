@@ -473,7 +473,7 @@ void drawControllerMap(SDL_Surface *surface, int j)
 		drawLabel(surface, &controls[i], j, assignments, controlPressed(&controls[i], j));
 }
 
-static const int holdToExitMs = 1000;
+static const Uint32 holdToExitMs = 1000;
 
 static bool anyGamepadButton(SDL_GameControllerButton button)
 {
@@ -536,7 +536,7 @@ void controllerMapScreen(int j)
 		// how long B has been held, as a bar that fills up
 		if (holdStart != 0)
 		{
-			const int w = MIN(60, (int)(SDL_GetTicks() - holdStart) * 60 / holdToExitMs);
+			const int w = MIN(60, (int)((SDL_GetTicks() - holdStart) * 60 / holdToExitMs));
 			JE_rectangle(VGAScreen, 129, 179, 190, 183, COLOR_OUTLINE);
 			fill_rectangle_xy(VGAScreen, 130, 180, 129 + MAX(1, w), 182, C(14, 12));
 		}

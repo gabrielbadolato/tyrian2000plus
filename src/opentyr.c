@@ -18,6 +18,7 @@
  */
 #include "opentyr.h"
 
+#include "about.h"
 #include "config.h"
 #include "demo.h"
 #include "destruct.h"
@@ -223,6 +224,7 @@ void setupMenu(void)
 		MENU_ITEM_CONTROLS,
 		MENU_ITEM_JUKEBOX,
 		MENU_ITEM_DESTRUCT,
+		MENU_ITEM_ABOUT,
 		MENU_ITEM_DISPLAY,
 		MENU_ITEM_SCALER,
 		MENU_ITEM_SCALING_MODE,
@@ -298,6 +300,7 @@ void setupMenu(void)
 				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
 				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
+				{ MENU_ITEM_ABOUT, "About...", "What this is, where it came from, and credits." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous screen." },
 				{ -1 }
 			},
@@ -982,6 +985,19 @@ void setupMenu(void)
 					menuParents[MENU_CONTROLS] = currentMenu;
 					currentMenu = MENU_CONTROLS;
 					selectedMenuItemIndexes[currentMenu] = 0;
+					break;
+				}
+				case MENU_ITEM_ABOUT:
+				{
+					JE_playSampleNum(S_SELECT);
+
+					fade_black(10);
+
+					aboutScreen();
+
+					fade_black(10);
+
+					restart = true;
 					break;
 				}
 				case MENU_ITEM_JUKEBOX:

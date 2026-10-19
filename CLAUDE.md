@@ -87,3 +87,12 @@ Telas de ajuda: `padHelpText()` em `src/helptext.c` troca, só quando há um
 controle conectado, as menções a teclas dos textos do `tyrian.hdt` (Enter, ESC,
 setas, Alt-X, "[/]") pelos nomes dos botões do controle (conforme o mapeamento
 atual). Texto que não reconhece fica igual.
+
+## Vídeo
+
+Padrão: Scaling Mode "Fit 4:3" (fiel ao monitor 4:3 de 1995). A opção
+"Sharp Bilinear" em Setup > Graphics (`sharp_bilinear` na seção "video",
+desligada por padrão) amplia primeiro por um número inteiro (pixels nítidos)
+e depois encaixa na janela com filtro bilinear, para os pixels ficarem do
+mesmo tamanho quando a ampliação não é inteira (`sharp_bilinear_prescale()`
+em `src/video.c`). Em múltiplos exatos nada muda.

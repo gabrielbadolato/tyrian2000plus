@@ -37,6 +37,7 @@ const char *const scaling_mode_names[ScalingMode_MAX] = {
 int fullscreen_display;
 ScalingMode scaling_mode = SCALE_ASPECT_4_3;  // matches the original 4:3 CRT presentation
 bool vsync_enabled = true;  // sync presentation to the display refresh (no tearing)
+bool sharp_bilinear_enabled = false;  // even pixels when the window is not an exact multiple
 static SDL_Rect last_output_rect = { 0, 0, vga_width, vga_height };
 
 SDL_Surface *VGAScreen, *VGAScreenSeg;
@@ -47,6 +48,13 @@ SDL_Window *main_window = NULL;
 static SDL_Renderer *main_window_renderer = NULL;
 SDL_PixelFormat *main_window_tex_format = NULL;
 static SDL_Texture *main_window_texture = NULL;
+
+// Sharp bilinear: the scaler output is first enlarged by a whole number with nearest-neighbor
+// (so every pixel stays a crisp block) and then fitted to the window with bilinear filtering,
+// which only blends the one-pixel seam between blocks.  This keeps the pixels the same size
+// when the window is not an exact multiple of the game resolution (e.g. Fit 4:3 at 1280x800).
+static SDL_Texture *prescale_texture = NULL;
+static int prescale_w = 0, prescale_h = 0;
 
 static ScalerFunction scaler_function;
 
@@ -139,8 +147,28 @@ static void init_renderer(void)
 	}
 }
 
+static void deinit_prescale_texture(void)
+{
+	if (prescale_texture != NULL)
+	{
+		SDL_DestroyTexture(prescale_texture);
+		prescale_texture = NULL;
+	}
+	prescale_w = prescale_h = 0;
+}
+
+void set_sharp_bilinear(bool enabled)
+{
+	sharp_bilinear_enabled = enabled;
+
+	if (!enabled)
+		deinit_prescale_texture();
+}
+
 static void deinit_renderer(void)
 {
+	deinit_prescale_texture();
+
 	if (main_window_renderer != NULL)
 	{
 		SDL_DestroyRenderer(main_window_renderer);
@@ -383,6 +411,65 @@ static void calc_dst_render_rect(SDL_Surface *const src_surface, SDL_Rect *const
 	dst_rect->y = (win_h - dst_rect->h) / 2;
 }
 
+/** Returns the texture to draw at dst_rect: the scaler output, or its sharp bilinear prescale. */
+static SDL_Texture *sharp_bilinear_prescale(const SDL_Rect *const dst_rect)
+{
+	if (!sharp_bilinear_enabled)
+		return main_window_texture;
+
+	int tex_w, tex_h;
+	SDL_QueryTexture(main_window_texture, NULL, NULL, &tex_w, &tex_h);
+
+	// Exact multiples (and Center) already look sharp with nearest-neighbor.
+	if (dst_rect->w % tex_w == 0 && dst_rect->h % tex_h == 0)
+		return main_window_texture;
+
+	if (!SDL_RenderTargetSupported(main_window_renderer))
+		return main_window_texture;
+
+	// Round each axis up, so the final bilinear step shrinks slightly (by less than one block)
+	// instead of enlarging; that keeps the blended seam at most one window pixel wide.
+	int factor_x = (dst_rect->w + tex_w - 1) / tex_w;
+	int factor_y = (dst_rect->h + tex_h - 1) / tex_h;
+
+	SDL_RendererInfo info;
+	if (SDL_GetRendererInfo(main_window_renderer, &info) == 0)
+	{
+		while (factor_x > 1 && info.max_texture_width > 0 && tex_w * factor_x > info.max_texture_width)
+			--factor_x;
+		while (factor_y > 1 && info.max_texture_height > 0 && tex_h * factor_y > info.max_texture_height)
+			--factor_y;
+	}
+
+	const int w = tex_w * factor_x;
+	const int h = tex_h * factor_y;
+
+	if (prescale_texture == NULL || prescale_w != w || prescale_h != h)
+	{
+		deinit_prescale_texture();
+
+		prescale_texture = SDL_CreateTexture(main_window_renderer, main_window_tex_format->format, SDL_TEXTUREACCESS_TARGET, w, h);
+		if (prescale_texture == NULL)
+		{
+			logWarn("Failed to create sharp bilinear texture (%dx%d): %s", w, h, SDL_GetError());
+			sharp_bilinear_enabled = false;
+			return main_window_texture;
+		}
+		SDL_SetTextureScaleMode(prescale_texture, SDL_ScaleModeLinear);
+		prescale_w = w;
+		prescale_h = h;
+	}
+
+	SDL_SetTextureScaleMode(main_window_texture, SDL_ScaleModeNearest);
+
+	if (SDL_SetRenderTarget(main_window_renderer, prescale_texture) != 0)
+		return main_window_texture;
+	SDL_RenderCopy(main_window_renderer, main_window_texture, NULL, NULL);
+	SDL_SetRenderTarget(main_window_renderer, NULL);
+
+	return prescale_texture;
+}
+
 static void scale_and_flip(SDL_Surface *src_surface)
 {
 	assert(src_surface->format->BitsPerPixel == 8);
@@ -394,10 +481,12 @@ static void scale_and_flip(SDL_Surface *src_surface)
 	SDL_Rect dst_rect;
 	calc_dst_render_rect(src_surface, &dst_rect);
 
+	SDL_Texture *const output_texture = sharp_bilinear_prescale(&dst_rect);
+
 	// Clear the window and blit the output texture to it
 	SDL_SetRenderDrawColor(main_window_renderer, 0, 0, 0, 255);
 	SDL_RenderClear(main_window_renderer);
-	SDL_RenderCopy(main_window_renderer, main_window_texture, NULL, &dst_rect);
+	SDL_RenderCopy(main_window_renderer, output_texture, NULL, &dst_rect);
 	SDL_RenderPresent(main_window_renderer);
 
 	// Save output rect to be used by mouse functions

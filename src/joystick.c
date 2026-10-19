@@ -726,11 +726,25 @@ bool joystick_filter_steam_input(void)
 	return valve_pad_ever_active && !SDL_TICKS_PASSED(now, valve_pad_last_active + steam_filter_grace);
 }
 
+static Uint32 steam_last_filtered = 0;
+static bool steam_ever_filtered = false;
+
+// true when the filter recently dropped keyboard/mouse input, which means
+// Steam's desktop layout is on (holding Start turns it off)
+bool joystick_steam_desktop_active(void)
+{
+	return joystick_steam_filter_enabled() && steam_ever_filtered &&
+	       !SDL_TICKS_PASSED(SDL_GetTicks(), steam_last_filtered + 15000);
+}
+
 // logs, at most every 5 s, how much input the Steam filter dropped
 void joystick_note_filtered(bool keyboard)
 {
 	static unsigned keys = 0, mice = 0;
 	static Uint32 next_log = 0;
+
+	steam_last_filtered = SDL_GetTicks();
+	steam_ever_filtered = true;
 
 	if (keyboard)
 		++keys;

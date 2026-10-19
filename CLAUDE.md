@@ -81,8 +81,13 @@ Steam, o controle funciona e vibra (testado). Com a Steam aberta e o jogo
 fora dela, a Steam também gera teclado/mouse do controle;
 `joystick_filter_steam_input()` (`src/joystick.c`, usado em `src/keyboard.c`)
 ignora teclado/mouse enquanto o estado de um controle Valve (28de) muda e
-nos 300 ms seguintes (só mudanças contam: o controle 2026 pode ter entrada
-sempre "apertada"; o log registra o que foi ignorado), só quando a Steam está rodando e não abriu o jogo. O Linux
+nos 300 ms seguintes (teclas: atrasadas 60 ms e janela de 1 s, porque a Steam
+manda a tecla do direcional atrasada; só mudanças contam: o controle 2026 pode
+ter entrada sempre "apertada"; o log registra o que foi ignorado), só quando a
+Steam está rodando e não abriu o jogo. Nesse modo o X abre o teclado virtual da
+Steam (janela dela, o jogo não bloqueia); segurar Start troca a Steam para o
+action set Gamepad. Enquanto o filtro descartou algo nos últimos 15 s
+(`joystick_steam_desktop_active()`), a tela de título mostra esse lembrete. O Linux
 continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
 está explicado no `README.md` (que vai no pacote como LEIA-ME.txt).
 

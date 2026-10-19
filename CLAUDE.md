@@ -93,6 +93,12 @@ Menu da nave: Options tem "Setup..." (antes do Done), que abre o mesmo
 o `tyrian.hdt` (`src/helptext.c`); o menu de arcade (MENU_LIMITED_OPTIONS)
 não tem o item.
 
+Pausa durante a fase (Start/Esc, `JE_inGameSetup()` em `src/mainint.c`):
+além dos itens do jogo, tem "Auto Fire" e "Graphics..." (Display, Scaler,
+Scaling Mode, Sharp Bilinear, VSync, Brightness), uma segunda página na mesma
+caixa da pausa, desenhada sobre a fase com a paleta dela; mudanças valem na
+hora. Graphics fica escondido em jogo em rede.
+
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).
 

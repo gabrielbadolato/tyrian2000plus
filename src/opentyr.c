@@ -46,6 +46,7 @@
 #include "picload.h"
 #include "sprite.h"
 #include "tyrian2.h"
+#include "update_check.h"
 #include "varz.h"
 #include "vga256d.h"
 #include "video.h"
@@ -232,6 +233,7 @@ void setupMenu(void)
 		MENU_ITEM_SHARP_BILINEAR,
 		MENU_ITEM_BRIGHTNESS,
 		MENU_ITEM_AUTO_FIRE,
+		MENU_ITEM_UPDATE_CHECK,
 		MENU_ITEM_KEYBOARD,
 		MENU_ITEM_JOYSTICK,
 		MENU_ITEM_CONTROLLER_MAP,
@@ -300,6 +302,7 @@ void setupMenu(void)
 				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
 				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
+				{ MENU_ITEM_UPDATE_CHECK, "Check Updates:", "Look for a new version when the game starts.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_ABOUT, "About...", "What this is, where it came from, and credits." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous screen." },
 				{ -1 }
@@ -535,6 +538,10 @@ void setupMenu(void)
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, autoFireToggle ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
+			case MENU_ITEM_UPDATE_CHECK:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, update_check_enabled ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
 			case MENU_ITEM_KEY:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, SDL_GetScancodeName(keySettings[menuItem->id - MENU_ITEM_KEY]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
@@ -696,6 +703,7 @@ void setupMenu(void)
 									case MENU_ITEM_VSYNC:
 									case MENU_ITEM_BRIGHTNESS:
 									case MENU_ITEM_AUTO_FIRE:
+									case MENU_ITEM_UPDATE_CHECK:
 									case MENU_ITEM_KEY:
 									case MENU_ITEM_JOYSTICK_NUMBER:
 									case MENU_ITEM_JOYSTICK_ANALOG:
@@ -1078,6 +1086,14 @@ void setupMenu(void)
 					pickerSelectedIndex = autoFireToggle ? 1 : 0;
 					break;
 				}
+				case MENU_ITEM_UPDATE_CHECK:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = update_check_enabled ? 1 : 0;
+					break;
+				}
 				case MENU_ITEM_MUSIC_VOLUME:
 				{
 					JE_playSampleNum(S_CLICK);
@@ -1269,6 +1285,12 @@ void setupMenu(void)
 					autoFireToggle = pickerSelectedIndex == 1;
 					break;
 				}
+				case MENU_ITEM_UPDATE_CHECK:
+				{
+					update_check_enabled = pickerSelectedIndex == 1;
+					update_check_start();  // if it was off when the game started
+					break;
+				}
 				default:
 					break;
 				}
@@ -1351,6 +1373,8 @@ int main(int argc, char *argv[])
 	xmas = xmas_time();  // arg handler may override
 
 	JE_paramCheck(argc, argv);
+
+	update_check_start();  // in the background; the title screen shows the result
 
 	if (!findDataFiles())
 	{

@@ -48,10 +48,13 @@ gamesdir ?= $(datadir)/games
 
 TARGET := opentyrian2000
 RES :=
+PLATFORM_LDLIBS :=
 ifeq ($(PLATFORM), WIN32)
     TARGET := opentyrian2000.exe
     # The icon, from the same resource script the Visual Studio build uses.
     RES := obj/resources.o
+    # WinHTTP, for the update check
+    PLATFORM_LDLIBS := -lwinhttp
 endif
 
 SRCS := $(wildcard src/*.c)
@@ -116,6 +119,7 @@ ALL_LDFLAGS = $(SDL_LDFLAGS) \
               $(LDFLAGS)
 ALL_LDLIBS = -lm \
              $(SDL_LDLIBS) \
+             $(PLATFORM_LDLIBS) \
              $(LDLIBS)
 
 ###

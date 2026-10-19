@@ -111,7 +111,7 @@ F1 mostra a ajuda e F11 muda o brilho.
 - **Tela de título > About:** o que é o jogo, de onde veio, os créditos e os
   links (Enter ou A abre o link no navegador).
 - **Tela de título > Setup:** vídeo (Graphics), som (Sound), controles
-  (Controls), Jukebox e About.
+  (Controls), Jukebox, Check Updates e About.
 - **Setup > Controls:** teclado, controle, mouse, Auto Fire e o desenho do
   controle (Controller Map).
 - **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup.
@@ -119,6 +119,10 @@ F1 mostra a ajuda e F11 muda o brilho.
   Graphics... (tela cheia, escala, Sharp Bilinear, VSync e brilho, aplicados
   na hora).
 - **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
+- **Setup > Check Updates:** ao abrir, o jogo pergunta ao GitHub qual é a
+  última versão publicada. Se houver uma mais nova, aparece um aviso no canto
+  da tela de título, e o About mostra os links para baixar (itch.io e GitHub). Nenhum dado seu é
+  enviado; sem internet, nada aparece. Coloque em "Off" para desligar.
 
 ## Dicas do Steam Controller
 
@@ -177,6 +181,7 @@ disponíveis, e os fãs do Tyrian que mantêm o jogo vivo.
 ## Links
 
 - Tyrian 2000+: <https://github.com/gabrielbadolato/tyrian2000plus>
+- Tyrian 2000+ no itch.io: <https://gabrielbadolato.itch.io/tyrian2000plus>
 - OpenTyrian2000: <https://github.com/KScl/opentyrian2000>
 - OpenTyrian: <https://github.com/opentyrian/opentyrian>
 - Dados freeware do Tyrian 2000: <https://www.camanis.net/tyrian/>

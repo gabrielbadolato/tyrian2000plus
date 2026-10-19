@@ -46,6 +46,7 @@
 #include "pcxmast.h"
 #include "picload.h"
 #include "shots.h"
+#include "update_check.h"
 #include "sprite.h"
 #include "vga256d.h"
 #include "video.h"
@@ -3226,6 +3227,19 @@ void networkStartScreen(void)
 }
 #endif /* WITH_NETWORK */
 
+// bottom right of the title screen, when a newer release is out; false if none
+static bool drawUpdateNotice(SDL_Surface *surface)
+{
+	const char *version = update_check_newer_version();
+	if (version == NULL)
+		return false;
+
+	char text[64];
+	snprintf(text, sizeof(text), "%s is out! See About.", version);
+	drawFontHvFullShadowAligned(surface, 318, 192, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, true, 1);  // black outline: readable on the light and dark parts
+	return true;
+}
+
 bool titleScreen(void)
 {
 	enum MenuItemIndex
@@ -3244,6 +3258,7 @@ bool titleScreen(void)
 		JE_loadCompShapes(&shopSpriteSheet, '1');  // need mouse pointer sprites
 
 	bool restart = true;
+	bool updateNoticeShown = false;
 
 	size_t selectedIndex = MENU_ITEM_NEW_GAME;
 	size_t specialNameProgress[SA_ENGAGE] = { 0 };
@@ -3264,6 +3279,7 @@ bool titleScreen(void)
 			JE_loadPic(VGAScreen, 4, false);
 
 			drawFontHvShadow(VGAScreen, 2, 192, opentyrian_version, FONT_SMALL, 15, 0, false, 1);
+			updateNoticeShown = drawUpdateNotice(VGAScreen);
 
 			if (moveTyrianLogoUp)
 			{
@@ -3329,9 +3345,18 @@ bool titleScreen(void)
 		JE_mouseReplace();
 
 		const Uint32 idleStartTick = SDL_GetTicks();
+		bool redraw = false;
 
 		while (true)
 		{
+			// The update check answered after the screen was drawn.
+			if (!updateNoticeShown && update_check_newer_version() != NULL)
+			{
+				updateNoticeShown = drawUpdateNotice(VGAScreen2);
+				redraw = true;
+				break;
+			}
+
 			// Play demo after idle for 30 seconds.
 			if (SDL_GetTicks() - idleStartTick > 30000)
 			{
@@ -3348,6 +3373,9 @@ bool titleScreen(void)
 
 			setFrameCount(1);
 		}
+
+		if (redraw)
+			continue;
 
 		// Handle interaction.
 

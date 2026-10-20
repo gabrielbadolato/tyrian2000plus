@@ -8,6 +8,15 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Sturdier**: the whole game was played automatically, every episode on
+  every difficulty and by both branches of the map, with memory checks on,
+  and random keys were pressed through all the menus. It found one error,
+  now fixed: the help line at the bottom of the ship menu read past the end
+  of its text table (inherited from OpenTyrian2000). The tests are in
+  `tests/run_autoplay.sh` for future versions.
+
 ## v1.1 (2026-10-20)
 
 - **Continue** on the title screen: loads the game last saved or loaded

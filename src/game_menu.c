@@ -2380,7 +2380,7 @@ void JE_drawMainMenuHelpText(void)
 	if (curMenu == MENU_JOYSTICK_CONFIG) // joystick settings menu help
 	{
 		const int help[17] = { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 24, 11 };
-		memcpy(tempStr, mainMenuHelp[help[curSel[curMenu] - 2]], sizeof(tempStr));
+		SDL_strlcpy(tempStr, mainMenuHelp[help[curSel[curMenu] - 2]], sizeof(tempStr));
 	}
 	else if (curMenu == MENU_OPTIONS && curSel[curMenu] == 9)  // Setup... (Tyrian2000 Plus)
 	{
@@ -2388,25 +2388,25 @@ void JE_drawMainMenuHelpText(void)
 	}
 	else if (curMenu < MENU_PLAY_NEXT_LEVEL || curMenu >= MENU_2_PLAYER_ARCADE)
 	{
-		memcpy(tempStr, mainMenuHelp[(menuHelp[curMenu][temp])-1], sizeof(tempStr));
+		SDL_strlcpy(tempStr, mainMenuHelp[(menuHelp[curMenu][temp])-1], sizeof(tempStr));
 	}
 	else if (curMenu == MENU_KEYBOARD_CONFIG &&
 	         curSel[MENU_KEYBOARD_CONFIG] == 10)
 	{
-		memcpy(tempStr, mainMenuHelp[25-1], sizeof(tempStr));
+		SDL_strlcpy(tempStr, mainMenuHelp[25-1], sizeof(tempStr));
 	}
 	else if (leftPower || rightPower)
 	{
-		memcpy(tempStr, mainMenuHelp[24-1], sizeof(tempStr));
+		SDL_strlcpy(tempStr, mainMenuHelp[24-1], sizeof(tempStr));
 	}
 	else if (temp == menuChoices[curMenu] - 2 ||
 	         (curMenu == MENU_DATA_CUBES && cubeMax == 0))
 	{
-		memcpy(tempStr, mainMenuHelp[12-1], sizeof(tempStr));
+		SDL_strlcpy(tempStr, mainMenuHelp[12-1], sizeof(tempStr));
 	}
 	else
 	{
-		memcpy(tempStr, mainMenuHelp[17 + curMenu - 3], sizeof(tempStr));
+		SDL_strlcpy(tempStr, mainMenuHelp[17 + curMenu - 3], sizeof(tempStr));
 	}
 	
 	JE_textShade(VGAScreen, 10, 187, padHelpText(tempStr), 14, 1, DARKEN);

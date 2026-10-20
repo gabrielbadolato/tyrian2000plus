@@ -39,6 +39,7 @@
 #include "mtrand.h"
 #include "musmast.h"
 #include "network.h"
+#include "osk.h"
 #include "nortsong.h"
 #include "nortvars.h"
 #include "opentyr.h"
@@ -2270,6 +2271,9 @@ void JE_highScoreCheck(void)
 
 				JE_barShade(VGAScreen, 65, 55, 255, 155);
 
+				static Osk osk;  // keyboard on the screen, for the controller
+				osk_init(&osk, VGAScreen);
+
 				SDL_StartTextInput();
 
 				do
@@ -2296,6 +2300,8 @@ void JE_highScoreCheck(void)
 
 					sprintf(buffer, "%s %d", miscText[37], temp_score);
 					JE_textShade(VGAScreen, 70, 70, buffer, 11, 4, FULL_SHADE);
+
+					osk_draw(&osk, VGAScreen);
 
 					// TODO: Rework this so that cursor blink timing is independent of input.
 					while (true)
@@ -2339,50 +2345,88 @@ void JE_highScoreCheck(void)
 					MouseInput mouseInput;
 					KeyboardInput keyboardInput;
 
+					Uint8 oskCh = 0;
+					OskResult oskResult = OSK_NONE;
+
 					if (mouseGetInput(INPUT_NO_MOTION, &mouseInput))
 					{
-						if (mouseInput.x > 56 && mouseInput.x < 142 &&
-						    mouseInput.y > 123 && mouseInput.y < 149)
+						oskResult = osk_mouse(&osk, &mouseInput, &oskCh);
+						if (oskResult == OSK_NONE)
 						{
-							quit = true;
-						}
-						else if (mouseInput.x > 151 && mouseInput.x < 237 &&
-						         mouseInput.y > 123 && mouseInput.y < 149)
-						{
-							quit = true;
-							cancel = true;
+							if (mouseInput.x > 56 && mouseInput.x < 142 &&
+							    mouseInput.y > 123 && mouseInput.y < 149)
+							{
+								quit = true;
+							}
+							else if (mouseInput.x > 151 && mouseInput.x < 237 &&
+							         mouseInput.y > 123 && mouseInput.y < 149)
+							{
+								quit = true;
+								cancel = true;
+							}
 						}
 					}
 					else if (keyboardGetInput(&keyboardInput))
 					{
-						switch (keyboardInput.scancode)
+						oskResult = osk_key(&osk, &keyboardInput, &oskCh);
+						if (oskResult == OSK_NONE)
 						{
-							case SDL_SCANCODE_BACKSPACE:
-							case SDL_SCANCODE_DELETE:
-								if (temp > 0)
-								{
-									temp -= 1;
-									stemp[temp] = ' ';
-								}
-								break;
-							case SDL_SCANCODE_ESCAPE:
-								quit = true;
-								cancel = true;
-								break;
-							case SDL_SCANCODE_RETURN:
-								quit = true;
-								break;
-							default:
-								break;
-						}
+							switch (keyboardInput.scancode)
+							{
+								case SDL_SCANCODE_BACKSPACE:
+								case SDL_SCANCODE_DELETE:
+									if (temp > 0)
+									{
+										temp -= 1;
+										stemp[temp] = ' ';
+									}
+									break;
+								case SDL_SCANCODE_ESCAPE:
+									quit = true;
+									cancel = true;
+									break;
+								case SDL_SCANCODE_RETURN:
+									quit = true;
+									break;
+								default:
+									break;
+							}
 
-						const Uint8 ch = keyboardInput.ch;
-						if ((ch == ' ' || (fontMap[ch] != -1 && !is_padglyph(ch))) &&
-						    temp < 28)
-						{
-							stemp[temp] = ch;
-							temp += 1;
+							const Uint8 ch = keyboardInput.ch;
+							if ((ch == ' ' || (fontMap[ch] != -1 && !is_padglyph(ch))) &&
+							    temp < 28)
+							{
+								stemp[temp] = ch;
+								temp += 1;
+							}
 						}
+					}
+
+					switch (oskResult)
+					{
+						case OSK_CHAR:
+							if (temp < 28)
+							{
+								stemp[temp] = oskCh;
+								temp += 1;
+							}
+							break;
+						case OSK_DELETE:
+							if (temp > 0)
+							{
+								temp -= 1;
+								stemp[temp] = ' ';
+							}
+							break;
+						case OSK_ACCEPT:
+							quit = true;
+							break;
+						case OSK_CANCEL:
+							quit = true;
+							cancel = true;
+							break;
+						default:
+							break;
 					}
 				} while (!quit);
 
@@ -3040,6 +3084,9 @@ void JE_operation(JE_byte slot)
 
 		JE_barShade(VGAScreen, 65, 55, 255, 155);
 
+		static Osk osk;  // keyboard on the screen, for the controller
+		osk_init(&osk, VGAScreen);
+
 		SDL_StartTextInput();
 
 		bool quit = false;
@@ -3057,6 +3104,8 @@ void JE_operation(JE_byte slot)
 
 			text_x = 149 + 45 - (JE_textWidth(miscText[10], FONT_SHAPES) / 2);
 			JE_outTextAdjust(VGAScreen, text_x, 128, miscText[10], 15, -5, FONT_SHAPES, true);
+
+			osk_draw(&osk, VGAScreen);
 
 			// TODO: Rework this so that cursor blink timing is independent of input.
 			while (true)
@@ -3092,60 +3141,104 @@ void JE_operation(JE_byte slot)
 			MouseInput mouseInput;
 			KeyboardInput keyboardInput;
 
+			Uint8 oskCh = 0;
+			OskResult oskResult = OSK_NONE;
+
 			if (mouseGetInput(INPUT_NO_MOTION, &mouseInput))
 			{
-				if (mouseInput.x > 56 && mouseInput.x < 142 &&
-				    mouseInput.y > 123 && mouseInput.y < 149)
+				oskResult = osk_mouse(&osk, &mouseInput, &oskCh);
+				if (oskResult == OSK_NONE)
 				{
-					quit = true;
-					if (JE_saveRequest(slot, stemp))
-						JE_saveGame(slot, stemp);
-				}
-				else if (mouseInput.x > 151 && mouseInput.x < 237 &&
-				         mouseInput.y > 123 && mouseInput.y < 149)
-				{
-					quit = true;
-					JE_playSampleNum(S_SPRING);
+					if (mouseInput.x > 56 && mouseInput.x < 142 &&
+					    mouseInput.y > 123 && mouseInput.y < 149)
+					{
+						quit = true;
+						if (JE_saveRequest(slot, stemp))
+							JE_saveGame(slot, stemp);
+					}
+					else if (mouseInput.x > 151 && mouseInput.x < 237 &&
+					         mouseInput.y > 123 && mouseInput.y < 149)
+					{
+						quit = true;
+						JE_playSampleNum(S_SPRING);
+					}
 				}
 			}
 			else if (keyboardGetInput(&keyboardInput))
 			{
-				switch (keyboardInput.scancode)
+				oskResult = osk_key(&osk, &keyboardInput, &oskCh);
+				if (oskResult == OSK_NONE)
 				{
-					case SDL_SCANCODE_BACKSPACE:
-					case SDL_SCANCODE_DELETE:
-						if (temp > 0)
-						{
-							temp -= 1;
-							stemp[temp] = ' ';
-							JE_playSampleNum(S_CLICK);
-						}
-						break;
-					case SDL_SCANCODE_ESCAPE:
-						quit = true;
-						JE_playSampleNum(S_SPRING);
-						break;
-					case SDL_SCANCODE_RETURN:
-						quit = true;
-						if (JE_saveRequest(slot, stemp))
-							JE_saveGame(slot, stemp);
-						break;
-					default:
-						break;
-				}
+					switch (keyboardInput.scancode)
+					{
+						case SDL_SCANCODE_BACKSPACE:
+						case SDL_SCANCODE_DELETE:
+							if (temp > 0)
+							{
+								temp -= 1;
+								stemp[temp] = ' ';
+								JE_playSampleNum(S_CLICK);
+							}
+							break;
+						case SDL_SCANCODE_ESCAPE:
+							quit = true;
+							JE_playSampleNum(S_SPRING);
+							break;
+						case SDL_SCANCODE_RETURN:
+							quit = true;
+							if (JE_saveRequest(slot, stemp))
+								JE_saveGame(slot, stemp);
+							break;
+						default:
+							break;
+					}
 
-				const Uint8 ch = keyboardInput.ch;
-				if ((ch == ' ' || (fontMap[ch] != -1 && !is_padglyph(ch))) &&
-				    temp < 14)
-				{
-					stemp[temp] = ch;
-					temp += 1;
-					JE_playSampleNum(S_CURSOR);
+					const Uint8 ch = keyboardInput.ch;
+					if ((ch == ' ' || (fontMap[ch] != -1 && !is_padglyph(ch))) &&
+					    temp < 14)
+					{
+						stemp[temp] = ch;
+						temp += 1;
+						JE_playSampleNum(S_CURSOR);
+					}
 				}
+			}
+
+			switch (oskResult)
+			{
+				case OSK_CHAR:
+					if (temp < 14)
+					{
+						stemp[temp] = oskCh;
+						temp += 1;
+						JE_playSampleNum(S_CURSOR);
+					}
+					break;
+				case OSK_DELETE:
+					if (temp > 0)
+					{
+						temp -= 1;
+						stemp[temp] = ' ';
+						JE_playSampleNum(S_CLICK);
+					}
+					break;
+				case OSK_ACCEPT:
+					quit = true;
+					if (JE_saveRequest(slot, stemp))
+						JE_saveGame(slot, stemp);
+					break;
+				case OSK_CANCEL:
+					quit = true;
+					JE_playSampleNum(S_SPRING);
+					break;
+				default:
+					break;
 			}
 		}
 
 		SDL_StopTextInput();
+
+		osk_close(&osk, VGAScreen);
 	}
 }
 
@@ -3764,6 +3857,13 @@ redo:
 				check_joystick_hotplug();  // pick up controllers connected mid-level
 				if (joystick_take_lost() && !playDemo)
 					pause_pressed = true;  // a controller went away: don't let the ship die meanwhile
+				const int lowBattery = joystick_take_low_battery();
+				if (lowBattery >= 0 && !playDemo)
+				{
+					char lowBatteryText[64];
+					snprintf(lowBatteryText, sizeof(lowBatteryText), tr("Controller %d: battery low!"), lowBattery + 1);
+					JE_drawTextWindow(lowBatteryText);
+				}
 				if ((inputDevice == 0 || inputDevice >= 3) && joysticks > 0)
 				{
 					int j = inputDevice  == 0 ? 0 : inputDevice - 3;

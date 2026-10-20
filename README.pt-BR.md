@@ -42,8 +42,13 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - Suporte a controles modernos: Xbox, PlayStation, Switch Pro, Steam Controller
   e outros, com vibração e troca de controle sem reiniciar.
 - Desenho do controle mostrando a função de cada botão (Controller Map).
-- Tiro automático (Auto Fire).
+- Tiro automático (Auto Fire) e opção de vibração (desligada, fraca ou forte).
 - Nomes dos botões do controle nas telas de ajuda.
+- Teclado na tela para digitar com o controle o nome do jogo salvo e dos
+  recordes, e aviso quando a bateria do controle está fraca.
+- "Continue" (Continuar) na tela de título: volta ao último jogo com um toque.
+- Música mais fiel: o emulador Nuked OPL3, próximo de uma placa Sound Blaster
+  de 1995 de verdade (o som antigo continua em Setup > Sound).
 - Mais opções de vídeo, inclusive na pausa, e o filtro Sharp Bilinear.
 - Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
@@ -173,8 +178,18 @@ Setup > Controls > Shortcuts):
 - **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
   (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
   idioma (Language), Check Updates e About.
-- **Setup > Controls:** teclado, controle, mouse, Auto Fire, o desenho do
-  controle (Controller Map) e a lista de atalhos do teclado (Shortcuts).
+- **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
+  carregado (o jogo também salva "LAST LEVEL" ao começar cada fase). Só
+  aparece quando existe um.
+- **Setup > Sound > Music Sound (Som da música):** "Accurate" (Fiel, o
+  padrão, Nuked OPL3) ou "Classic" (Clássico, o emulador que o OpenTyrian
+  sempre usou).
+- **Setup > Controls:** teclado, controle, mouse, Auto Fire, vibração
+  (Vibration), o desenho do controle (Controller Map, com o nível da bateria)
+  e a lista de atalhos do teclado (Shortcuts).
+- **Para digitar um nome com o controle** (ao salvar o jogo ou num recorde):
+  aparece um teclado embaixo do nome. O direcional anda, A digita, B apaga,
+  Start termina e Back cancela.
 - **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup. Os
   itens Joystick, Keyboard e Mouse de lá abrem as mesmas telas de
   Setup > Controls.

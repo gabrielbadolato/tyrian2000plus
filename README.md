@@ -41,8 +41,13 @@ the open-source port of Tyrian. What this version adds:
 - Modern controller support: Xbox, PlayStation, Switch Pro, Steam Controller
   and others, with rumble and hot-plugging.
 - A drawing of the controller showing what each button does (Controller Map).
-- Auto Fire.
+- Auto Fire, and a Vibration option (off, weak or strong).
 - Controller button names in the help screens.
+- A keyboard on the screen to type save and high score names with the
+  controller, and a warning when the controller's battery is low.
+- "Continue" on the title screen: back to the last game in one press.
+- More faithful music: the Nuked OPL3 emulator, close to a real 1995 Sound
+  Blaster card (the old sound is still in Setup > Sound).
 - More graphics options, including in the pause menu, and a Sharp Bilinear
   filter.
 - Menus, help and item names in Portuguese (Brazilian).
@@ -170,8 +175,16 @@ Controls > Shortcuts):
   and the links (Enter or A opens a link in your browser).
 - **Title screen > Setup:** Graphics (with the detail level), Sound,
   Controls, game speed, Jukebox, Language, Check Updates and About.
-- **Setup > Controls:** keyboard, controller, mouse, Auto Fire, the
-  Controller Map and the list of keyboard shortcuts.
+- **Title screen > Continue:** loads the game you last saved or loaded (the
+  game also saves "LAST LEVEL" when a level starts). Shown when there is one.
+- **Setup > Sound > Music Sound:** "Accurate" (the default, Nuked OPL3) or
+  "Classic" (the emulator OpenTyrian always used).
+- **Setup > Controls:** keyboard, controller, mouse, Auto Fire, Vibration,
+  the Controller Map (with the controller's battery level) and the list of
+  keyboard shortcuts.
+- **Typing a name with the controller** (saving a game, a high score): a
+  keyboard appears below the name. The D-pad moves, A types, B erases, Start
+  finishes and Back cancels.
 - **Ship menu (between levels) > Options > Setup...:** the same Setup. The
   Joystick, Keyboard and Mouse items there open the same screens as Setup >
   Controls.

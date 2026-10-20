@@ -10,6 +10,22 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Continue** on the title screen: loads the game last saved or loaded
+  (also the "LAST LEVEL" save the game makes when a level starts). It only
+  appears when there is such a game.
+- **More faithful music**: Setup > Sound > "Music Sound" chooses Accurate
+  (the default), the Nuked OPL3 emulator, which sounds very close to the real
+  Sound Blaster cards of 1995, or Classic, the emulator used until now. Both
+  have about the same loudness.
+- **Keyboard on the screen** for the controller: when saving a game or
+  entering a high score with a controller connected, a keyboard appears below
+  the name. The D-pad moves, A types, B erases, Start finishes and Back
+  cancels. The real keyboard and the mouse work as before.
+- **Vibration** option in Setup > Controls: Off, Weak or Strong (the
+  default, as before). Choosing it gives a short sample.
+- **Low battery warning**: when a wireless controller's battery gets low,
+  a message appears once during the level; the Controller Map shows the
+  battery level next to the controller's name.
 - **Portuguese** (Brazilian): menus, help screens, item names and the
   program's own screens (Setup, pause, Controller Map, About) can be shown in
   Portuguese. Setup > "Language" chooses Automatic (the system's language,

@@ -17,7 +17,11 @@ PKG="$1"
 CHANNEL="$2"
 VERSION="$3"
 TARGET="gabrielbadolato/tyrian2000plus"
-BUTLER_URL="https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default"
+# A fixed butler version, checked by sha256 before it runs with the itch.io
+# key.  To update: change both lines (the version is in "butler -V" output).
+BUTLER_VERSION="15.32.0"
+BUTLER_SHA256="2335971394ef6596f95ded0833e85ee28755e13761716ef4c91d6b11f69162f5"
+BUTLER_URL="https://broth.itch.zone/butler/linux-amd64/$BUTLER_VERSION/archive/default"
 
 if [ -z "${BUTLER_API_KEY:-}" ]; then
 	echo "BUTLER_API_KEY is not set; skipping the itch.io upload"
@@ -28,6 +32,11 @@ fi
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 curl -fsSL --retry 4 -o "$TMP/butler.zip" "$BUTLER_URL"
+got=$(sha256sum "$TMP/butler.zip" | cut -d' ' -f1)
+if [ "$got" != "$BUTLER_SHA256" ]; then
+    echo "ERROR: butler $BUTLER_VERSION has sha256 $got, expected $BUTLER_SHA256" >&2
+    exit 1
+fi
 unzip -q "$TMP/butler.zip" -d "$TMP/butler"
 chmod +x "$TMP/butler/butler"
 "$TMP/butler/butler" -V

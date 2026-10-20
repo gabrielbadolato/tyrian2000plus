@@ -22,11 +22,27 @@ LLVM_MINGW_VER="20260922"
 SDL2_VER="2.32.10"
 SDL2_NET_VER="2.4.0"
 SDL2_COMPAT_VER="2.32.74"  # bundles SDL3 3.4.18
+# sha256 of each download above: a changed file stops the build instead of
+# ending up in the package.  Update them together with the versions.
+LLVM_MINGW_SHA256="bb7bb7654b33d5aa8712acb837c963b2e0c56352560c76105270a3268c665c21"
+SDL2_SHA256="83a5d74012311edc3c0d40ea6faecbe57ad692aa033fa5dc273cc937e3938ff2"
+SDL2_NET_SHA256="0d6de8d1f9c369beea85d9d7a45a0b3e64eb9288c166b9ea84a961cc34d0ba6f"
+SDL2_COMPAT_SHA256="94a0184bc2d0670151a023656fb58e8f722fc001bda3a6a424234c88c5501cc0"
 NPROC="$(nproc 2>/dev/null || echo 4)"
 NAME="Tyrian2000Plus-windows-x64"
 VENDOR="$PWD/build/win"
 
 mkdir -p "$VENDOR"
+
+check_sha256() {  # $1 = file, $2 = expected sha256
+    local got
+    got=$(sha256sum "$1" | cut -d' ' -f1)
+    if [ "$got" != "$2" ]; then
+        echo "ERROR: $1 has sha256 $got, expected $2" >&2
+        rm -f "$1"
+        exit 1
+    fi
+}
 
 if ! command -v x86_64-w64-mingw32-clang >/dev/null; then
     LLVM_MINGW="llvm-mingw-$LLVM_MINGW_VER-ucrt-ubuntu-22.04-x86_64"
@@ -34,27 +50,30 @@ if ! command -v x86_64-w64-mingw32-clang >/dev/null; then
         echo "Downloading llvm-mingw $LLVM_MINGW_VER ..."
         curl -fsSL -o "$VENDOR/llvm-mingw.tar.xz" \
             "https://github.com/mstorsjo/llvm-mingw/releases/download/$LLVM_MINGW_VER/$LLVM_MINGW.tar.xz"
+        check_sha256 "$VENDOR/llvm-mingw.tar.xz" "$LLVM_MINGW_SHA256"
         tar -xJf "$VENDOR/llvm-mingw.tar.xz" -C "$VENDOR"
         rm "$VENDOR/llvm-mingw.tar.xz"
     fi
     export PATH="$VENDOR/$LLVM_MINGW/bin:$PATH"
 fi
 
-fetch_devel() {  # $1 = repo, $2 = package name, $3 = version
+fetch_devel() {  # $1 = repo, $2 = package name, $3 = version, $4 = sha256
     if [ ! -d "$VENDOR/$2-$3" ]; then
         echo "Downloading $2 $3 (mingw) ..."
         curl -fsSL -o "$VENDOR/$2.tar.gz" \
             "https://github.com/libsdl-org/$1/releases/download/release-$3/$2-devel-$3-mingw.tar.gz"
+        check_sha256 "$VENDOR/$2.tar.gz" "$4"
         tar -xzf "$VENDOR/$2.tar.gz" -C "$VENDOR"
         rm "$VENDOR/$2.tar.gz"
     fi
 }
-fetch_devel SDL SDL2 "$SDL2_VER"
-fetch_devel SDL_net SDL2_net "$SDL2_NET_VER"
+fetch_devel SDL SDL2 "$SDL2_VER" "$SDL2_SHA256"
+fetch_devel SDL_net SDL2_net "$SDL2_NET_VER" "$SDL2_NET_SHA256"
 if [ ! -d "$VENDOR/sdl2-compat-$SDL2_COMPAT_VER" ]; then
     echo "Downloading sdl2-compat $SDL2_COMPAT_VER ..."
     curl -fsSL -o "$VENDOR/sdl2-compat.zip" \
         "https://github.com/libsdl-org/sdl2-compat/releases/download/release-$SDL2_COMPAT_VER/sdl2-compat-$SDL2_COMPAT_VER-win32-x64.zip"
+    check_sha256 "$VENDOR/sdl2-compat.zip" "$SDL2_COMPAT_SHA256"
     mkdir -p "$VENDOR/sdl2-compat-$SDL2_COMPAT_VER"
     (cd "$VENDOR/sdl2-compat-$SDL2_COMPAT_VER" && unzip -q ../sdl2-compat.zip)
     rm "$VENDOR/sdl2-compat.zip"

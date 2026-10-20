@@ -8,7 +8,7 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## Next version
+## v1.1 (2026-10-20)
 
 - **Continue** on the title screen: loads the game last saved or loaded
   (also the "LAST LEVEL" save the game makes when a level starts). It only

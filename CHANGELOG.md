@@ -8,6 +8,15 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Statistics**: Setup > "Statistics..." shows the totals of all your games
+  (time in levels, levels completed, enemies destroyed, deaths, secret levels
+  and datacubes found, highest score) and the records of each level (best
+  score, fastest time and most enemies destroyed). Beating a level's record
+  shows "New level record!" on the end of level screen. They are kept in a
+  file of their own (statistics.cfg), apart from the game's saves.
+
 ## v1.1 (2026-10-20)
 
 - **Continue** on the title screen: loads the game last saved or loaded

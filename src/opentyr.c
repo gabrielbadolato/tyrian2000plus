@@ -47,6 +47,7 @@
 #include "params.h"
 #include "picload.h"
 #include "sprite.h"
+#include "stats.h"
 #include "tyrian2.h"
 #include "update_check.h"
 #include "varz.h"
@@ -295,6 +296,7 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_JUKEBOX,
 		MENU_ITEM_DESTRUCT,
 		MENU_ITEM_ABOUT,
+		MENU_ITEM_STATISTICS,
 		MENU_ITEM_DISPLAY,
 		MENU_ITEM_SCALER,
 		MENU_ITEM_SCALING_MODE,
@@ -383,6 +385,7 @@ void setupMenuPage(SetupPage page)
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
 				{ MENU_ITEM_LANGUAGE, "Language:", "Choose the language of the menus and help.", getLanguagePickerItemsCount, getLanguagePickerItem },
 				{ MENU_ITEM_UPDATE_CHECK, "Check Updates:", "Look for a new version when the game starts.", getOffOnPickerItemsCount, getOffOnPickerItem },
+				{ MENU_ITEM_STATISTICS, "Statistics...", "Totals of all your games and the records of each level." },
 				{ MENU_ITEM_ABOUT, "About...", "What this is, where it came from, and credits." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous screen." },
 				{ -1 }
@@ -1139,6 +1142,19 @@ void setupMenuPage(SetupPage page)
 					selectedMenuItemIndexes[currentMenu] = 0;
 					break;
 				}
+				case MENU_ITEM_STATISTICS:
+				{
+					JE_playSampleNum(S_SELECT);
+
+					fade_black(10);
+
+					statisticsScreen();
+
+					fade_black(10);
+
+					restart = true;
+					break;
+				}
 				case MENU_ITEM_ABOUT:
 				{
 					JE_playSampleNum(S_SELECT);
@@ -1597,6 +1613,7 @@ int main(int argc, char *argv[])
 
 	loadConfiguration();
 	lang_set(lang_setting);
+	stats_load();
 
 	xmas = xmas_time();  // arg handler may override
 

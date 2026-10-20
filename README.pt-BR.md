@@ -177,7 +177,7 @@ Setup > Controls > Shortcuts):
   links (Enter ou A abre o link no navegador).
 - **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
   (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
-  idioma (Language), Check Updates e About.
+  idioma (Language), Check Updates, estatísticas (Statistics) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
   carregado (o jogo também salva "LAST LEVEL" ao começar cada fase). Só
   aparece quando existe um.
@@ -196,6 +196,11 @@ Setup > Controls > Shortcuts):
 - **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire,
   Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
   Sharp Bilinear, VSync e brilho, aplicados na hora).
+- **Setup > Statistics (Estatísticas):** os totais de todos os seus jogos
+  (tempo nas fases, fases concluídas, inimigos destruídos, mortes, fases
+  secretas, datacubes, maior pontuação) e os recordes de cada fase: maior
+  pontuação, menor tempo e mais inimigos destruídos. Ficam no arquivo
+  statistics.cfg, junto dos saves.
 - **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
 - **Setup > Language:** menus, ajuda e nomes dos itens em português ou em
   inglês. "Automatic" (o padrão) segue o idioma do sistema; em português, o

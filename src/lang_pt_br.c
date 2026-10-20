@@ -721,6 +721,26 @@ const LangEntry lang_pt_br[] =
 	{ "Tyrian 2000 freeware game data:", "Dados freeware do Tyrian 2000:" },
 	{ "Gabriel Badolato, with help from Claude (Anthropic)", "Gabriel Badolato, com a ajuda do Claude (Anthropic)" },
 
+	// ---- Statistics (Setup > Statistics... and the end of a level) ----
+	{ "Statistics...", "Estatísticas..." },
+	{ "Totals of all your games and the records of each level.", "Totais de todos os seus jogos e os recordes de cada fase." },
+	{ "Statistics", "Estatísticas" },
+	{ "All Games", "Todos os jogos" },
+	{ "Time in Levels", "Tempo nas fases" },
+	{ "Levels Completed", "Fases concluídas" },
+	{ "Enemies Destroyed", "Inimigos destruídos" },
+	{ "Deaths", "Mortes" },
+	{ "Secret Levels Found", "Fases secretas achadas" },
+	{ "Datacubes Found", "Datacubes achados" },
+	{ "Highest Score", "Maior pontuação" },
+	{ "Level Records", "Recordes por fase" },
+	{ "Finish a level to set its records.", "Termine uma fase para ter os recordes dela." },
+	{ "Episode %d", "Episódio %d" },
+	{ "Score", "Pontos" },
+	{ "Time", "Tempo" },
+	{ "Destroyed", "Destruídos" },
+	{ "New level record!", "Novo recorde da fase!" },
+
 	// ---- Controller help: phrases of the help texts that padHelpText()
 	// swaps for the controller's buttons (first the phrase in the help
 	// texts above, then what it becomes) ----

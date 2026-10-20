@@ -153,8 +153,8 @@ screen, F1 shows help and F11 changes the brightness.
   Controller Map.
 - **Ship menu (between levels) > Options > Setup...:** the same Setup.
 - **During a level, Start or Esc:** volume, detail level, game speed, Auto
-  Fire and Graphics... (full screen, scaling, Sharp Bilinear, VSync and
-  brightness, applied right away).
+  Fire, Controls... (the same Setup > Controls) and Graphics... (full screen,
+  scaling, Sharp Bilinear, VSync and brightness, applied right away).
 - **Setup > About:** the same About screen, to see it in the middle of a
   saved game.
 - **Setup > Check Updates:** at startup the game asks GitHub for the latest

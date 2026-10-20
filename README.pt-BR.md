@@ -154,9 +154,9 @@ F1 mostra a ajuda e F11 muda o brilho.
 - **Setup > Controls:** teclado, controle, mouse, Auto Fire e o desenho do
   controle (Controller Map).
 - **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup.
-- **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire e
-  Graphics... (tela cheia, escala, Sharp Bilinear, VSync e brilho, aplicados
-  na hora).
+- **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire,
+  Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
+  Sharp Bilinear, VSync e brilho, aplicados na hora).
 - **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
 - **Setup > Check Updates:** ao abrir, o jogo pergunta ao GitHub qual é a
   última versão publicada. Se houver uma mais nova, aparece um aviso no canto

@@ -1,0 +1,95 @@
+# Changelog
+
+What changed in each version of Tyrian 2000+. The numbers in parentheses are
+the GitHub pull requests with the details of each change.
+
+Tyrian 2000+ is a modified version of
+[OpenTyrian2000](https://github.com/KScl/opentyrian2000). Since October 2026
+its source files have been changed by this project; the full history of every
+change is in this repository's git log.
+
+## Next version
+
+- **Fixes** (#19):
+  - The game no longer crashes when a controller disconnects while
+    Setup > Controls > Controller... is open.
+  - In two-player games each player keeps their own controller (and rumble)
+    when a controller leaves and comes back.
+  - Odd sensitivity values in `opentyrian.cfg` no longer close the game.
+  - Auto Fire no longer turns itself on or off after any pause, stops at the
+    start of each level and stays off while recording a demo.
+  - An unreadable `tyrian.sav` is kept as `tyrian.sav.bak` before it is
+    replaced.
+  - Controller Map: holding B to exit no longer goes back one menu too many,
+    and long labels stay inside the screen.
+  - Sharp Bilinear: a one-off failure no longer turns the saved option off.
+- **Auto Fire for the special weapon too** (#20): with Auto Fire on, the
+  special weapon fires again every second (except in network games).
+- **Build security** (#21): every download the builds use (compiler, SDL,
+  game data, butler) is checked by sha256; each release has a `SHA256SUMS`
+  file, which `atualizar-tyrian.sh` checks before installing; GitHub Actions
+  only writes to the repository in the final release step.
+- **Repository cleanup**:
+  - Correct copyright in the files written for this project
+    ("Tyrian 2000+ contributors"), also in the startup log.
+  - The packages include `CODIGO-FONTE.txt` with the link to the exact source
+    of that version, as the GPL asks (the itch.io ones too).
+  - The Linux package also carries the licenses of SDL's internal parts
+    (hidapi and yuv2rgb).
+  - `Tyrian2000Plus.exe` shows its name and version in Properties > Details.
+  - The main README is now in English (Portuguese in `README.pt-BR.md`), with
+    screenshots, the right release file names and the right place of
+    `opentyrian.log`.
+  - The release packages leave out the original DOS programs of the game
+    data (tyrian2k.exe, setup.exe etc.): the game never opens them, they do
+    not run on modern Windows and antivirus tools may flag them. The data
+    files themselves are still the originals, unchanged.
+  - Removed leftovers from the parent project that do not apply here
+    (`get_data.sh`, which fetched Tyrian 2.1, and the macOS build).
+
+## v1.0.3 (2026-10-19)
+
+- **Update notice** (#18): at startup the game asks GitHub whether there is a
+  newer release. If there is, the title screen shows "vX is out! See About."
+  and About shows the download links (itch.io and GitHub). It can be turned
+  off in Setup > Check Updates.
+
+## v1.0.2 (2026-10-19)
+
+- **Auto Fire stays on** when the pause menu is closed with A (#15).
+- **Automatic itch.io upload** (#16): publishing a GitHub release sends the
+  packages to the itch.io page.
+- **Steam Controller with Steam open** (#17): the workarounds were removed;
+  the README explains what to do (hold Start for Steam's gamepad mode, close
+  Steam, or start the game from Steam).
+
+## v1.0.1 (2026-10-19)
+
+- The packages carry the full README in Portuguese (`LEIA-ME.txt`) and in
+  English (`README.txt`) (#14).
+
+## v1.0 (2026-10-19)
+
+First release.
+
+- **Modern controllers** (#1): Xbox, PlayStation, Switch Pro, Steam
+  Controller and others, with rumble and hotplug.
+- **Auto Fire**: the fire button turns continuous fire on and off.
+- **Setup > Controls** on the title screen: keyboard, controller, mouse and
+  Auto Fire.
+- **Controller button names** in the help screens.
+- **Video**: Fit 4:3 by default, VSync, the Sharp Bilinear filter (#2) and
+  Brightness; Graphics... and Auto Fire in the pause menu too (#7, #8).
+- **Controller Map** (#5): a drawing of a controller showing what each button
+  does.
+- **Setup...** in the ship menu, and an automatic pause when the controller
+  disconnects (#7).
+- **2026 Steam Controller without Steam** on Windows (#9).
+- **About screen** and READMEs in Portuguese and English (#11); the
+  "Tyrian 2000+" name (#12).
+- **Windows, Linux and Steam Deck builds** on GitHub Actions, with the game
+  data in the release packages and `atualizar-tyrian.sh` for the Steam Deck
+  (#1, #3, #13).
+- **Tests** with virtual Xbox, PS5 and Switch Pro controllers (#6).
+- Based on OpenTyrian as of October 2026 (new input, config, save, file and
+  logging code).

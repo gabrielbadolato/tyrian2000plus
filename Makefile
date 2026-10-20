@@ -186,6 +186,14 @@ obj/%.o : src/%.c
 	@mkdir -p "$(dir $@)"
 	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c -o $@ $<
 
-obj/resources.o : visualc/resources.rc visualc/tyrian2000.ico visualc/opentyrian.manifest
+# v1.2.3-4-gabcdef -> 1,2,3,0 for the exe's version info (nothing if no tag)
+RC_VERSION_NUM := $(shell echo '$(OPENTYRIAN_VERSION)' | \
+                          sed -n 's/^v\([0-9]*\)\.\([0-9]*\)\.\{0,1\}\([0-9]*\).*/\1,\2,\3,0/p' | \
+                          sed 's/,,/,0,/')
+ifneq ($(RC_VERSION_NUM), )
+    RC_DEFINES := -DTYRIAN_VERSION_NUM=$(RC_VERSION_NUM) -DTYRIAN_VERSION_STR='\"$(OPENTYRIAN_VERSION)\"'
+endif
+
+obj/resources.o : visualc/resources.rc visualc/tyrian2000.ico visualc/opentyrian.manifest src/opentyrian_version.h
 	@mkdir -p "$(dir $@)"
-	$(WINDRES) --include-dir visualc -i $< -o $@
+	$(WINDRES) --include-dir visualc $(RC_DEFINES) -i $< -o $@

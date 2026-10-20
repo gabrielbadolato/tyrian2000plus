@@ -44,8 +44,15 @@ pequenas e podem seguir as regras acima normalmente.
 - Windows x64: `./make_windows.sh` (no Linux) cross-compila com llvm-mingw +
   SDL2 2.32 e SDL2_net 2.4, baixando tudo em `build/win`, e gera
   `dist/Tyrian2000Plus-windows-x64.zip` (Tyrian2000Plus.exe + SDL2.dll e SDL3.dll do sdl2-compat +
-  SDL2_net.dll + LEIA-ME.txt (= README.md) e README.txt (= README.en.md) + licenças). O Makefile embute ícone e manifesto
-  UTF-8 de `visualc/resources.rc`.
+  SDL2_net.dll + LEIA-ME.txt (= README.pt-BR.md) e README.txt (= README.md) + licenças). O Makefile embute ícone e manifesto
+  UTF-8 de `visualc/resources.rc`, e também nome e versão do exe (Propriedades >
+  Detalhes, tirados do `git describe`). Os dois pacotes levam `CODIGO-FONTE.txt`
+  (`write_source_note.sh`) com o link do código exato daquela versão (GPL).
+- README principal em inglês (`README.md`); português em `README.pt-BR.md`.
+  Cada mudança que chega ao jogador entra no `CHANGELOG.md` (em inglês), na
+  seção "Next version" até virar release. Arquivos escritos neste projeto
+  levam "Copyright (C) 2026 Tyrian 2000+ contributors"; os herdados mantêm o
+  aviso do OpenTyrian.
 - Linux x86_64 / Steam Deck: `./make_linux.sh` compila SDL2 estático (só
   depende da glibc) e gera `dist/Tyrian2000Plus-linux-x86_64.tar.gz`.
 - GitHub Actions (`.github/workflows/build.yml`) roda os dois scripts e os
@@ -97,7 +104,7 @@ o jogo não sabe com certeza o que a Steam está fazendo. Com a Steam no modo
 gamepad (segurar Start) tudo funciona (testado pelo Gabriel); a orientação é
 essa, ou fechar a Steam ou abrir o jogo por ela; não tentar de novo sem ele pedir. O Linux
 continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
-está explicado no `README.md` (que vai no pacote como LEIA-ME.txt).
+está explicado no `README.pt-BR.md` (que vai no pacote como LEIA-ME.txt).
 
 Tiro automático: opção "Auto Fire" em Setup > Controls (seção "gameplay",
 `auto_fire` no opentyrian.cfg). Cada toque no tiro liga/desliga o disparo
@@ -135,7 +142,7 @@ About: item "About" na tela de título, antes do Quit (inserido em
 Setup > "About..." (`aboutScreen()` em `src/about.c`) mostra o que é o
 jogo, o recado do Gabriel, os créditos (os do jogo original são lidos do
 `tyrian.cdt`) e links que abrem no navegador com `SDL_OpenURL`. O mesmo texto,
-em português, está no `README.md` (e em inglês no `README.en.md`); mudou um, mude os outros. O README original
+em português, está no `README.pt-BR.md` (e em inglês no `README.md`, o principal no GitHub); mudou um, mude os outros. O README original
 do OpenTyrian2000 ficou em `doc/README-OpenTyrian2000`.
 
 Aviso de atualização: ao abrir, `update_check_start()` (`src/update_check.c`)

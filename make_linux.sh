@@ -82,6 +82,9 @@ if [ ! -f "$PREFIX/lib/libSDL2.a" ]; then
     cmake --build "build/vendor/SDL2-$SDL2_VER/build" -j"$NPROC" >/dev/null
     cmake --install "build/vendor/SDL2-$SDL2_VER/build" >/dev/null
     install_license "build/vendor/SDL2-$SDL2_VER" SDL2
+    # Parts of SDL2 keep their own (BSD) licenses
+    cp "build/vendor/SDL2-$SDL2_VER/src/hidapi/LICENSE-bsd.txt" "$PREFIX/share/licenses/SDL2-hidapi.txt"
+    cp "build/vendor/SDL2-$SDL2_VER/src/video/yuv2rgb/LICENSE" "$PREFIX/share/licenses/SDL2-yuv2rgb.txt"
 fi
 
 if [ ! -f "$PREFIX/lib/libSDL2_net.a" ]; then
@@ -125,12 +128,13 @@ rm -rf "dist/$NAME" "dist/$NAME.tar.gz"
 mkdir -p "dist/$NAME/data" "dist/$NAME/licencas"
 cp opentyrian2000 "dist/$NAME/Tyrian2000Plus"
 strip "dist/$NAME/Tyrian2000Plus"
-cp README.md "dist/$NAME/LEIA-ME.txt"
-cp README.en.md "dist/$NAME/README.txt"
+cp README.pt-BR.md "dist/$NAME/LEIA-ME.txt"
+cp README.md "dist/$NAME/README.txt"
 cp linux/icons/tyrian2000-128.png "dist/$NAME/Tyrian2000Plus.png"
 cp COPYING "dist/$NAME/licencas/GPL-2.0.txt"
+./write_source_note.sh "dist/$NAME"
 cp doc/tyrian-freeware-license.txt "dist/$NAME/licencas/tyrian-freeware-license.txt"
-cp "$PREFIX/share/licenses/SDL2.txt" "$PREFIX/share/licenses/SDL2_net.txt" "dist/$NAME/licencas/"
+cp "$PREFIX/share/licenses/"SDL2*.txt "dist/$NAME/licencas/"
 cat > "dist/$NAME/data/COLOQUE-OS-DADOS-AQUI.txt" <<'EOF'
 Copie para esta pasta todos os arquivos da pasta "tyrian2000" de
 https://www.camanis.net/tyrian/tyrian2000.zip (tyrian.hdt, tyrian1.lvl,

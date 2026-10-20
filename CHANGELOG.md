@@ -14,6 +14,8 @@ change is in this repository's git log.
   Steam Deck) or a PlayStation controller, the help texts, the Controller Map
   and the controller menus show small pixel-art icons of the buttons instead
   of their names, and the Controller Map drawing shows them on its buttons.
+  Its layout also follows the controller: the left stick above the D-pad on
+  Xbox-style pads, a touchpad on PlayStation ones.
   Other controllers keep the names for now.
 
 ## v1.0.4 (2026-10-19)

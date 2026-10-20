@@ -1317,7 +1317,6 @@ static File logFile;
 static SDL_LogOutputFunction defaultLogOutput;
 static void *defaultLogUserdata;
 
-// copies every log message to opentyrian.log in the user directory
 void setupMenu(void)
 {
 	runSetupMenu(false);
@@ -1328,6 +1327,7 @@ void controlsMenu(void)
 	runSetupMenu(true);
 }
 
+// copies every log message to opentyrian.log in the user directory
 static void logToFile(void *userdata, int category, SDL_LogPriority priority, const char *message)
 {
 	(void)userdata;

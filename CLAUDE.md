@@ -75,7 +75,8 @@ pequenas e podem seguir as regras acima normalmente.
   Release (sem chave, repositório público), conferindo o SHA256SUMS; com uma
   chave do GitHub em ~/.config/tyrian2000plus/github-token pega o build mais
   novo do Actions no main (conferido pelo digest do artifact). Só apaga a
-  chave se o GitHub responder 401. Também põe o jogo na Steam como jogo
+  chave se o GitHub responder 401. O script fica todo entre { } porque a
+  atualização grava a versão nova por cima dele enquanto ele roda. Também põe o jogo na Steam como jogo
   não-Steam (edita userdata/*/config/shortcuts.vdf, binário; guarda cópia
   .antes-tyrian), só no Modo Desktop e fechando a Steam com permissão;
   atalho que já mencione "tyrian" conta como existente.
@@ -83,14 +84,16 @@ pequenas e podem seguir as regras acima normalmente.
   vão para o repositório.
 - Testes: `tests/run_tests.sh [pasta-do-jogo]` compila e roda
   `tests/test_gamepad.c` (controles virtuais: genérico, Xbox, PS5 e Switch
-  Pro, com tipo, nomes dos botões e ação de cada botão padrão) e, se receber uma pasta com
+  Pro, com tipo, nomes dos botões e ação de cada botão padrão), `tests/test_migrate.c`
+  (cópia dos saves da pasta do OpenTyrian2000, inclusive quando falha) e, se receber uma pasta com
   data/, tyrian.sav e tyrian.cfg reais, `tests/test_saves.c` (carrega e
   regrava os saves; devem sair idênticos).
 - Pastas do usuário: portátil (ao lado do exe) se existir `opentyrian.cfg` lá;
   senão `%APPDATA%/Tyrian2000Plus` ou `~/.config/tyrian2000plus` (desde o PR
   #24; antes era a pasta do OpenTyrian2000). `migrateUserDir()` em
   `src/file.c` COPIA os saves da pasta antiga na primeira vez (só se a nova
-  não tiver tyrian.sav/tyrian.cfg/opentyrian.cfg) e não mexe na antiga. No
+  não tiver tyrian.sav/tyrian.cfg/opentyrian.cfg) e não mexe na antiga; se a
+  cópia falhar, usa a pasta antiga naquela vez e tenta de novo na próxima. No
   Linux a pasta nova é a mesma do github-token do updater.
 
 ## Controles

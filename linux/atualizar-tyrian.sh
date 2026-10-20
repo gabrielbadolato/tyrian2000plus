@@ -21,6 +21,11 @@
 #   bash atualizar-tyrian.sh
 set -euo pipefail
 
+# O script inteiro fica entre { e }: assim o bash lê tudo antes de começar. A
+# atualização grava a versão nova deste arquivo por cima dele; sem isso, o
+# bash continuaria lendo o arquivo novo do ponto em que estava no antigo.
+{
+
 REPO="gabrielbadolato/tyrian2000plus"
 ARTIFACT="Tyrian2000Plus-linux-x86_64"
 DEST="${TYRIAN_DIR:-$HOME/Jogos/Tyrian2000Plus}"
@@ -113,7 +118,7 @@ for name, link in assets.items():
         print(r["tag_name"], link, name, assets.get("SHA256SUMS", "-")); break
 else:
     sys.exit(1)
-' <<<"$rel") || fail "a última versão publicada não tem o pacote Linux"
+' <<<"$rel") || fail "a última versão publicada ainda não tem o pacote Linux (logo depois de publicada, ela leva alguns minutos para ficar pronta); tente de novo daqui a pouco"
     run_desc="$versao"
 fi
 
@@ -273,8 +278,13 @@ for a in json.load(sys.stdin)["artifacts"]:
     tar -xzf "$TMP/x/$ARTIFACT.tar.gz" -C "$TMP/x"
 else
     curl -fsSL -o "$TMP/pacote.tar.gz" "$url" || fail "não consegui baixar a versão $versao (sem internet?)"
-    # Confere o pacote com a lista SHA256SUMS publicada junto (versões até a
-    # v1.0.3 não têm a lista).
+    # Confere o pacote com a lista SHA256SUMS publicada junto. Só as versões
+    # até a v1.0.3 não têm a lista; nas outras, faltar quer dizer que a versão
+    # acabou de ser publicada e a lista ainda não foi anexada.
+    case "$versao" in
+        v1.0|v1.0.1|v1.0.2|v1.0.3) ;;
+        *) [ "$sums" != "-" ] || fail "a versão $versao ainda está sendo preparada no GitHub; tente de novo daqui a alguns minutos" ;;
+    esac
     if [ "$sums" != "-" ]; then
         curl -fsSL -o "$TMP/SHA256SUMS" "$sums" || fail "não consegui baixar a lista SHA256SUMS (sem internet?)"
         esperado=$(awk -v n="$pacote" '$2 == n || $2 == "*" n { print $1 }' "$TMP/SHA256SUMS")
@@ -291,7 +301,8 @@ fi
 mkdir -p "$DEST"
 cp -r "$TMP/x/$ARTIFACT/." "$DEST/"
 [ -f "$TMP/x/$ARTIFACT/atualizar-tyrian.sh" ] || cp "$0" "$DEST/atualizar-tyrian.sh" 2>/dev/null || true
-chmod +x "$DEST/Tyrian2000Plus" "$DEST/atualizar-tyrian.sh"
+chmod +x "$DEST/Tyrian2000Plus"
+[ ! -f "$DEST/atualizar-tyrian.sh" ] || chmod +x "$DEST/atualizar-tyrian.sh"
 
 # ---- dados do jogo (só na primeira vez) ----
 if ! find "$DEST/data" -maxdepth 1 -iname "tyrian1.lvl" | grep -q .; then
@@ -340,3 +351,5 @@ EOF
 
 add_to_steam
 say "Tyrian 2000+ instalado na versão $run_desc, em $DEST.${steam_msg:+ $steam_msg}"
+exit
+}

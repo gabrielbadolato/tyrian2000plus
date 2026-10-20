@@ -235,8 +235,9 @@ static bool copyUserFile(const char *oldDir, const char *newDir, const char *nam
 // Up to v1.0.4 Tyrian 2000+ kept its settings and saves in OpenTyrian2000's
 // folder.  The first time its own folder is used, they are copied from
 // there; the old folder is left as it was, so nothing can be lost and
-// OpenTyrian2000 itself keeps its files.
-static void migrateUserDir(const char *oldDir, const char *newDir)
+// OpenTyrian2000 itself keeps its files.  False when the copy failed: the
+// old folder is then used this time, and the copy is tried again next time.
+static bool migrateUserDir(const char *oldDir, const char *newDir)
 {
 	static const char *const mainFiles[] = { "tyrian.sav", "tyrian.cfg", "opentyrian.cfg" };
 	static const char *const otherFiles[] = { "tyrian.sav.bak", "gamecontrollerdb.txt", "newsh$.shp" };
@@ -254,10 +255,10 @@ static void migrateUserDir(const char *oldDir, const char *newDir)
 		free(newPath);
 		free(oldPath);
 		if (newExists)
-			return;
+			return true;
 	}
 	if (!oldHasFiles)
-		return;
+		return true;
 
 	makeDir(newDir);
 
@@ -283,9 +284,10 @@ static void migrateUserDir(const char *oldDir, const char *newDir)
 				remove(path);
 				free(path);
 			}
-			return;
+			return false;
 		}
 	}
+	return true;
 }
 
 static void determineUserDirPath(void)
@@ -350,8 +352,18 @@ static void determineUserDirPath(void)
 		userDirPathLen = strlen(userDirPath);
 
 		char *oldDirPath = joinPath(parent, oldName);
-		migrateUserDir(oldDirPath, userDirPath);
-		free(oldDirPath);
+		if (migrateUserDir(oldDirPath, userDirPath))
+		{
+			free(oldDirPath);
+		}
+		else
+		{
+			// Without the copy the new folder would start empty and hold
+			// new files, and the copy would never be tried again.
+			free(userDirPath);
+			userDirPath = oldDirPath;
+			userDirPathLen = strlen(userDirPath);
+		}
 
 		free(parent);
 		return;

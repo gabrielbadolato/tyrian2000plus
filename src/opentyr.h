@@ -59,5 +59,6 @@ extern const char *opentyrian_str;
 extern const char *opentyrian_version;
 
 void setupMenu(void);
+void controlsMenu(void);  // Setup > Controls only
 
 #endif /* OPENTYR_H */

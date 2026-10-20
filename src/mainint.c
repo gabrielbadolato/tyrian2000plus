@@ -1527,6 +1527,7 @@ JE_boolean JE_inGameSetup(void)
 		MENU_ITEM_QUIT,
 		// Items added by Tyrian2000 Plus (names and help are not in the game data).
 		MENU_ITEM_AUTO_FIRE,
+		MENU_ITEM_CONTROLS,
 		MENU_ITEM_GRAPHICS,
 		MENU_ITEM_DISPLAY,
 		MENU_ITEM_SCALER,
@@ -1546,6 +1547,7 @@ JE_boolean JE_inGameSetup(void)
 	} plusItems[] =
 	{
 		[MENU_ITEM_AUTO_FIRE - MENU_ITEM_AUTO_FIRE] = { "Auto Fire", "Press fire once to start or stop firing." },
+		[MENU_ITEM_CONTROLS - MENU_ITEM_AUTO_FIRE] = { "Controls...", "Change the keyboard, controller and mouse." },
 		[MENU_ITEM_GRAPHICS - MENU_ITEM_AUTO_FIRE] = { "Graphics...", "Change the graphics settings." },
 		[MENU_ITEM_DISPLAY - MENU_ITEM_AUTO_FIRE] = { "Display", "Change the display mode." },
 		[MENU_ITEM_SCALER - MENU_ITEM_AUTO_FIRE] = { "Scaler", "Change the pixel art scaling algorithm." },
@@ -1556,8 +1558,8 @@ JE_boolean JE_inGameSetup(void)
 		[MENU_ITEM_DONE - MENU_ITEM_AUTO_FIRE] = { "Done", "Return to the previous menu." },
 	};
 
-	// The graphics page is hidden in network games: changing the video there
-	// would stall the other player.
+	// Controls and the graphics page are hidden in network games: changing
+	// them there would stall the other player.
 	const int mainItems[] =
 	{
 		MENU_ITEM_MUSIC_VOLUME,
@@ -1565,6 +1567,7 @@ JE_boolean JE_inGameSetup(void)
 		MENU_ITEM_DETAIL_LEVEL,
 		MENU_ITEM_GAME_SPEED,
 		MENU_ITEM_AUTO_FIRE,
+		isNetworkGame ? -1 : MENU_ITEM_CONTROLS,
 		isNetworkGame ? -1 : MENU_ITEM_GRAPHICS,
 		MENU_ITEM_RETURN_TO_GAME,
 		MENU_ITEM_QUIT,
@@ -1601,11 +1604,12 @@ JE_boolean JE_inGameSetup(void)
 		JE_loadCompShapes(&shopSpriteSheet, '1');  // need mouse pointer sprites
 
 	bool restart = true;
+	bool fadeInAfterControls = false;
 
 	size_t selectedIndex = 0;
 
 	const int yMenuItems = 20;
-	const int dyMenuItems = 14;
+	const int dyMenuItems = 13;  // 14 in the original, 13 fits the items Tyrian 2000+ added
 	const int xMenuItem = 10;
 	const int xMenuItemName = xMenuItem;
 	const int wMenuItemName = 110;
@@ -1726,6 +1730,12 @@ JE_boolean JE_inGameSetup(void)
 		JE_showVGA();
 		JE_mouseReplace();
 
+		if (fadeInAfterControls)
+		{
+			fade_palette(colors, 10, 0, 255);
+			fadeInAfterControls = false;
+		}
+
 		waitUntilElapsed();
 		waitUntilHasInput(INPUT_ANY);
 
@@ -1797,6 +1807,7 @@ JE_boolean JE_inGameSetup(void)
 								}
 								case MENU_ITEM_RETURN_TO_GAME:
 								case MENU_ITEM_QUIT:
+								case MENU_ITEM_CONTROLS:
 								case MENU_ITEM_GRAPHICS:
 								case MENU_ITEM_DONE:
 									break;
@@ -1933,6 +1944,30 @@ JE_boolean JE_inGameSetup(void)
 
 				result = true;
 				done = true;
+				break;
+			}
+			case MENU_ITEM_CONTROLS:
+			{
+				JE_playSampleNum(S_SELECT);
+
+				// The Setup > Controls screens use their own picture and
+				// palette; keep the level's to come back to.
+				Palette levelColors;
+				memcpy(levelColors, colors, sizeof(levelColors));
+				const size_t backgroundSize = (size_t)VGAScreen2->pitch * VGAScreen2->h;
+				Uint8 *const background = malloc(backgroundSize);
+				memcpy(background, VGAScreen2->pixels, backgroundSize);
+
+				fade_black(10);
+
+				controlsMenu();  // ends faded to black
+
+				memcpy(VGAScreen2->pixels, background, backgroundSize);
+				free(background);
+				memcpy(colors, levelColors, sizeof(colors));
+				fadeInAfterControls = true;
+
+				mouseCursor = MOUSE_POINTER_NORMAL;
 				break;
 			}
 			case MENU_ITEM_GRAPHICS:

@@ -214,7 +214,9 @@ static void captureKeySetting(size_t i, int x, int y, int w, int xStatus, const 
 	keySettings[i] = scancode;
 }
 
-void setupMenu(void)
+// controlsOnly: open straight on Controls and leave when backing out of it
+// (the pause menu during a level)
+static void runSetupMenu(bool controlsOnly)
 {
 	typedef enum
 	{
@@ -416,7 +418,7 @@ void setupMenu(void)
 
 	MenuId menuParents[COUNTOF(menus)] = { MENU_NONE };
 	size_t selectedMenuItemIndexes[COUNTOF(menus)] = { 0 };
-	MenuId currentMenu = MENU_SETUP;
+	MenuId currentMenu = controlsOnly ? MENU_CONTROLS : MENU_SETUP;
 	MenuItemId currentPicker = MENU_ITEM_NONE;
 	size_t pickerSelectedIndex = 0;
 
@@ -1316,6 +1318,16 @@ static SDL_LogOutputFunction defaultLogOutput;
 static void *defaultLogUserdata;
 
 // copies every log message to opentyrian.log in the user directory
+void setupMenu(void)
+{
+	runSetupMenu(false);
+}
+
+void controlsMenu(void)
+{
+	runSetupMenu(true);
+}
+
 static void logToFile(void *userdata, int category, SDL_LogPriority priority, const char *message)
 {
 	(void)userdata;

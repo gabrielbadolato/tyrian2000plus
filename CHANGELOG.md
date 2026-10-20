@@ -10,6 +10,11 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Controls in the pause menu**: during a level, Start or Esc now has
+  "Controls...", which opens the same Setup > Controls screens (keyboard,
+  controller, buttons, mouse, Auto Fire and the Controller Map). Closing it
+  goes back to the pause, and the level continues from where it stopped.
+  Hidden in network games.
 - **Button icons**: with an Xbox-style (also Steam Controller), PlayStation,
   Nintendo Switch or Steam Deck controller, the help texts, the Controller Map
   and the controller menus show small pixel-art icons of the buttons instead

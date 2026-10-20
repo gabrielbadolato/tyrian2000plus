@@ -31,6 +31,7 @@
 #include "joystick.h"
 #include "jukebox.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "logging.h"
 #include "loudness.h"
 #include "mainint.h"
@@ -72,9 +73,9 @@ static size_t getDisplayPickerItemsCount(void)
 static const char *getDisplayPickerItem(size_t i, char *buffer, size_t bufferSize)
 {
 	if (i == 0)
-		return "Window";
+		return tr("Window");
 
-	snprintf(buffer, bufferSize, "Display %d", (int)i);
+	snprintf(buffer, bufferSize, tr("Display %d"), (int)i);
 	return buffer;
 }
 
@@ -99,7 +100,7 @@ static const char *getOffOnPickerItem(size_t i, char *buffer, size_t bufferSize)
 {
 	(void)buffer, (void)bufferSize;
 
-	return i == 0 ? "Off" : "On";
+	return i == 0 ? tr("Off") : tr("On");
 }
 
 static const char *const brightnessNames[] = { "Normal", "Bright", "Brighter", "Brightest" };
@@ -113,7 +114,7 @@ static const char *getBrightnessPickerItem(size_t i, char *buffer, size_t buffer
 {
 	(void)buffer, (void)bufferSize;
 
-	return brightnessNames[i];
+	return tr(brightnessNames[i]);
 }
 
 static const char *const mouseActionNames[] =
@@ -134,7 +135,7 @@ static const char *getMouseActionPickerItem(size_t i, char *buffer, size_t buffe
 {
 	(void)buffer, (void)bufferSize;
 
-	return mouseActionNames[i];
+	return tr(mouseActionNames[i]);
 }
 
 static size_t getScalingModePickerItemsCount(void)
@@ -146,7 +147,19 @@ static const char *getScalingModePickerItem(size_t i, char *buffer, size_t buffe
 {
 	(void)buffer, (void)bufferSize;
 
-	return scaling_mode_names[i];
+	return tr(scaling_mode_names[i]);
+}
+
+static size_t getLanguagePickerItemsCount(void)
+{
+	return lang_setting_count();
+}
+
+static const char *getLanguagePickerItem(size_t i, char *buffer, size_t bufferSize)
+{
+	(void)buffer, (void)bufferSize;
+
+	return lang_setting_name(i);
 }
 
 // waits for a key press and assigns it to keySettings[i], swapping with the
@@ -155,7 +168,7 @@ static void captureKeySetting(size_t i, int x, int y, int w, int xStatus, const 
 {
 	// replace the status text
 	memcpy((Uint8 *)VGAScreen->pixels + VGAScreen->pitch * 188, (Uint8 *)VGAScreen2->pixels + VGAScreen2->pitch * 188, (size_t)VGAScreen->pitch * 12);
-	JE_textShade(VGAScreen, xStatus, 190, status, 15, 4, PART_SHADE);
+	JE_textShade(VGAScreen, xStatus, 190, tr(status), 15, 4, PART_SHADE);
 
 	int col = 248, colC = 1;
 
@@ -236,6 +249,7 @@ static void runSetupMenu(bool controlsOnly)
 		MENU_ITEM_BRIGHTNESS,
 		MENU_ITEM_AUTO_FIRE,
 		MENU_ITEM_UPDATE_CHECK,
+		MENU_ITEM_LANGUAGE,
 		MENU_ITEM_KEYBOARD,
 		MENU_ITEM_JOYSTICK,
 		MENU_ITEM_CONTROLLER_MAP,
@@ -304,6 +318,7 @@ static void runSetupMenu(bool controlsOnly)
 				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
 				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
+				{ MENU_ITEM_LANGUAGE, "Language:", "Choose the language of the menus and help.", getLanguagePickerItemsCount, getLanguagePickerItem },
 				{ MENU_ITEM_UPDATE_CHECK, "Check Updates:", "Look for a new version when the game starts.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_ABOUT, "About...", "What this is, where it came from, and credits." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous screen." },
@@ -465,15 +480,20 @@ static void runSetupMenu(bool controlsOnly)
 		const int xMenuItemValue = xMenuItemName + wMenuItemName;
 		const int wMenuItemValue = menu->wItemName != 0 ? 320 - 10 - xMenuItemValue : 95;
 		const int wMenuItem = wMenuItemName + wMenuItemValue;
+		size_t itemsCount = 0;
+		while (menu->items[itemsCount].id != (MenuItemId)-1)
+			++itemsCount;
+
 		const int yMenuItems = menu->compact ? 30 : 37;
-		const int dyMenuItems = menu->compact ? 13 : 21;
+		// a long menu closes up so its last item stays above the description
+		const int dyMenuItems = menu->compact ? 13 : itemsCount > 7 ? (176 - yMenuItems) / (int)(itemsCount - 1) : 21;
 
 		if (joystickIndex >= joysticks)  // a controller was disconnected
 			joystickIndex = 0;
 		Joystick *joy = joysticks > 0 ? &joystick[joystickIndex] : NULL;
 
 		// Draw header.
-		drawFontHvShadowAligned(VGAScreen, xCenter, yMenuHeader, menu->header, FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
+		drawFontHvShadowAligned(VGAScreen, xCenter, yMenuHeader, tr(menu->header), FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
 
 		int yPicker = 0;
 		const int dyPickerItem = 15;
@@ -500,17 +520,17 @@ static void runSetupMenu(bool controlsOnly)
 			if (selected)
 				yPicker = y;
 
-			const char *const name = menuItem->name;
+			const char *const name = tr(menuItem->name);
 
 			drawFontHvShadow(VGAScreen, xMenuItemName, y, name, FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 
 			switch (MENU_ITEM_BASE(menuItem->id))
 			{
 			case MENU_ITEM_DISPLAY:;
-				const char *value = "Window";
+				const char *value = tr("Window");
 				if (fullscreen_display >= 0)
 				{
-					snprintf(buffer, sizeof(buffer), "Display %d", fullscreen_display + 1);
+					snprintf(buffer, sizeof(buffer), tr("Display %d"), fullscreen_display + 1);
 					value = buffer;
 				}
 
@@ -522,27 +542,31 @@ static void runSetupMenu(bool controlsOnly)
 				break;
 
 			case MENU_ITEM_SCALING_MODE:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, scaling_mode_names[scaling_mode], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(scaling_mode_names[scaling_mode]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_SHARP_BILINEAR:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, sharp_bilinear_enabled ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, sharp_bilinear_enabled ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_VSYNC:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, vsync_enabled ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, vsync_enabled ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_BRIGHTNESS:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, brightnessNames[gammaCorrection % COUNTOF(brightnessNames)], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_AUTO_FIRE:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, autoFireToggle ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, autoFireToggle ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
+			case MENU_ITEM_LANGUAGE:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, lang_setting_name((size_t)lang_setting), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_UPDATE_CHECK:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, update_check_enabled ? "On" : "Off", FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, update_check_enabled ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_KEY:
@@ -557,7 +581,7 @@ static void runSetupMenu(bool controlsOnly)
 				const char *joyValue = buffer;
 				bool joyDisabled = disabled || joy == NULL;
 				if (joy == NULL)
-					joyValue = menuItem->id == MENU_ITEM_JOYSTICK_NUMBER ? "None" : "-";
+					joyValue = menuItem->id == MENU_ITEM_JOYSTICK_NUMBER ? tr("None") : "-";
 				else if (menuItem->id == MENU_ITEM_JOYSTICK_NUMBER)
 				{
 					// "1: Steam Controller", shortened with "..." if it does not fit
@@ -566,7 +590,7 @@ static void runSetupMenu(bool controlsOnly)
 						strcpy(&buffer[len - 4], "...");
 				}
 				else if (menuItem->id == MENU_ITEM_JOYSTICK_ANALOG)
-					joyValue = joy->analog ? "On" : "Off";
+					joyValue = joy->analog ? tr("On") : tr("Off");
 				else if (menuItem->id == MENU_ITEM_JOYSTICK_SENSITIVITY || menuItem->id == MENU_ITEM_JOYSTICK_THRESHOLD)
 				{
 					snprintf(buffer, sizeof(buffer), "%d", menuItem->id == MENU_ITEM_JOYSTICK_SENSITIVITY ? joy->sensitivity : joy->threshold);
@@ -579,7 +603,7 @@ static void runSetupMenu(bool controlsOnly)
 				break;
 
 			case MENU_ITEM_MOUSE_BUTTON:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, mouseActionNames[mouseSettings[menuItem->id - MENU_ITEM_MOUSE_BUTTON] - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(mouseActionNames[mouseSettings[menuItem->id - MENU_ITEM_MOUSE_BUTTON] - 1]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_MUSIC_VOLUME:
@@ -598,7 +622,7 @@ static void runSetupMenu(bool controlsOnly)
 		}
 
 		// Draw status text.
-		const char *description = menuItems[*selectedMenuItemIndex].description;
+		const char *description = tr(menuItems[*selectedMenuItemIndex].description);
 		if (menuItems[*selectedMenuItemIndex].id == MENU_ITEM_JOYSTICK_NUMBER && joy != NULL)
 			description = joystick_display_name(joystickIndex);
 		JE_textShade(VGAScreen, xMenuItemName, 190, description, 15, 4, PART_SHADE);
@@ -713,6 +737,7 @@ static void runSetupMenu(bool controlsOnly)
 									case MENU_ITEM_BRIGHTNESS:
 									case MENU_ITEM_AUTO_FIRE:
 									case MENU_ITEM_UPDATE_CHECK:
+									case MENU_ITEM_LANGUAGE:
 									case MENU_ITEM_KEY:
 									case MENU_ITEM_JOYSTICK_NUMBER:
 									case MENU_ITEM_JOYSTICK_ANALOG:
@@ -947,7 +972,7 @@ static void runSetupMenu(bool controlsOnly)
 					JE_playSampleNum(S_CLICK);
 
 					memcpy((Uint8 *)VGAScreen->pixels + VGAScreen->pitch * 188, (Uint8 *)VGAScreen2->pixels + VGAScreen2->pitch * 188, (size_t)VGAScreen->pitch * 12);
-					JE_textShade(VGAScreen, xMenuItemName, 190, "Press a button on the controller (Esc to cancel).", 15, 4, PART_SHADE);
+					JE_textShade(VGAScreen, xMenuItemName, 190, tr("Press a button on the controller (Esc to cancel)."), 15, 4, PART_SHADE);
 					JE_rectangle(VGAScreen, xMenuItemValue - 3, ySelected - 2, xMenuItemValue + wMenuItemValue, ySelected + 10, 248);
 					JE_showVGA();
 
@@ -1101,6 +1126,14 @@ static void runSetupMenu(bool controlsOnly)
 
 					currentPicker = selectedMenuItemId;
 					pickerSelectedIndex = update_check_enabled ? 1 : 0;
+					break;
+				}
+				case MENU_ITEM_LANGUAGE:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = (size_t)lang_setting;
 					break;
 				}
 				case MENU_ITEM_MUSIC_VOLUME:
@@ -1300,6 +1333,15 @@ static void runSetupMenu(bool controlsOnly)
 					update_check_start();  // if it was off when the game started
 					break;
 				}
+				case MENU_ITEM_LANGUAGE:
+				{
+					if ((int)pickerSelectedIndex != lang_setting)
+					{
+						lang_set((int)pickerSelectedIndex);
+						lang_reload_texts();
+					}
+					break;
+				}
 				default:
 					break;
 				}
@@ -1389,6 +1431,7 @@ int main(int argc, char *argv[])
 	atexit(SDL_Quit);
 
 	loadConfiguration();
+	lang_set(lang_setting);
 
 	xmas = xmas_time();  // arg handler may override
 

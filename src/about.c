@@ -29,6 +29,7 @@
 #include "helptext.h"
 #include "joystick.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "logging.h"
 #include "mouse.h"
 #include "nortsong.h"
@@ -83,7 +84,7 @@ static const AboutEntry aboutEntries[] =
 	{ STYLE_TEXT, "Thank you for playing!" },
 	{ STYLE_BLANK },
 	{ STYLE_HEADING, "What this version adds" },
-	{ STYLE_TEXT, "Modern controller support (Xbox, PlayStation, Switch Pro, Steam Controller and others), a Controller Map, Auto Fire, controller button names in the help screens, more graphics options in Setup and in the pause menu, and ready-to-play builds for Windows, Linux and the Steam Deck." },
+	{ STYLE_TEXT, "Modern controller support (Xbox, PlayStation, Switch Pro, Steam Controller and others), a Controller Map, Auto Fire, controller button names in the help screens, more graphics options in Setup and in the pause menu, Portuguese menus, and ready-to-play builds for Windows, Linux and the Steam Deck." },
 	{ STYLE_BLANK },
 	{ STYLE_HEADING, "Tyrian 2000 - original credits" },
 	{ STYLE_CREDITS },
@@ -268,11 +269,11 @@ static void buildLines(void)
 	if (newerVersion != NULL)
 	{
 		char text[160];
-		addWrapped(STYLE_HEADING, "New version available");
-		snprintf(text, sizeof(text), "Tyrian 2000+ %s is out (this is %s). Download it from one of the links below. On the Steam Deck, run atualizar-tyrian.sh again.", newerVersion, opentyrian_version);
+		addWrapped(STYLE_HEADING, tr("New version available"));
+		snprintf(text, sizeof(text), tr("Tyrian 2000+ %s is out (this is %s). Download it from one of the links below. On the Steam Deck, run atualizar-tyrian.sh again."), newerVersion, opentyrian_version);
 		addWrapped(STYLE_TEXT, text);
-		addLine(STYLE_LINK, "Download on itch.io", strlen("Download on itch.io"), UPDATE_CHECK_ITCH_URL);
-		addLine(STYLE_LINK, "Download on GitHub", strlen("Download on GitHub"), UPDATE_CHECK_RELEASES_URL);
+		addLine(STYLE_LINK, tr("Download on itch.io"), strlen(tr("Download on itch.io")), UPDATE_CHECK_ITCH_URL);
+		addLine(STYLE_LINK, tr("Download on GitHub"), strlen(tr("Download on GitHub")), UPDATE_CHECK_RELEASES_URL);
 		addLine(STYLE_BLANK, "", 0, NULL);
 	}
 
@@ -292,7 +293,7 @@ static void buildLines(void)
 			addLine(STYLE_LINK, entry->text, strlen(entry->text), entry->url);
 			break;
 		default:
-			addWrapped(entry->style, entry->text);
+			addWrapped(entry->style, tr(entry->text));
 			break;
 		}
 	}
@@ -404,18 +405,18 @@ void aboutScreen(void)
 
 		memcpy(VGAScreen->pixels, VGAScreen2->pixels, (size_t)VGAScreen->pitch * VGAScreen->h);
 
-		drawFontHvShadowAligned(VGAScreen, 160, 4, "About", FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
+		drawFontHvShadowAligned(VGAScreen, 160, 4, tr("About"), FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
 
 		drawLines(top, cursor);
 
 		const int j = joystick_first_gamepad();
 		char help[128];
 		if (status != NULL)
-			snprintf(help, sizeof(help), "%s", status);
+			snprintf(help, sizeof(help), "%s", tr(status));
 		else if (lines[cursor].style == STYLE_LINK)
-			snprintf(help, sizeof(help), "Enter (%s): open this link in your browser.", joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A));
+			snprintf(help, sizeof(help), tr("Enter (%s): open this link in your browser."), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A));
 		else
-			snprintf(help, sizeof(help), "Up/Down: scroll. Left/Right: page. Esc (%s): back.", joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
+			snprintf(help, sizeof(help), tr("Up/Down: scroll. Left/Right: page. Esc (%s): back."), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		JE_textShade(VGAScreen, TEXT_X, 190, help, 15, 4, PART_SHADE);
 
 		if (fadeIn)

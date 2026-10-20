@@ -18,6 +18,7 @@
  */
 #include "sprite.h"
 
+#include "accents.h"
 #include "file.h"
 #include "logging.h"
 #include "padglyph.h"
@@ -891,6 +892,7 @@ void JE_loadMainShapeTables(const char *filename)
 	fileClose(&file);
 
 	padglyphs_install();
+	accents_install();
 }
 
 void free_main_shape_tables(void)

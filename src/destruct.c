@@ -52,6 +52,7 @@
 #include "fonthand.h"
 #include "helptext.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "loudness.h"
 #include "mtrand.h"
 #include "nortsong.h"
@@ -776,7 +777,7 @@ static void DrawModeSelectMenu(enum de_mode_t mode)
 	for (i = 0; i < DESTRUCT_MODES; i++)
 		JE_textShade(VGAScreen, JE_fontCenter(destructModeName[i], TINY_FONT), 82 + i * 12, destructModeName[i], 12, (i == mode) * 4, FULL_SHADE);
 	if (config.allow_custom == true)
-		JE_textShade(VGAScreen, JE_fontCenter("Custom", TINY_FONT), 82 + i * 12, "Custom", 12, (i == mode) * 4, FULL_SHADE);
+		JE_textShade(VGAScreen, JE_fontCenter(tr("Custom"), TINY_FONT), 82 + i * 12, tr("Custom"), 12, (i == mode) * 4, FULL_SHADE);
 }
 
 static enum de_mode_t JE_modeSelect(void)

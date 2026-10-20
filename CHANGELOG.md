@@ -8,6 +8,19 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Portuguese** (Brazilian): menus, help screens, item names and the
+  program's own screens (Setup, pause, Controller Map, About) can be shown in
+  Portuguese. Setup > "Language" chooses Automatic (the system's language,
+  the default), English or Português. The game data stays unchanged: the
+  translation is a separate table in the program, and the accented letters
+  are drawn on top of the game's own fonts when they load (the two larger
+  fonts show capitals without the accent, since they have no room above
+  them). The data cube stories and the in-level texts are still in English.
+- Long Setup menus close up a little so their last item no longer covers the
+  description at the bottom.
+
 ## v1.0.5 (2026-10-20)
 
 - **Controls in the pause menu** (#27): during a level, Start or Esc now has

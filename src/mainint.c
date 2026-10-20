@@ -30,6 +30,7 @@
 #include "helptext.h"
 #include "joystick.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "lds_play.h"
 #include "logging.h"
 #include "loudness.h"
@@ -427,7 +428,7 @@ static bool helpSystemPage(Uint8 *topic, bool *restart)
 		snprintf(buffer, sizeof buffer, "%s %d", miscText[24], page - topicStart[*topic - 1] + 1);
 		drawFontHvAligned(VGAScreen, 10, 192, buffer, FONT_SMALL, ALIGN_LEFT, 13, 5);
 
-		snprintf(buffer, sizeof buffer, "%s %d of %d", miscText[25], page, MAX_PAGE);
+		snprintf(buffer, sizeof buffer, tr("%s %d of %d"), miscText[25], page, MAX_PAGE);
 		drawFontHvAligned(VGAScreen, 320 - 10, 192, buffer, FONT_SMALL, ALIGN_RIGHT, 13, 5);
 
 		// Draw text.
@@ -1450,7 +1451,7 @@ void JE_doInGameSetup(void)
 		{
 			JE_barShade(VGAScreen, 3, 60, 257, 80); /*Help Box*/
 			JE_barShade(VGAScreen, 5, 62, 255, 78);
-			JE_dString(VGAScreen, 10, 65, "Other player in options menu.", SMALL_FONT_SHAPES);
+			JE_dString(VGAScreen, 10, 65, tr("Other player in options menu."), SMALL_FONT_SHAPES);
 			JE_showVGA();
 
 			while (true)
@@ -1485,7 +1486,7 @@ void JE_doInGameSetup(void)
 			JE_barShade(3, 160, 257, 180); /-*Help Box*-/
 			JE_barShade(5, 162, 255, 178);
 			tempScreenSeg = VGAScreen;
-			JE_dString(VGAScreen, 10, 165, "Waiting for other player.", SMALL_FONT_SHAPES);
+			JE_dString(VGAScreen, 10, 165, tr("Waiting for other player."), SMALL_FONT_SHAPES);
 			JE_showVGA();
 			*/
 		}
@@ -1651,7 +1652,7 @@ JE_boolean JE_inGameSetup(void)
 
 			const char *const name = item < MENU_ITEM_AUTO_FIRE
 				? inGameText[item]
-				: plusItems[item - MENU_ITEM_AUTO_FIRE].name;
+				: tr(plusItems[item - MENU_ITEM_AUTO_FIRE].name);
 
 			const bool selected = i == selectedIndex;
 
@@ -1681,33 +1682,33 @@ JE_boolean JE_inGameSetup(void)
 				valueText = gameSpeedText[gameSpeed-1];
 				break;
 			case MENU_ITEM_AUTO_FIRE:
-				valueText = autoFireToggle ? "On" : "Off";
+				valueText = autoFireToggle ? tr("On") : tr("Off");
 				break;
 			case MENU_ITEM_DISPLAY:
 				if (fullscreen_display >= 0)
 				{
-					snprintf(buffer, sizeof(buffer), "Display %d", fullscreen_display + 1);
+					snprintf(buffer, sizeof(buffer), tr("Display %d"), fullscreen_display + 1);
 					valueText = buffer;
 				}
 				else
 				{
-					valueText = "Window";
+					valueText = tr("Window");
 				}
 				break;
 			case MENU_ITEM_SCALER:
 				valueText = scalers[scaler].name;
 				break;
 			case MENU_ITEM_SCALING_MODE:
-				valueText = scaling_mode_names[scaling_mode];
+				valueText = tr(scaling_mode_names[scaling_mode]);
 				break;
 			case MENU_ITEM_SHARP_BILINEAR:
-				valueText = sharp_bilinear_enabled ? "On" : "Off";
+				valueText = sharp_bilinear_enabled ? tr("On") : tr("Off");
 				break;
 			case MENU_ITEM_VSYNC:
-				valueText = vsync_enabled ? "On" : "Off";
+				valueText = vsync_enabled ? tr("On") : tr("Off");
 				break;
 			case MENU_ITEM_BRIGHTNESS:
-				valueText = brightnessNames[gammaCorrection % COUNTOF(brightnessNames)];
+				valueText = tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]);
 				break;
 			default:
 				break;
@@ -1722,7 +1723,7 @@ JE_boolean JE_inGameSetup(void)
 			const int item = menuItems[selectedIndex];
 			const char *const help = item < MENU_ITEM_AUTO_FIRE
 				? padHelpText(mainMenuHelp[helpIndexes[item]])
-				: plusItems[item - MENU_ITEM_AUTO_FIRE].help;
+				: tr(plusItems[item - MENU_ITEM_AUTO_FIRE].help);
 			JE_outTextAdjust(VGAScreen, 10, 147, help, 14, 6, TINY_FONT, true);
 		}
 
@@ -3219,7 +3220,7 @@ void JE_inGameDisplays(void)
 
 	if (youAreCheating)
 	{
-		JE_outText(VGAScreen, 90, 170, "Cheaters always prosper.", 3, 4);
+		JE_outText(VGAScreen, 90, 170, tr("Cheaters always prosper."), 3, 4);
 	}
 }
 

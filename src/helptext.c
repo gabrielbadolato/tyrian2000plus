@@ -22,6 +22,7 @@
 #include "file.h"
 #include "fonthand.h"
 #include "joystick.h"
+#include "lang.h"
 #include "logging.h"
 #include "menus.h"
 #include "opentyr.h"
@@ -116,6 +117,9 @@ void readEncryptedString(File *file, char *dst, size_t size)
 
 	memcpy(dst, buffer, len);
 	dst[len] = '\0';
+
+	if (lang_translate_reads)
+		lang_translate(dst, size);
 }
 
 // replaces every occurrence of find in text (at most size - 1 characters are kept)
@@ -162,47 +166,47 @@ const char *padHelpText(const char *text)
 
 	char confirmButton[32], pressConfirm[32], PressConfirm[32], doneOrCancel[32], PressCancel[32];
 	char changeButton[64], changeKey[40], sidekickButtons[80];
-	snprintf(confirmButton, sizeof confirmButton, "the ~%s~ button", confirm);
-	snprintf(pressConfirm, sizeof pressConfirm, "press ~%s~", confirm);
-	snprintf(PressConfirm, sizeof PressConfirm, "Press %s", confirm);
-	snprintf(doneOrCancel, sizeof doneOrCancel, "done or ~%s~", cancel);
-	snprintf(PressCancel, sizeof PressCancel, "Press %s", cancel);
-	snprintf(changeButton, sizeof changeButton, "the ~%s~ button (~change fire~)", change);
+	snprintf(confirmButton, sizeof confirmButton, tr("the ~%s~ button"), confirm);
+	snprintf(pressConfirm, sizeof pressConfirm, tr("press ~%s~"), confirm);
+	snprintf(PressConfirm, sizeof PressConfirm, tr("Press %s"), confirm);
+	snprintf(doneOrCancel, sizeof doneOrCancel, tr("done or ~%s~"), cancel);
+	snprintf(PressCancel, sizeof PressCancel, tr("Press %s"), cancel);
+	snprintf(changeButton, sizeof changeButton, tr("the ~%s~ button (~change fire~)"), change);
 	snprintf(changeKey, sizeof changeKey, "[%s]", change);
-	snprintf(sidekickButtons, sizeof sidekickButtons, "fired with ~%s~ and ~%s~", leftSidekick, rightSidekick);
+	snprintf(sidekickButtons, sizeof sidekickButtons, tr("fired with ~%s~ and ~%s~"), leftSidekick, rightSidekick);
 
 	const struct { const char *find, *replacement; } rules[] =
 	{
 		// keys that have no controller equivalent
-		{ "  Use Alt-X for a quick way to quit the game.", "" },
-		{ "  (Shortcut is ALT-L)", "" },
-		{ "  (Shortcut is ALT-S)", "" },
+		{ tr("  Use Alt-X for a quick way to quit the game."), "" },
+		{ tr("  (Shortcut is ALT-L)"), "" },
+		{ tr("  (Shortcut is ALT-S)"), "" },
 
 		// Enter / space bar confirm, ESC cancels
-		{ "the \"enter\" key or the space bar", confirmButton },
-		{ "press the Enter key or spacebar", pressConfirm },
-		{ "press Enter or hit the spacebar", pressConfirm },
-		{ "press Enter or the spacebar", pressConfirm },
-		{ "press Enter", pressConfirm },
-		{ "Press ENTER", PressConfirm },
-		{ "done or ESC", doneOrCancel },
-		{ "Press ESC", PressCancel },
-		{ "Press a key", "Press a button" },
+		{ tr("the \"enter\" key or the space bar"), confirmButton },
+		{ tr("press the Enter key or spacebar"), pressConfirm },
+		{ tr("press Enter or hit the spacebar"), pressConfirm },
+		{ tr("press Enter or the spacebar"), pressConfirm },
+		{ tr("press Enter"), pressConfirm },
+		{ tr("Press ENTER"), PressConfirm },
+		{ tr("done or ESC"), doneOrCancel },
+		{ tr("Press ESC"), PressCancel },
+		{ tr("Press a key"), tr("Press a button") },
 
 		// weapon buttons
-		{ "the keyboard command ~change fire~ or a joystick button assigned to ~Change rear weapon~", changeButton },
-		{ "usually fired with separate buttons", sidekickButtons },
-		{ "[/]", changeKey },
+		{ tr("the keyboard command ~change fire~ or a joystick button assigned to ~Change rear weapon~"), changeButton },
+		{ tr("usually fired with separate buttons"), sidekickButtons },
+		{ tr("[/]"), changeKey },
 
 		// arrow keys
-		{ "up/down arrow keys", "D-pad up/down" },
-		{ "right and left arrow keys", "D-pad right/left" },
-		{ "left and right arrow keys", "D-pad left/right" },
-		{ "left/right ~arrow keys~", "~D-pad~ left/right" },
-		{ "left/right arrow keys", "D-pad left/right" },
-		{ "Left/right arrow keys", "D-pad left/right" },
-		{ "Use arrow keys", "Use the D-pad" },
-		{ "arrow keys", "D-pad" },
+		{ tr("up/down arrow keys"), tr("D-pad up/down") },
+		{ tr("right and left arrow keys"), tr("D-pad right/left") },
+		{ tr("left and right arrow keys"), tr("D-pad left/right") },
+		{ tr("left/right ~arrow keys~"), tr("~D-pad~ left/right") },
+		{ tr("left/right arrow keys"), tr("D-pad left/right") },
+		{ tr("Left/right arrow keys"), tr("D-pad left/right") },
+		{ tr("Use arrow keys"), tr("Use the D-pad") },
+		{ tr("arrow keys"), tr("D-pad") },
 	};
 
 	char *out = buffer[which];
@@ -293,6 +297,9 @@ void JE_loadHelpText(void)
 		exit(EXIT_FAILURE);
 	}
 
+	// Tyrian 2000+: texts in the chosen language (see lang.h)
+	lang_translate_reads = true;
+
 	(void)fileReadU32(&file);  // Episode 1-3 item data position
 
 	/*Online Help*/
@@ -334,11 +341,11 @@ void JE_loadHelpText(void)
 	// OpenTyrian2000 Override
 	strcpy(menuText[6], menuText[5]);
 	strcpy(menuText[5], menuText[4]);
-	strcpy(menuText[4], "Setup");
+	SDL_strlcpy(menuText[4], tr("Setup"), sizeof(menuText[4]));
 
 	// Tyrian2000 Plus: About before Quit
 	strcpy(menuText[7], menuText[6]);
-	strcpy(menuText[6], "About");
+	SDL_strlcpy(menuText[6], tr("About"), sizeof(menuText[6]));
 
 	/*Event text*/
 	readEncryptedString(&file, NULL, 0);
@@ -377,7 +384,7 @@ void JE_loadHelpText(void)
 	readEncryptedString(&file, NULL, 0);
 	// Tyrian2000 Plus: "Setup..." (the title screen setup menu) goes before "Done"
 	strcpy(menuInt[3][9], menuInt[3][8]);
-	strcpy(menuInt[3][8], "Setup...");
+	SDL_strlcpy(menuInt[3][8], tr("Setup..."), sizeof(menuInt[3][8]));
 
 	/*InGame Menu*/
 	readEncryptedString(&file, NULL, 0);
@@ -557,6 +564,8 @@ void JE_loadHelpText(void)
 	readEncryptedString(&file, NULL, 0);
 	for (size_t i = 0; i < COUNTOF(superTyrianText); ++i)
 		readEncryptedString(&file, superTyrianText[i], sizeof superTyrianText[i]);
+
+	lang_translate_reads = false;
 
 	if (file.error)
 	{

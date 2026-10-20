@@ -200,6 +200,28 @@ do texto. `joystick_button_icon()`, `joystick_action_icons()` e
 as versões `*_label`/`*_to_string` continuam em texto (testes, logs). Família
 sem ícone para um botão cai no nome em texto.
 
+## Tradução
+
+Idiomas: Setup > "Language" (`lang_setting`; seção "language", `language` =
+auto/en/pt-br no opentyrian.cfg; auto segue `SDL_GetPreferredLocales`).
+Os dados do jogo não mudam: `src/lang.c` procura cada texto pelo original em
+inglês (`tr()`, espaços do fim ignorados) numa tabela UTF-8 por idioma
+(`src/lang_pt_br.c`), convertida para o CP437 do jogo. Os textos do
+`tyrian.hdt` são traduzidos ao carregar (`lang_translate_reads` em
+`readEncryptedString`), os nomes dos itens no fim de `JE_loadItemDat`, e os
+textos do próprio programa com `tr()` na hora de desenhar. Trocar o idioma
+recarrega hdt e itens (`lang_reload_texts`). Cada grupo da tabela diz o
+tamanho máximo do buffer; a fonte grande (títulos) não tem números nem "-".
+Não traduzir: códigos secretos (specialName), nomes padrão dos recordes,
+listas antigas do DOS. As frases das ajudas que `padHelpText()` troca pelos
+botões estão no fim da tabela ("Controller help"): se mudar o texto de uma
+ajuda em PT, mantenha a frase exata. Acentos: `src/accents.c` monta as letras
+acentuadas nas 3 fontes ao carregar (sprites 176+, códigos 0xF0+ para ã, õ e
+maiúsculas que o CP437 não tem); nas duas fontes maiores as maiúsculas
+ficam sem acento (não há espaço acima). Etapa 2 (datacubes e dicas das
+fases, ~25 mil palavras) ainda não feita; antes, pedir permissão ao Jason
+Emery. Estudo: `/mnt/project-files/analises/traducao-pt-br.md`.
+
 ## Vídeo
 
 Padrão: Scaling Mode "Fit 4:3" (fiel ao monitor 4:3 de 1995). A opção

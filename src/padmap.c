@@ -29,6 +29,7 @@
 #include "fonthand.h"
 #include "joystick.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "mouse.h"
 #include "nortsong.h"
 #include "opentyr.h"
@@ -191,7 +192,7 @@ static void actionsToString(unsigned int actions, char *buffer, size_t bufferSiz
 
 	if ((actions & 0xf) == 0xf)
 	{
-		SDL_strlcat(buffer, "Move", bufferSize);
+		SDL_strlcat(buffer, tr("Move"), bufferSize);
 		actions &= ~0xfu;
 	}
 
@@ -202,7 +203,7 @@ static void actionsToString(unsigned int actions, char *buffer, size_t bufferSiz
 
 		if (buffer[0] != '\0')
 			SDL_strlcat(buffer, "/", bufferSize);
-		SDL_strlcat(buffer, a == 4 && autoFireToggle ? "Auto Fire" : actionNames[a], bufferSize);
+		SDL_strlcat(buffer, tr(a == 4 && autoFireToggle ? "Auto Fire" : actionNames[a]), bufferSize);
 	}
 
 	if (buffer[0] == '\0')
@@ -468,7 +469,7 @@ static void drawLeader(SDL_Surface *surface, int x1, int y1, int xBend, int yBen
 
 static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Joystick_assignment assignments[JOYSTICK_ASSIGNMENTS][2], bool pressed)
 {
-	const char *name = control->name != NULL ? control->name : joystick_assignment_icon(j, &control->inputs[0]);
+	const char *name = control->name != NULL ? tr(control->name) : joystick_assignment_icon(j, &control->inputs[0]);
 
 	char actions[64];
 	actionsToString(controlActions(control, assignments), actions, sizeof(actions));
@@ -634,7 +635,7 @@ void controllerMapScreen(int j)
 
 		memcpy(VGAScreen->pixels, VGAScreen2->pixels, (size_t)VGAScreen->pitch * VGAScreen->h);
 
-		drawFontHvShadowAligned(VGAScreen, 160, 4, "Controller Map", FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
+		drawFontHvShadowAligned(VGAScreen, 160, 4, tr("Controller Map"), FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
 
 		drawControllerMap(VGAScreen, j);
 
@@ -648,15 +649,15 @@ void controllerMapScreen(int j)
 		}
 		else
 		{
-			snprintf(text, sizeof(text), "No controller connected. This is the default layout.");
+			snprintf(text, sizeof(text), "%s", tr("No controller connected. This is the default layout."));
 		}
 		drawFontHvShadowAligned(VGAScreen, 160, 160, text, FONT_SMALL, ALIGN_CENTER, 15, 2, false, 1);
 
-		snprintf(text, sizeof(text), "In menus: %s = OK, %s = Back.",
+		snprintf(text, sizeof(text), tr("In menus: %s = OK, %s = Back."),
 		         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		drawFontHvShadowAligned(VGAScreen, 160, 170, text, FONT_SMALL, ALIGN_CENTER, 15, 2, false, 1);
 
-		snprintf(text, sizeof(text), "Press buttons to test. Hold %s or press Esc to exit.",
+		snprintf(text, sizeof(text), tr("Press buttons to test. Hold %s or press Esc to exit."),
 		         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		JE_textShade(VGAScreen, 45, 190, text, 15, 4, PART_SHADE);
 

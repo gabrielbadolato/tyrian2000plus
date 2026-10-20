@@ -110,6 +110,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\about.c" />
+    <ClCompile Include="..\src\accents.c" />
     <ClCompile Include="..\src\animlib.c" />
     <ClCompile Include="..\src\arg_parse.c" />
     <ClCompile Include="..\src\backgrnd.c" />
@@ -127,6 +128,8 @@
     <ClCompile Include="..\src\joystick.c" />
     <ClCompile Include="..\src\jukebox.c" />
     <ClCompile Include="..\src\keyboard.c" />
+    <ClCompile Include="..\src\lang.c" />
+    <ClCompile Include="..\src\lang_pt_br.c" />
     <ClCompile Include="..\src\lds_play.c" />
     <ClCompile Include="..\src\logging.c" />
     <ClCompile Include="..\src\loudness.c" />
@@ -168,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\about.h" />
+    <ClInclude Include="..\src\accents.h" />
     <ClInclude Include="..\src\animlib.h" />
     <ClInclude Include="..\src\arg_parse.h" />
     <ClInclude Include="..\src\backgrnd.h" />
@@ -185,6 +189,7 @@
     <ClInclude Include="..\src\joystick.h" />
     <ClInclude Include="..\src\jukebox.h" />
     <ClInclude Include="..\src\keyboard.h" />
+    <ClInclude Include="..\src\lang.h" />
     <ClInclude Include="..\src\lds_play.h" />
     <ClInclude Include="..\src\logging.h" />
     <ClInclude Include="..\src\loudness.h" />

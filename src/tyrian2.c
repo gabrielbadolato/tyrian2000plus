@@ -29,6 +29,7 @@
 #include "game_menu.h"
 #include "joystick.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "lds_play.h"
 #include "logging.h"
 #include "loudness.h"
@@ -1936,7 +1937,7 @@ draw_player_shot_loop_end:
 			fill_rectangle_xy(VGAScreen, 175, 181, 287, 183, warningCol);
 			fill_rectangle_xy(VGAScreen, 24, 0, 287, 3, warningCol);
 
-			JE_outText(VGAScreen, 140, 178, "WARNING", 7, (warningCol % 16) / 2);
+			JE_outText(VGAScreen, 140, 178, tr("WARNING"), 7, (warningCol % 16) / 2);
 
 		}
 	}
@@ -2636,7 +2637,7 @@ new_game:
 									sprintf(buffer, "%s %s", miscTextB[4], pName[0]);
 									JE_dString(VGAScreen, JE_fontCenter(buffer, FONT_SHAPES), 100, buffer, FONT_SHAPES);
 
-									sprintf(buffer, "Or play... %s", specialName[SA_DESTRUCT - 1]);
+									sprintf(buffer, tr("Or play... %s"), specialName[SA_DESTRUCT - 1]);
 									JE_dString(VGAScreen, 80, 180, buffer, SMALL_FONT_SHAPES);
 								}
 								else
@@ -2650,7 +2651,7 @@ new_game:
 								else if (SANextShip[superArcadeMode] == SA_NORTSHIPZ)
 									trentWin = true;
 
-								sprintf(buffer, "Type %s at Title", specialName[SANextShip[superArcadeMode]-1]);
+								sprintf(buffer, tr("Type %s at Title"), specialName[SANextShip[superArcadeMode]-1]);
 								JE_dString(VGAScreen, JE_fontCenter(buffer, SMALL_FONT_SHAPES), 160, buffer, SMALL_FONT_SHAPES);
 								JE_showVGA();
 
@@ -3157,7 +3158,7 @@ void networkStartScreen(void)
 {
 	JE_loadPic(VGAScreen, 2, false);
 	memcpy(VGAScreen2->pixels, VGAScreen->pixels, VGAScreen2->pitch * VGAScreen2->h);
-	JE_dString(VGAScreen, JE_fontCenter("Waiting for other player.", SMALL_FONT_SHAPES), 140, "Waiting for other player.", SMALL_FONT_SHAPES);
+	JE_dString(VGAScreen, JE_fontCenter(tr("Waiting for other player."), SMALL_FONT_SHAPES), 140, tr("Waiting for other player."), SMALL_FONT_SHAPES);
 	JE_showVGA();
 	fade_palette(colors, 10, 0, 255);
 
@@ -3236,7 +3237,7 @@ static bool drawUpdateNotice(SDL_Surface *surface)
 		return false;
 
 	char text[64];
-	snprintf(text, sizeof(text), "%s is out! See About.", version);
+	snprintf(text, sizeof(text), tr("%s is out! See About."), version);
 	drawFontHvFullShadowAligned(surface, 318, 192, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, true, 1);  // black outline: readable on the light and dark parts
 	return true;
 }

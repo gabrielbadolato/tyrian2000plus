@@ -20,6 +20,7 @@
 
 #include "font.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "lds_play.h"
 #include "loudness.h"
 #include "mtrand.h"
@@ -100,8 +101,8 @@ void jukebox(void)  // FKA Setup.jukeboxGo
 			
 			const int x = VGAScreen->w / 2;
 			
-			drawFontHvAligned(VGAScreen, x, 170, "Press ESC to quit the jukebox.",           FONT_SMALL, ALIGN_CENTER, 1, 0);
-			drawFontHvAligned(VGAScreen, x, 180, "Arrow keys change the song being played.", FONT_SMALL, ALIGN_CENTER, 1, 0);
+			drawFontHvAligned(VGAScreen, x, 170, tr("Press ESC to quit the jukebox."), FONT_SMALL, ALIGN_CENTER, 1, 0);
+			drawFontHvAligned(VGAScreen, x, 180, tr("Arrow keys change the song being played."), FONT_SMALL, ALIGN_CENTER, 1, 0);
 			drawFontHvAligned(VGAScreen, x, 190, buffer,                                     FONT_SMALL, ALIGN_CENTER, 1, 4);
 		}
 

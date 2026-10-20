@@ -13,6 +13,8 @@ original freeware release, unchanged.
 
 Free, with the original game data included: Windows installer or .zip,
 and Linux / Steam Deck. How to install is [below](#installation).
+Or play it right in the browser on the itch.io page, with nothing to
+install (your saves stay in that browser).
 
 <table>
   <tr>

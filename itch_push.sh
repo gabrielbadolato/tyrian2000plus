@@ -8,7 +8,8 @@
 #
 # butler uploads only what changed, and the itch.io app updates installed
 # copies on its own.  The channel name ("windows", "linux") also tells
-# itch.io which system each file is for.
+# itch.io which system each file is for; "html5" is the version that plays
+# in the browser on the page (make_web.sh).
 #
 # Usage: ./itch_push.sh dist/Tyrian2000Plus-windows-x64 windows v1.0.2
 set -euo pipefail

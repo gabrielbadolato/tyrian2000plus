@@ -8,6 +8,13 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Play in the browser**: the itch.io page can run the game right in the
+  browser, with nothing to install. Saves and settings stay in that browser;
+  Xbox and PlayStation controllers work. The same code as the Windows and
+  Linux versions, built for the web with Emscripten (#43).
+
 ## v1.2 (2026-10-20)
 
 - **Statistics**: Setup > "Statistics..." shows the totals of all your games

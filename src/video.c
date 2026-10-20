@@ -24,6 +24,10 @@
 #include "video_scale.h"
 
 #include <assert.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#endif
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,6 +84,17 @@ static void window_center_in_display(int display_index);
 static bool window_restore_geometry(void);
 static void calc_dst_render_rect(SDL_Surface *src_surface, SDL_Rect *dst_rect);
 static void scale_and_flip(SDL_Surface *);
+
+#ifdef __EMSCRIPTEN__
+// In the browser the "window" is the canvas, and the page sets its size (all
+// of the page, or of the itch.io frame): the window always takes that size.
+static void window_fit_page(void)
+{
+	double w, h;
+	if (emscripten_get_element_css_size("#canvas", &w, &h) == EMSCRIPTEN_RESULT_SUCCESS && w >= 1 && h >= 1)
+		SDL_SetWindowSize(main_window, (int)w, (int)h);
+}
+#endif
 
 void init_video(void)
 {
@@ -331,8 +346,12 @@ void reinit_fullscreen(int new_display)
 
 	if (fullscreen_display == -1)
 	{
+#ifdef __EMSCRIPTEN__
+		window_fit_page();
+#else
 		if (!window_restore_geometry())
 			window_center_in_display(window_get_display_index());
+#endif
 	}
 	else
 	{
@@ -353,6 +372,13 @@ void video_on_win_resize(void)
 
 	// Tell video to reinit if the window was manually resized by the user.
 	// Also enforce a minimum size on the window.
+
+#ifdef __EMSCRIPTEN__
+	// The page decides the size; just show the screen again at the new one.
+	(void)w; (void)h; (void)scaler_w; (void)scaler_h;
+	JE_showVGA();
+	return;
+#endif
 
 	SDL_GetWindowSize(main_window, &w, &h);
 	scaler_w = scalers[scaler].width;
@@ -390,8 +416,13 @@ bool init_scaler(unsigned int new_scaler)
 	{
 		// Changing scalers, when not in fullscreen mode, forces the window
 		// to resize to exactly match the scaler's output dimensions.
+#ifdef __EMSCRIPTEN__
+		(void)w; (void)h;
+		window_fit_page();
+#else
 		SDL_SetWindowSize(main_window, w, h);
 		window_center_in_display(window_get_display_index());
+#endif
 	}
 
 	switch (bpp)
@@ -579,6 +610,12 @@ static void scale_and_flip(SDL_Surface *src_surface)
 	SDL_RenderClear(main_window_renderer);
 	SDL_RenderCopy(main_window_renderer, output_texture, NULL, &dst_rect);
 	SDL_RenderPresent(main_window_renderer);
+#ifdef __EMSCRIPTEN__
+	// The browser shows the frame only once the game hands control back to
+	// it.  The game's own waits do that (SDL_Delay), but a frame that runs
+	// late skips its wait, so give the browser a turn after every frame.
+	emscripten_sleep(0);
+#endif
 
 	// Save output rect to be used by mouse functions
 	last_output_rect = dst_rect;

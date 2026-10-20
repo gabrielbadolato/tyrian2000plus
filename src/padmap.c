@@ -32,9 +32,11 @@
 #include "mouse.h"
 #include "nortsong.h"
 #include "opentyr.h"
+#include "padglyph.h"
 #include "palette.h"
 #include "picload.h"
 #include "sndmast.h"
+#include "sprite.h"
 #include "vga256d.h"
 #include "video.h"
 
@@ -93,7 +95,13 @@ typedef struct
 static const int xLeftLabels = 94;    // labels on the left end here
 static const int xRightLabels = 226;  // labels on the right start here
 
-static const PadControl controls[] =
+/*
+ * One body for every controller; only the layout follows the controller's
+ * family (no brand's outline): sticks side by side for the generic and
+ * PlayStation layouts (with a touchpad on the latter), the left stick above
+ * the D-pad for the Xbox layout.
+ */
+static const PadControl genericControls[] =
 {
 	{ NULL, { AXIS(TRIGGERLEFT, false) },    SHAPE_TRIGGER,  125, 59,  SIDE_LEFT,  34, 0, 0, 116, 59 },
 	{ NULL, { BUTTON(LEFTSHOULDER) },        SHAPE_SHOULDER, 124, 67,  SIDE_LEFT,  54, 0, 0, 108, 67 },
@@ -110,6 +118,44 @@ static const PadControl controls[] =
 	{ NULL, { BUTTON(X) },                   SHAPE_FACE,     185, 91,  SIDE_RIGHT, 124, 185, 0, 185, 96 },
 	{ "R Stick", { STICK(RIGHT, RIGHTSTICK) }, SHAPE_STICK,  174, 113, SIDE_RIGHT, 142, 174, 0, 174, 122 },
 };
+
+static const PadControl xboxControls[] =
+{
+	{ NULL, { AXIS(TRIGGERLEFT, false) },    SHAPE_TRIGGER,  125, 59,  SIDE_LEFT,  34, 0, 0, 116, 59 },
+	{ NULL, { BUTTON(LEFTSHOULDER) },        SHAPE_SHOULDER, 124, 67,  SIDE_LEFT,  54, 0, 0, 108, 67 },
+	{ "L Stick", { STICK(LEFT, LEFTSTICK) }, SHAPE_STICK,    126, 91,  SIDE_LEFT,  84, 0, 0, 118, 91 },
+	{ "D-Pad", { BUTTON(DPAD_UP), BUTTON(DPAD_RIGHT), BUTTON(DPAD_DOWN), BUTTON(DPAD_LEFT) },
+	                                         SHAPE_DPAD,     146, 113, SIDE_LEFT,  140, 146, 0, 146, 123 },
+	{ NULL, { BUTTON(BACK) },                SHAPE_PILL,     150, 84,  SIDE_TOP_LEFT,  34, 0, 0, 150, 82 },
+	{ NULL, { BUTTON(START) },               SHAPE_PILL,     170, 84,  SIDE_TOP_RIGHT, 34, 0, 0, 170, 82 },
+	{ NULL, { AXIS(TRIGGERRIGHT, false) },   SHAPE_TRIGGER,  195, 59,  SIDE_RIGHT, 34, 0, 0, 204, 59 },
+	{ NULL, { BUTTON(RIGHTSHOULDER) },       SHAPE_SHOULDER, 196, 67,  SIDE_RIGHT, 52, 0, 0, 212, 67 },
+	{ NULL, { BUTTON(Y) },                   SHAPE_FACE,     194, 82,  SIDE_RIGHT, 70, 0, 0, 198, 79 },
+	{ NULL, { BUTTON(B) },                   SHAPE_FACE,     203, 91,  SIDE_RIGHT, 88, 0, 0, 208, 91 },
+	{ NULL, { BUTTON(A) },                   SHAPE_FACE,     194, 100, SIDE_RIGHT, 106, 0, 0, 198, 104 },
+	{ NULL, { BUTTON(X) },                   SHAPE_FACE,     185, 91,  SIDE_RIGHT, 124, 185, 0, 185, 96 },
+	{ "R Stick", { STICK(RIGHT, RIGHTSTICK) }, SHAPE_STICK,  174, 113, SIDE_RIGHT, 142, 174, 0, 174, 122 },
+};
+
+static const PadControl playstationControls[] =
+{
+	{ NULL, { AXIS(TRIGGERLEFT, false) },    SHAPE_TRIGGER,  125, 59,  SIDE_LEFT,  34, 0, 0, 116, 59 },
+	{ NULL, { BUTTON(LEFTSHOULDER) },        SHAPE_SHOULDER, 124, 67,  SIDE_LEFT,  54, 0, 0, 108, 67 },
+	{ "D-Pad", { BUTTON(DPAD_UP), BUTTON(DPAD_RIGHT), BUTTON(DPAD_DOWN), BUTTON(DPAD_LEFT) },
+	                                         SHAPE_DPAD,     124, 91,  SIDE_LEFT,  84, 0, 0, 114, 91 },
+	{ "L Stick", { STICK(LEFT, LEFTSTICK) }, SHAPE_STICK,    146, 113, SIDE_LEFT,  140, 146, 0, 146, 122 },
+	{ NULL, { BUTTON(BACK) },                SHAPE_PILL,     135, 77,  SIDE_TOP_LEFT,  34, 0, 0, 135, 74 },
+	{ NULL, { BUTTON(START) },               SHAPE_PILL,     185, 77,  SIDE_TOP_RIGHT, 34, 0, 0, 185, 74 },
+	{ NULL, { AXIS(TRIGGERRIGHT, false) },   SHAPE_TRIGGER,  195, 59,  SIDE_RIGHT, 34, 0, 0, 204, 59 },
+	{ NULL, { BUTTON(RIGHTSHOULDER) },       SHAPE_SHOULDER, 196, 67,  SIDE_RIGHT, 52, 0, 0, 212, 67 },
+	{ NULL, { BUTTON(Y) },                   SHAPE_FACE,     196, 82,  SIDE_RIGHT, 70, 0, 0, 200, 79 },
+	{ NULL, { BUTTON(B) },                   SHAPE_FACE,     205, 91,  SIDE_RIGHT, 88, 0, 0, 210, 91 },
+	{ NULL, { BUTTON(A) },                   SHAPE_FACE,     196, 100, SIDE_RIGHT, 106, 0, 0, 200, 104 },
+	{ NULL, { BUTTON(X) },                   SHAPE_FACE,     187, 91,  SIDE_RIGHT, 124, 187, 0, 187, 96 },
+	{ "R Stick", { STICK(RIGHT, RIGHTSTICK) }, SHAPE_STICK,  174, 113, SIDE_RIGHT, 142, 174, 0, 174, 122 },
+};
+
+typedef enum { LAYOUT_GENERIC, LAYOUT_XBOX, LAYOUT_PLAYSTATION } Layout;
 
 static const char *const actionNames[] =
 {
@@ -297,17 +343,41 @@ static void buttonColors(bool assigned, bool pressed, int hue, Uint8 *fill, Uint
 	}
 }
 
-static void drawControl(SDL_Surface *surface, const PadControl *control, bool assigned, bool pressed)
+// the button's icon (padglyph.h) for this controller, 0 if it has none
+static unsigned char controlGlyph(const PadControl *control, int j)
+{
+	if (control->shape == SHAPE_DPAD || control->shape == SHAPE_STICK)
+		return 0;
+
+	const unsigned char glyph = (unsigned char)joystick_assignment_icon(j, &control->inputs[0])[0];
+	return is_padglyph(glyph) && sprite_exists(TINY_FONT, fontMap[glyph]) ? glyph : 0;
+}
+
+// draws an icon of the small font centered on (x, y)
+static void drawGlyph(SDL_Surface *surface, int x, int y, unsigned char glyph, Uint8 hue, Sint8 value)
+{
+	const Sprite *icon = sprite(TINY_FONT, fontMap[glyph]);
+	blit_sprite_hv(surface, x - icon->width / 2, y - icon->height / 2, TINY_FONT, fontMap[glyph], hue, value);
+}
+
+static void drawControl(SDL_Surface *surface, const PadControl *control, bool assigned, bool pressed, unsigned char glyph)
 {
 	Uint8 fill, light, dark;
 	buttonColors(assigned, pressed, 13, &fill, &light, &dark);
 
 	const int x = control->x, y = control->y;
 
+	// same colors as the drawn buttons (the icon shades are 4, 7 and 9)
+	const Uint8 glyphHue = pressed ? 14 : assigned ? (control->shape == SHAPE_FACE ? 13 : 5) : 3;
+	const Sint8 glyphValue = pressed ? 5 : assigned ? 2 : -2;
+
 	switch (control->shape)
 	{
 	case SHAPE_FACE:
-		drawDisc(surface, x, y, 4, fill, light, dark);
+		if (glyph != 0)
+			drawGlyph(surface, x, y, glyph, glyphHue, glyphValue);
+		else
+			drawDisc(surface, x, y, 4, fill, light, dark);
 		break;
 
 	case SHAPE_STICK:
@@ -331,6 +401,11 @@ static void drawControl(SDL_Surface *surface, const PadControl *control, bool as
 		break;
 
 	case SHAPE_PILL:
+		if (glyph != 0)
+		{
+			drawGlyph(surface, x, y, glyph, glyphHue, glyphValue);
+			break;
+		}
 		buttonColors(assigned, pressed, 5, &fill, &light, &dark);
 		fill_rectangle_xy(surface, x - 4, y - 1, x + 4, y + 2, COLOR_OUTLINE);
 		fill_rectangle_xy(surface, x - 3, y - 2, x + 3, y + 3, COLOR_OUTLINE);
@@ -349,6 +424,11 @@ static void drawControl(SDL_Surface *surface, const PadControl *control, bool as
 		const int bottom = pressed ? 10 : assigned ? 2 : 4;
 
 		drawShaded(surface, inside, MAX(x1, x < 160 ? 100 : 160), y1, MIN(x2, x < 160 ? 160 : 220), y2, hue, top, bottom);
+
+		// the name printed on the trigger, in the part above the shoulder
+		// (too little of the shoulder shows above the body for one)
+		if (glyph != 0 && !shoulder)
+			drawGlyph(surface, x, y1 + 4, glyph, hue, pressed ? 1 : assigned ? 5 : 1);
 		break;
 	}
 	}
@@ -388,7 +468,7 @@ static void drawLeader(SDL_Surface *surface, int x1, int y1, int xBend, int yBen
 
 static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Joystick_assignment assignments[JOYSTICK_ASSIGNMENTS][2], bool pressed)
 {
-	const char *name = control->name != NULL ? control->name : joystick_assignment_label(j, &control->inputs[0]);
+	const char *name = control->name != NULL ? control->name : joystick_assignment_icon(j, &control->inputs[0]);
 
 	char actions[64];
 	actionsToString(controlActions(control, assignments), actions, sizeof(actions));
@@ -436,8 +516,29 @@ static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Jo
 		drawLeader(surface, xLineStart, yLine, xBend, yLine, control->xAnchor, control->yAnchor);
 	}
 
-	drawFontHvShadowAligned(surface, xText, y, name, FONT_SMALL, align, 14, pressed ? 6 : 2, false, 1);
+	// icons are taller than letters: lift them clear of the actions line
+	const int yName = is_padglyph((unsigned char)name[0]) ? y - 2 : y;
+	drawFontHvShadowAligned(surface, xText, yName, name, FONT_SMALL, align, 14, pressed ? 6 : 2, false, 1);
 	drawFontHvShadowAligned(surface, xText, y + 8, actions, FONT_SMALL, align, 15, pressed ? 6 : 3, false, 1);
+}
+
+static Layout controllerLayout(int j)
+{
+	if (j < 0 || joystick[j].controller == NULL)
+		return LAYOUT_GENERIC;
+
+	switch (joystick_family(j))
+	{
+	case FAMILY_XBOX:
+	case FAMILY_NINTENDO:      return LAYOUT_XBOX;  // the Switch Pro also has the left stick on top
+	case FAMILY_PLAYSTATION:   return LAYOUT_PLAYSTATION;
+	default:                   return LAYOUT_GENERIC;  // Steam Deck: sticks between D-pad and buttons
+	}
+}
+
+static bool inTouchpad(int x, int y)
+{
+	return inRoundedRect(x, y, 142, 73, 178, 95, 4);
 }
 
 void drawControllerMap(SDL_Surface *surface, int j)
@@ -450,32 +551,52 @@ void drawControllerMap(SDL_Surface *surface, int j)
 	else
 		joystick_default_gamepad_assignments(defaults);
 
+	const Layout layout = controllerLayout(j);
+	const PadControl *controls = genericControls;
+	size_t count = COUNTOF(genericControls);
+	if (layout == LAYOUT_XBOX)
+	{
+		controls = xboxControls;
+		count = COUNTOF(xboxControls);
+	}
+	else if (layout == LAYOUT_PLAYSTATION)
+	{
+		controls = playstationControls;
+		count = COUNTOF(playstationControls);
+	}
+
 	// triggers and shoulders go behind the body
-	for (size_t i = 0; i < COUNTOF(controls); ++i)
+	for (size_t i = 0; i < count; ++i)
 	{
 		const PadControl *control = &controls[i];
 		if (control->shape == SHAPE_TRIGGER)
-			drawControl(surface, control, controlActions(control, assignments) != 0, controlPressed(control, j));
+			drawControl(surface, control, controlActions(control, assignments) != 0, controlPressed(control, j), controlGlyph(control, j));
 	}
-	for (size_t i = 0; i < COUNTOF(controls); ++i)
+	for (size_t i = 0; i < count; ++i)
 	{
 		const PadControl *control = &controls[i];
 		if (control->shape == SHAPE_SHOULDER)
-			drawControl(surface, control, controlActions(control, assignments) != 0, controlPressed(control, j));
+			drawControl(surface, control, controlActions(control, assignments) != 0, controlPressed(control, j), controlGlyph(control, j));
 	}
 
 	drawShaded(surface, inBody, 98, 68, 222, 148, 3, 11, 5);
 
-	for (size_t i = 0; i < COUNTOF(controls); ++i)
+	// details that do nothing in the game
+	if (layout == LAYOUT_PLAYSTATION)
+		drawShaded(surface, inTouchpad, 142, 73, 178, 95, 3, 7, 9);
+	else if (layout == LAYOUT_XBOX)
+		drawDisc(surface, 160, 75, 3, C(3, 7), C(3, 10), C(3, 4));  // guide button
+
+	for (size_t i = 0; i < count; ++i)
 	{
 		const PadControl *control = &controls[i];
 		const bool pressed = controlPressed(control, j);
 
 		if (control->shape != SHAPE_TRIGGER && control->shape != SHAPE_SHOULDER)
-			drawControl(surface, control, controlActions(control, assignments) != 0, pressed);
+			drawControl(surface, control, controlActions(control, assignments) != 0, pressed, controlGlyph(control, j));
 	}
 
-	for (size_t i = 0; i < COUNTOF(controls); ++i)
+	for (size_t i = 0; i < count; ++i)
 		drawLabel(surface, &controls[i], j, assignments, controlPressed(&controls[i], j));
 }
 
@@ -532,11 +653,11 @@ void controllerMapScreen(int j)
 		drawFontHvShadowAligned(VGAScreen, 160, 160, text, FONT_SMALL, ALIGN_CENTER, 15, 2, false, 1);
 
 		snprintf(text, sizeof(text), "In menus: %s = OK, %s = Back.",
-		         joystick_button_label(j, SDL_CONTROLLER_BUTTON_A), joystick_button_label(j, SDL_CONTROLLER_BUTTON_B));
+		         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		drawFontHvShadowAligned(VGAScreen, 160, 170, text, FONT_SMALL, ALIGN_CENTER, 15, 2, false, 1);
 
 		snprintf(text, sizeof(text), "Press buttons to test. Hold %s or press Esc to exit.",
-		         joystick_button_label(j, SDL_CONTROLLER_BUTTON_B));
+		         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		JE_textShade(VGAScreen, 45, 190, text, 15, 4, PART_SHADE);
 
 		// how long B has been held, as a bar that fills up

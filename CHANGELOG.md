@@ -10,7 +10,28 @@ change is in this repository's git log.
 
 ## Next version
 
-- **Both sidekicks on one button:** a new controller action, "Both Sidekicks",
+- **Button icons**: with an Xbox-style (also Steam Controller), PlayStation,
+  Nintendo Switch or Steam Deck controller, the help texts, the Controller Map
+  and the controller menus show small pixel-art icons of the buttons instead
+  of their names, and the Controller Map drawing shows them on its buttons.
+  Its layout also follows the controller: the left stick above the D-pad on
+  Xbox-style and Switch pads, a touchpad on PlayStation ones. The Steam Deck
+  now shows its own names (L1, R1, L2, R2) instead of the Xbox ones.
+- **Installers** (#24):
+  - Windows: `Tyrian2000Plus-vX.Y.Z-windows-x64-setup.exe` installs the game
+    for the current user (no administrator prompt), with a Start menu
+    shortcut, an optional desktop shortcut and an uninstaller in
+    Settings > Apps. Saves and settings are kept.
+  - Steam Deck / SteamOS: `Tyrian2000Plus-vX.Y.Z-instalar-steam-deck.sh`
+    installs the game and puts it in the Steam library as a non-Steam game
+    (asking first, since Steam has to close for a few seconds). Existing
+    installs get the Steam shortcut on their next update.
+- **Own folder for saves and settings** (#24): `%APPDATA%\Tyrian2000Plus` on
+  Windows and `~/.config/tyrian2000plus` on Linux, instead of
+  OpenTyrian2000's folder, so the two games no longer share settings. The
+  first start copies the saves and settings from the old folder and leaves
+  it as it was. The portable mode is unchanged.
+- **Both sidekicks on one button** (#26): a new controller action, "Both Sidekicks",
   fires the left and right sidekicks together, like the mouse option of the
   same name. By default it is on B (Circle on PlayStation, A on Switch), which
   had no use during a level; it can be changed in Setup > Controls >

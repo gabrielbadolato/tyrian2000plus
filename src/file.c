@@ -165,6 +165,129 @@ File dataFileOpen(const char *filename, const char *mode)
 	return file;
 }
 
+static void makeDir(const char *path)
+{
+#ifdef _WIN32
+	(void)_mkdir(path);
+#else
+	(void)mkdir(path, 0700);
+#endif
+}
+
+// "dir/name" in a new string (just a copy of dir when name is NULL).
+static char *joinPath(const char *dir, const char *name)
+{
+	size_t size = strlen(dir) + (name != NULL ? 1 + strlen(name) : 0) + 1;
+	char *path = malloc(size);
+	if (name != NULL)
+		snprintf(path, size, "%s/%s", dir, name);
+	else
+		snprintf(path, size, "%s", dir);
+	return path;
+}
+
+static bool copyFile(const char *fromPath, const char *toPath)
+{
+	FILE *from = fopen(fromPath, "rb");
+	if (from == NULL)
+		return false;
+	FILE *to = fopen(toPath, "wb");
+	if (to == NULL)
+	{
+		fclose(from);
+		return false;
+	}
+
+	bool ok = true;
+	char buffer[4096];
+	size_t count;
+	while ((count = fread(buffer, 1, sizeof(buffer), from)) > 0)
+	{
+		if (fwrite(buffer, 1, count, to) != count)
+		{
+			ok = false;
+			break;
+		}
+	}
+	if (ferror(from))
+		ok = false;
+	fclose(from);
+	if (fclose(to) != 0)
+		ok = false;
+
+	if (!ok)
+		remove(toPath);
+	return ok;
+}
+
+// Copies dir/name from oldDir to newDir unless it is missing there or already
+// in newDir.  False only when a copy failed.
+static bool copyUserFile(const char *oldDir, const char *newDir, const char *name)
+{
+	char *oldPath = joinPath(oldDir, name);
+	char *newPath = joinPath(newDir, name);
+	bool ok = !fileExists(oldPath) || fileExists(newPath) || copyFile(oldPath, newPath);
+	free(oldPath);
+	free(newPath);
+	return ok;
+}
+
+// Up to v1.0.4 Tyrian 2000+ kept its settings and saves in OpenTyrian2000's
+// folder.  The first time its own folder is used, they are copied from
+// there; the old folder is left as it was, so nothing can be lost and
+// OpenTyrian2000 itself keeps its files.
+static void migrateUserDir(const char *oldDir, const char *newDir)
+{
+	static const char *const mainFiles[] = { "tyrian.sav", "tyrian.cfg", "opentyrian.cfg" };
+	static const char *const otherFiles[] = { "tyrian.sav.bak", "gamecontrollerdb.txt", "newsh$.shp" };
+	const size_t mainCount = sizeof(mainFiles) / sizeof(*mainFiles);
+	const size_t otherCount = sizeof(otherFiles) / sizeof(*otherFiles);
+
+	// Only into a folder that has none of the main files yet.
+	bool oldHasFiles = false;
+	for (size_t i = 0; i < mainCount; ++i)
+	{
+		char *newPath = joinPath(newDir, mainFiles[i]);
+		char *oldPath = joinPath(oldDir, mainFiles[i]);
+		bool newExists = fileExists(newPath);
+		oldHasFiles = oldHasFiles || fileExists(oldPath);
+		free(newPath);
+		free(oldPath);
+		if (newExists)
+			return;
+	}
+	if (!oldHasFiles)
+		return;
+
+	makeDir(newDir);
+
+	for (size_t i = 0; i < otherCount; ++i)
+		copyUserFile(oldDir, newDir, otherFiles[i]);
+
+	char name[16];
+	for (int i = 1; i <= 255; ++i)  // the recorded demos (see demo.c)
+	{
+		snprintf(name, sizeof(name), "demorec.%d", i);
+		copyUserFile(oldDir, newDir, name);
+	}
+
+	// The main files go last.  If one fails, the ones already copied are
+	// taken back, so that the copy is tried again next time.
+	for (size_t i = 0; i < mainCount; ++i)
+	{
+		if (!copyUserFile(oldDir, newDir, mainFiles[i]))
+		{
+			for (size_t j = 0; j < i; ++j)
+			{
+				char *path = joinPath(newDir, mainFiles[j]);
+				remove(path);
+				free(path);
+			}
+			return;
+		}
+	}
+}
+
 static void determineUserDirPath(void)
 {
 	if (userDirPathLen != 0)
@@ -201,37 +324,38 @@ static void determineUserDirPath(void)
 			return;
 	}
 
+	// Settings and saves go into a folder in the system's user settings
+	// folder (APPDATA, or ~/.config on Linux).
+	char *parent = NULL;
 #ifdef TARGET_WIN32
 	const char *appData = getenv("APPDATA");
 	if (appData != NULL)
-	{
-		userDirPathLen = strlen(appData) + strlen("/OpenTyrian2000");
-		size_t userDirPathSize = userDirPathLen + 1;
-		userDirPath = malloc(userDirPathSize);
-		snprintf(userDirPath, userDirPathSize, "%s/OpenTyrian2000", appData);
-		return;
-	}
+		parent = joinPath(appData, NULL);
+	const char *const oldName = "OpenTyrian2000";
+	const char *const newName = "Tyrian2000Plus";
 #else
 	const char *xdgConfigHome = getenv("XDG_CONFIG_HOME");
-	if (xdgConfigHome != NULL)
-	{
-		userDirPathLen = strlen(xdgConfigHome) + strlen("/opentyrian2000");
-		size_t userDirPathSize = userDirPathLen + 1;
-		userDirPath = malloc(userDirPathSize);
-		snprintf(userDirPath, userDirPathSize, "%s/opentyrian2000", xdgConfigHome);
-		return;
-	}
-
 	const char *home = getenv("HOME");
-	if (home != NULL)
+	if (xdgConfigHome != NULL)
+		parent = joinPath(xdgConfigHome, NULL);
+	else if (home != NULL)
+		parent = joinPath(home, ".config");
+	const char *const oldName = "opentyrian2000";
+	const char *const newName = "tyrian2000plus";
+#endif
+
+	if (parent != NULL)
 	{
-		userDirPathLen = strlen(home) + strlen("/.config/opentyrian2000");
-		size_t userDirPathSize = userDirPathLen + 1;
-		userDirPath = malloc(userDirPathSize);
-		snprintf(userDirPath, userDirPathSize, "%s/.config/opentyrian2000", home);
+		userDirPath = joinPath(parent, newName);
+		userDirPathLen = strlen(userDirPath);
+
+		char *oldDirPath = joinPath(parent, oldName);
+		migrateUserDir(oldDirPath, userDirPath);
+		free(oldDirPath);
+
+		free(parent);
 		return;
 	}
-#endif
 
 	userDirPath = "";
 	userDirPathLen = 0;
@@ -245,11 +369,7 @@ File userFileOpen(const char *filename, const char *mode)
 	if (userDirPathLen == 0)
 		return fileOpen(filename, mode);
 
-#ifdef _WIN32
-	(void)_mkdir(userDirPath);
-#else
-	(void)mkdir(userDirPath, 0700);
-#endif
+	makeDir(userDirPath);
 
 	size_t pathSize = userDirPathLen + 1 + strlen(filename) + 1;
 	char *path = malloc(pathSize);

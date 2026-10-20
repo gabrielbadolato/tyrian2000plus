@@ -44,7 +44,13 @@ pequenas e podem seguir as regras acima normalmente.
 - Windows x64: `./make_windows.sh` (no Linux) cross-compila com llvm-mingw +
   SDL2 2.32 e SDL2_net 2.4, baixando tudo em `build/win`, e gera
   `dist/Tyrian2000Plus-windows-x64.zip` (Tyrian2000Plus.exe + SDL2.dll e SDL3.dll do sdl2-compat +
-  SDL2_net.dll + LEIA-ME.txt (= README.pt-BR.md) e README.txt (= README.md) + licenças). O Makefile embute ícone e manifesto
+  SDL2_net.dll + LEIA-ME.txt (= README.pt-BR.md) e README.txt (= README.md) + licenças).
+  Instalador: `./make_installer.sh <pasta-do-pacote> <saida.exe>` (NSIS,
+  `windows/installer.nsi`): por usuário, sem admin, em
+  %LOCALAPPDATA%\Programs\Tyrian2000Plus; o desinstalador apaga só os arquivos
+  que instalou (lista gerada pelo script). A release anexa
+  `Tyrian2000Plus-vX-windows-x64-setup.exe` (com dados) e
+  `Tyrian2000Plus-vX-instalar-steam-deck.sh` (= linux/atualizar-tyrian.sh). O Makefile embute ícone e manifesto
   UTF-8 de `visualc/resources.rc`, e também nome e versão do exe (Propriedades >
   Detalhes, tirados do `git describe`). Os dois pacotes levam `CODIGO-FONTE.txt`
   (`write_source_note.sh`) com o link do código exato daquela versão (GPL).
@@ -69,7 +75,10 @@ pequenas e podem seguir as regras acima normalmente.
   Release (sem chave, repositório público), conferindo o SHA256SUMS; com uma
   chave do GitHub em ~/.config/tyrian2000plus/github-token pega o build mais
   novo do Actions no main (conferido pelo digest do artifact). Só apaga a
-  chave se o GitHub responder 401.
+  chave se o GitHub responder 401. Também põe o jogo na Steam como jogo
+  não-Steam (edita userdata/*/config/shortcuts.vdf, binário; guarda cópia
+  .antes-tyrian), só no Modo Desktop e fechando a Steam com permissão;
+  atalho que já mencione "tyrian" conta como existente.
 - Os dados do jogo (freeware) ficam em `data/` ao lado do executável e não
   vão para o repositório.
 - Testes: `tests/run_tests.sh [pasta-do-jogo]` compila e roda
@@ -78,7 +87,11 @@ pequenas e podem seguir as regras acima normalmente.
   data/, tyrian.sav e tyrian.cfg reais, `tests/test_saves.c` (carrega e
   regrava os saves; devem sair idênticos).
 - Pastas do usuário: portátil (ao lado do exe) se existir `opentyrian.cfg` lá;
-  senão `%APPDATA%/OpenTyrian2000` ou `~/.config/opentyrian2000`.
+  senão `%APPDATA%/Tyrian2000Plus` ou `~/.config/tyrian2000plus` (desde o PR
+  #24; antes era a pasta do OpenTyrian2000). `migrateUserDir()` em
+  `src/file.c` COPIA os saves da pasta antiga na primeira vez (só se a nova
+  não tiver tyrian.sav/tyrian.cfg/opentyrian.cfg) e não mexe na antiga. No
+  Linux a pasta nova é a mesma do github-token do updater.
 
 ## Controles
 
@@ -124,9 +137,12 @@ Mouse..., os mesmos ajustes do menu da nave, feitos no estilo do `setupMenu`
 
 Controller Map: Setup > Controls > "Controller Map..." mostra um controle
 genérico desenhado pixel a pixel (`src/padmap.c`, sem gráficos do jogo nem
-formato de marca), com a função de cada botão segundo o mapeamento atual
+formato de marca; o corpo é o mesmo para todos e só o layout muda: Xbox com o
+analógico esquerdo acima do D-pad (também Nintendo), PlayStation com
+touchpad, Steam Deck e sem controle no genérico; decisão do Gabriel em
+2026-10-20), com a função de cada botão segundo o mapeamento atual
 (inclui "Auto Fire"). Os botões acendem quando apertados; sai segurando B por 1 s (assim B e View também podem ser testados), com Esc ou com clique. Sem controle,
-mostra o layout padrão (`joystick_default_gamepad_assignments()`).
+mostra o layout padrão (`joystick_default_gamepad_assignments()`). Com controle Xbox ou PlayStation, os botões redondos, Back/Start e os gatilhos do desenho levam o ícone do botão (`controlGlyph()`); os bumpers não, porque quase não aparecem acima do corpo.
 
 Menu da nave: Options tem "Setup..." (antes do Done), que abre o mesmo
 `setupMenu()` da tela de título e volta com `returnToItemScreen()`
@@ -167,6 +183,17 @@ Telas de ajuda: `padHelpText()` em `src/helptext.c` troca, só quando há um
 controle conectado, as menções a teclas dos textos do `tyrian.hdt` (Enter, ESC,
 setas, Alt-X, "[/]") pelos nomes dos botões do controle (conforme o mapeamento
 atual). Texto que não reconhece fica igual.
+
+Ícones dos botões: `src/padglyph.c` desenha em código (pixel art própria, sem
+logos) ícones de botão para as famílias Xbox, PlayStation, Nintendo e Steam
+Deck (`Pad_family` em `joystick.h`; o Deck é reconhecido pelo nome ou por
+SteamDeck=1 com controle da Valve) e os acrescenta às
+três tabelas de fonte (sprites 128+, códigos de caractere 0xB0+, ver
+`padglyph.h`), então qualquer rotina de texto os desenha como letras, na cor
+do texto. `joystick_button_icon()`, `joystick_action_icons()` e
+`joystick_assignments_to_icons()` (`src/joystick.c`) dão o texto com ícones;
+as versões `*_label`/`*_to_string` continuam em texto (testes, logs). Família
+sem ícone para um botão cai no nome em texto.
 
 ## Vídeo
 

@@ -1,0 +1,134 @@
+name: Prepare release
+
+# Takes the routine typing out of a release; publishing stays a person's
+# click.  The version number is only the git tag (the program reads it with
+# git describe), so nothing else needs bumping.
+#
+# 1. Actions > "Prepare release" > Run workflow, choosing the kind:
+#    novidade (v1.0.5 -> v1.1), correcao (v1.1 -> v1.1.1), grande
+#    (v1.1 -> v2.0), or an exact version.  This opens a pull request that
+#    turns "## Next version" in CHANGELOG.md into "## vX.Y (date)" and starts
+#    the Build workflow on it (a push made by this workflow does not start
+#    other workflows by itself, and main needs the build checks).
+# 2. Merging that pull request makes the "draft" job below create a draft
+#    release vX.Y on the merge commit, with the CHANGELOG section as notes.
+# 3. Publishing the draft on GitHub creates the tag and runs Build as before
+#    (packages, SHA256SUMS, itch.io).
+#
+# Nothing here runs downloaded code: only git, gh and prepare_release.sh.
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "novidade (v1.0.5 -> v1.1), correcao (v1.1 -> v1.1.1) or grande (v1.1 -> v2.0)"
+        type: choice
+        options: [novidade, correcao, grande]
+        default: novidade
+      version:
+        description: "Exact version instead (e.g. v1.1); leave empty to use the kind"
+        type: string
+        required: false
+  push:
+    branches: [main]
+    paths: [CHANGELOG.md]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
+jobs:
+  pull-request:
+    name: Open the release pull request
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write        # push the release branch
+      pull-requests: write   # open the pull request
+      actions: write         # start the Build workflow on it
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0   # the tags, to refuse a version that exists
+      - name: Update CHANGELOG.md and open the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          KIND: ${{ inputs.kind }}
+          VERSION_IN: ${{ inputs.version }}
+        run: |
+          VERSION=$(./prepare_release.sh next "${VERSION_IN:-$KIND}")
+          BRANCH="release/$VERSION"
+          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null; then
+            echo "::error::The branch $BRANCH already exists (a pull request for $VERSION is probably open)."
+            exit 1
+          fi
+          ./prepare_release.sh changelog "$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git commit -q -am "Prepare the $VERSION changelog"
+          git push -q origin "$BRANCH"
+
+          ./prepare_release.sh notes "$VERSION" > notes.md
+          {
+            echo "Turns \"Next version\" in \`CHANGELOG.md\` into \`$VERSION\`."
+            echo "Merging it creates a **draft** release $VERSION; nothing is published until"
+            echo "someone clicks \"Publish release\" on it."
+            echo
+            echo "Notes the draft will get:"
+            echo
+            echo "---"
+            echo
+            cat notes.md
+          } > body.md
+          if PR=$(gh pr create --base main --head "$BRANCH" \
+                  --title "Release $VERSION" --body-file body.md); then
+            echo "Pull request: $PR" >> "$GITHUB_STEP_SUMMARY"
+          else
+            # Needs Settings > Actions > General > "Allow GitHub Actions to
+            # create and approve pull requests"; without it, link the page.
+            echo "Open the pull request: https://github.com/$GH_REPO/compare/main...$BRANCH?expand=1" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          gh workflow run build.yml --ref "$BRANCH"
+
+  draft:
+    name: Create the draft release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write   # create the draft release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Draft the release of the newest CHANGELOG.md version
+        # Only when that version has no tag and no release (draft or not)
+        # yet, so later edits of CHANGELOG.md do nothing.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          VERSION=$(./prepare_release.sh current)
+          if [ -z "$VERSION" ]; then
+            echo "CHANGELOG.md starts with \"Next version\": nothing to release."
+            exit 0
+          fi
+          if git rev-parse -q --verify "refs/tags/$VERSION" > /dev/null; then
+            echo "$VERSION is already tagged."
+            exit 0
+          fi
+          if gh api "repos/$GH_REPO/releases" --paginate --jq '.[].tag_name' |
+              grep -qxF "$VERSION"; then
+            echo "A release $VERSION already exists."
+            exit 0
+          fi
+          ./prepare_release.sh notes "$VERSION" > notes.md
+          gh release create "$VERSION" --draft --target "$GITHUB_SHA" \
+            --title "Tyrian 2000+ $VERSION" --notes-file notes.md
+          echo "Draft release $VERSION created: https://github.com/$GH_REPO/releases" >> "$GITHUB_STEP_SUMMARY"

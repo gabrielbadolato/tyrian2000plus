@@ -8,7 +8,7 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## Next version
+## v1.0.4 (2026-10-19)
 
 - **Fixes** (#19):
   - The game no longer crashes when a controller disconnects while
@@ -29,7 +29,7 @@ change is in this repository's git log.
   game data, butler) is checked by sha256; each release has a `SHA256SUMS`
   file, which `atualizar-tyrian.sh` checks before installing; GitHub Actions
   only writes to the repository in the final release step.
-- **Repository cleanup**:
+- **Repository cleanup** (#22):
   - Correct copyright in the files written for this project
     ("Tyrian 2000+ contributors"), also in the startup log.
   - The packages include `CODIGO-FONTE.txt` with the link to the exact source

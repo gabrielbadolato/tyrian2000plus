@@ -29,9 +29,20 @@ done
 
 cc $CFLAGS -Isrc -o "$OUT/test_gamepad" tests/test_gamepad.c "$OUT"/obj/*.o $LIBS
 cc $CFLAGS -Isrc -o "$OUT/test_saves" tests/test_saves.c "$OUT"/obj/*.o $LIBS
+cc $CFLAGS -Isrc -o "$OUT/test_migrate" tests/test_migrate.c "$OUT"/obj/*.o $LIBS
 
 echo "== test_gamepad"
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$OUT/test_gamepad"
+
+echo "== test_migrate"
+tmp=$(mktemp -d)
+mkdir -p "$tmp/opentyrian2000/tyrian.cfg"  # a folder: copying it fails
+printf 'old save' > "$tmp/opentyrian2000/tyrian.sav"
+XDG_CONFIG_HOME="$tmp" "$OUT/test_migrate" "$tmp" fail
+rmdir "$tmp/opentyrian2000/tyrian.cfg"
+printf 'old cfg' > "$tmp/opentyrian2000/tyrian.cfg"
+XDG_CONFIG_HOME="$tmp" "$OUT/test_migrate" "$tmp" ok
+rm -rf "$tmp"
 
 if [ "$#" -ge 1 ]; then
     echo "== test_saves"

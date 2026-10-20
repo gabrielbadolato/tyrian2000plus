@@ -42,6 +42,16 @@ change is in this repository's git log.
   had no use during a level; it can be changed in Setup > Controls >
   Controller... > Buttons... and in the ship's Joystick menu. Older
   `opentyrian.cfg` files get it too, unless B is already used there.
+- **Fixes** (#28):
+  - Steam Deck updater: it no longer stops halfway when the update replaces
+    the updater itself (the copy from v1.0.4 still does once: if the game is
+    not in the Steam library afterwards, run "Atualizar Tyrian 2000+" again).
+  - Steam Deck updater: a release whose `SHA256SUMS` is not attached yet
+    (the first minutes after it is published) is no longer installed
+    unchecked; the updater asks to try again in a few minutes.
+  - If copying the saves from OpenTyrian2000's folder fails, the game uses
+    the old folder that time and tries the copy again on the next start,
+    instead of starting with no saves.
 
 ## v1.0.4 (2026-10-19)
 

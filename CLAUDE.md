@@ -192,6 +192,15 @@ conectado aparece um teclado embaixo da caixa do nome. Só reage aos toques
 do controle (as teclas que `push_joysticks_as_keyboard()` gera têm `sym` 0);
 Start (segurado na hora do Enter) termina e Back (no Esc) cancela.
 
+Comparar na loja: no menu Upgrade Ship da nave, cada item mostra ao lado do
+preço um número (`src/shopstats.c`, desenhado em `JE_itemScreen`): dano por
+segundo estimado para armas (na potência da linha, `temp_weapon_power`) e
+sidekicks, casco (`ships[].dmg`), escudo (`mpwr`) e energia do gerador; verde
+se for melhor que o item comprado (`old_items`), vermelho se pior. O dano só
+conta acertos diretos (tiro que atravessa conta ~20 px de contato; reação em
+cadeia soma um disparo da arma da explosão); alguns níveis do jogo trocam dano
+por espalhamento/teleguiado, então o número pode cair ao subir de nível.
+
 Continuar: item "Continue" na tela de título (`menuText[0]`, escondido sem
 jogo salvo), carrega `lastSaveSlot` (último slot salvo ou carregado,
 `last_save` na seção "gameplay"; sem ele, o "LAST LEVEL" do slot 11).

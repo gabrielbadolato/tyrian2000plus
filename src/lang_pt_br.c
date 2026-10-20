@@ -163,7 +163,7 @@ const LangEntry lang_pt_br[] =
 	{ "Episode", "Episódio" },
 	{ "Last Level", "Última fase" },
 	{ "got", "pegou" },
-	{ "POWER:", "POTÊNCIA:" },
+	{ "POWER:", "NIVEL:" },
 	{ "Time Bonus", "Bônus tempo" },
 	{ "Lives Bonus", "Bônus vidas" },
 
@@ -282,6 +282,10 @@ const LangEntry lang_pt_br[] =
 	{ "Next Level", "Próxima fase" },
 	{ "Custom Ship %d", "Nave própria %d" },
 	{ "Cost: %d", "Preço: %d" },
+	{ "Damage %u", "Dano %u" },
+	{ "Armor %u", "Casco %u" },
+	{ "Shield %u", "Escudo %u" },
+	{ "Power %u", "Energia %u" },
 	{ "Graphics, sound and all control settings.", "Gráficos, som e todos os controles." },
 
 	// ---- pause menu, at most 20 characters ----

@@ -3835,6 +3835,23 @@ redo:
 						autoFiring[p] = !autoFiring[p];
 					fireWasHeld[p] = button[0];
 					button[0] = autoFiring[p];
+
+					// The special weapon fires once per press, so a held button fires it
+					// only once. While auto firing, press it again one second after each
+					// shot; it still waits for its own recharge. Once a second keeps the
+					// specials with little or no recharge from running nonstop.
+					// Not in network games: the other side would not see these presses.
+					if (p == 0 && autoFiring[0] && !isNetworkGame)
+					{
+						static uint specialHeldTicks;
+						if (!fireButtonHeld)
+							specialHeldTicks = 0;
+						else if (++specialHeldTicks >= 35)
+						{
+							specialHeldTicks = 0;
+							fireButtonHeld = false;
+						}
+					}
 				}
 				else
 				{

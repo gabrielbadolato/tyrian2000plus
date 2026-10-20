@@ -3,6 +3,7 @@
  * PlayStation, Switch), mapping, button names, hotplug, config. */
 #include "joystick.h"
 #include "helptext.h"
+#include "padglyph.h"
 #include "config.h"
 #include "SDL.h"
 #include <stdio.h>
@@ -38,7 +39,8 @@ typedef struct
 	SDL_GameControllerType type;
 	const char *labels[10];  // joystick_action_label() of each default action
 	const char *confirm, *cancel;
-	const char *escHelp;     // padHelpText("Press ESC to exit.")
+	const char *escHelp;     // padHelpText("Press ESC to exit.") without icons
+	PadGlyph confirmIcon, cancelIcon;  // 0: this family has no icons yet
 }
 Pad_model;
 
@@ -99,13 +101,13 @@ static const Pad_model pad_models[] =
 		"Xbox Wireless Controller", 0x045e, 0x0b13, SDL_CONTROLLER_TYPE_XBOXONE,
 		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
 		  "A/RT", "Y", "LB/LT", "RB/X", "MENU", "VIEW" },
-		"A", "B", "Press B to exit.",
+		"A", "B", "Press B to exit.", PADGLYPH_XBOX_A, PADGLYPH_XBOX_B,
 	},
 	{
 		"DualSense Wireless Controller", 0x054c, 0x0ce6, SDL_CONTROLLER_TYPE_PS5,
 		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
 		  "CROSS/R2", "TRI", "L1/L2", "R1/SQUARE", "OPTION", "CREATE" },
-		"CROSS", "CIRCLE", "Press CIRCLE to exit.",
+		"CROSS", "CIRCLE", "Press CIRCLE to exit.", PADGLYPH_PS_CROSS, PADGLYPH_PS_CIRCLE,
 	},
 	{
 		// positional layout (SDL_GAMECONTROLLER_USE_BUTTON_LABELS=0): the
@@ -113,7 +115,14 @@ static const Pad_model pad_models[] =
 		"Nintendo Switch Pro Controller", 0x057e, 0x2009, SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO,
 		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
 		  "B/ZR", "X", "L/ZL", "R/Y", "+", "-" },
-		"B", "A", "Press A to exit.",
+		"B", "A", "Press A to exit.", PADGLYPH_XBOX_B, PADGLYPH_XBOX_A,
+	},
+	{
+		// Valve's vendor id; the name tells the Deck from a Steam Controller
+		"Steam Deck", 0x28de, 0x1205, SDL_CONTROLLER_TYPE_UNKNOWN,
+		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
+		  "A/R2", "Y", "L1/L2", "R1/X", "MENU", "VIEW" },
+		"A", "B", "Press B to exit.", PADGLYPH_XBOX_A, PADGLYPH_XBOX_B,
 	},
 };
 
@@ -194,6 +203,13 @@ int main(int argc, char *argv[])
 	joystick_assignments_to_string(0, buf, sizeof(buf), joystick[0].assignment[0]);
 	printf("       up:   '%s'\n", buf);
 	CHECK(strcmp(buf, "LS UP, D-UP") == 0);
+	char expected[64];
+	joystick_assignments_to_icons(0, buf, sizeof(buf), joystick[0].assignment[4]);
+	snprintf(expected, sizeof(expected), "%c, %c", PADGLYPH_XBOX_A, PADGLYPH_XBOX_RT);
+	CHECK(strcmp(buf, expected) == 0);
+	joystick_assignments_to_icons(0, buf, sizeof(buf), joystick[0].assignment[0]);
+	snprintf(expected, sizeof(expected), "%c%c, %c", PADGLYPH_STICK_LEFT, PADGLYPH_ARROW_UP, PADGLYPH_DPAD_UP);
+	CHECK(strcmp(buf, expected) == 0);
 
 	printf("[3a] controller map\n");
 	Joystick_assignment defaults[10][2];
@@ -209,12 +225,16 @@ int main(int argc, char *argv[])
 	CHECK(strcmp(joystick_button_label(-1, SDL_CONTROLLER_BUTTON_B), "B") == 0);
 
 	printf("[3b] help texts\n");
-	CHECK(strcmp(padHelpText("Press ESC to exit."), "Press B to exit.") == 0);
+	snprintf(expected, sizeof(expected), "Press %c to exit.", PADGLYPH_XBOX_B);
+	CHECK(strcmp(padHelpText("Press ESC to exit."), expected) == 0);
 	CHECK(strcmp(padHelpText("Change volume with the left/right arrow keys."), "Change volume with the D-pad left/right.") == 0);
 	CHECK(strcmp(padHelpText("Load a saved game.  (Shortcut is ALT-L)"), "Load a saved game.") == 0);
-	CHECK(strcmp(padHelpText("[/] Rear Weapon Mode"), "[Y] Rear Weapon Mode") == 0);
-	CHECK(strcmp(padHelpText("press Enter or the spacebar."), "press ~A~.") == 0);
-	CHECK(strstr(padHelpText("usually fired with separate buttons."), "~LB/LT~ and ~RB/X~") != NULL);
+	snprintf(expected, sizeof(expected), "[%c] Rear Weapon Mode", PADGLYPH_XBOX_Y);
+	CHECK(strcmp(padHelpText("[/] Rear Weapon Mode"), expected) == 0);
+	snprintf(expected, sizeof(expected), "press ~%c~.", PADGLYPH_XBOX_A);
+	CHECK(strcmp(padHelpText("press Enter or the spacebar."), expected) == 0);
+	snprintf(expected, sizeof(expected), "~%c/%c~ and ~%c/%c~", PADGLYPH_XBOX_LB, PADGLYPH_XBOX_LT, PADGLYPH_XBOX_RB, PADGLYPH_XBOX_X);
+	CHECK(strstr(padHelpText("usually fired with separate buttons."), expected) != NULL);
 	CHECK(strcmp(padHelpText("Quit the game."), "Quit the game.") == 0);
 
 	printf("[4] config round trip\n");
@@ -295,7 +315,7 @@ int main(int argc, char *argv[])
 	joysticks_rumble_all(0xFFFF, 0xFFFF, 100); // must be harmless with nothing connected
 	CHECK(strcmp(padHelpText("Press ESC to exit."), "Press ESC to exit.") == 0);  // keyboard texts again
 
-	printf("[6] Xbox, PlayStation and Switch controllers\n");
+	printf("[6] Xbox, PlayStation, Switch and Steam Deck controllers\n");
 	for (size_t m = 0; m < SDL_arraysize(pad_models); m++)
 	{
 		const Pad_model *model = &pad_models[m];
@@ -310,7 +330,8 @@ int main(int argc, char *argv[])
 			continue;
 
 		CHECK(joystick[0].controller != NULL);
-		CHECK(SDL_GameControllerGetType(joystick[0].controller) == model->type);
+		if (model->type != SDL_CONTROLLER_TYPE_UNKNOWN)  // the Deck's type depends on the SDL version
+			CHECK(SDL_GameControllerGetType(joystick[0].controller) == model->type);
 		CHECK(SDL_strstr(joystick_display_name(0), model->name) != NULL);
 		CHECK(joystick_first_gamepad() == 0);
 
@@ -328,7 +349,16 @@ int main(int argc, char *argv[])
 		CHECK(labels);
 		CHECK(strcmp(joystick_button_label(0, SDL_CONTROLLER_BUTTON_A), model->confirm) == 0);
 		CHECK(strcmp(joystick_button_label(0, SDL_CONTROLLER_BUTTON_B), model->cancel) == 0);
-		CHECK(strcmp(padHelpText("Press ESC to exit."), model->escHelp) == 0);
+		char escHelp[64];
+		if (model->cancelIcon != 0)
+			snprintf(escHelp, sizeof(escHelp), "Press %c to exit.", model->cancelIcon);
+		else
+			SDL_strlcpy(escHelp, model->escHelp, sizeof(escHelp));
+		CHECK(strcmp(padHelpText("Press ESC to exit."), escHelp) == 0);
+		if (model->confirmIcon != 0)
+			CHECK((unsigned char)joystick_button_icon(0, SDL_CONTROLLER_BUTTON_A)[0] == model->confirmIcon);
+		else
+			CHECK(strcmp(joystick_button_icon(0, SDL_CONTROLLER_BUTTON_A), model->confirm) == 0);
 
 		bool actions = true;
 		for (int a = 0; a < 10; a++)

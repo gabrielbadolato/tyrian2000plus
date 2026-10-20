@@ -118,9 +118,12 @@ Mouse..., os mesmos ajustes do menu da nave, feitos no estilo do `setupMenu`
 
 Controller Map: Setup > Controls > "Controller Map..." mostra um controle
 genérico desenhado pixel a pixel (`src/padmap.c`, sem gráficos do jogo nem
-formato de marca), com a função de cada botão segundo o mapeamento atual
+formato de marca; o corpo é o mesmo para todos e só o layout muda: Xbox com o
+analógico esquerdo acima do D-pad (também Nintendo), PlayStation com
+touchpad, Steam Deck e sem controle no genérico; decisão do Gabriel em
+2026-10-20), com a função de cada botão segundo o mapeamento atual
 (inclui "Auto Fire"). Os botões acendem quando apertados; sai segurando B por 1 s (assim B e View também podem ser testados), com Esc ou com clique. Sem controle,
-mostra o layout padrão (`joystick_default_gamepad_assignments()`).
+mostra o layout padrão (`joystick_default_gamepad_assignments()`). Com controle Xbox ou PlayStation, os botões redondos, Back/Start e os gatilhos do desenho levam o ícone do botão (`controlGlyph()`); os bumpers não, porque quase não aparecem acima do corpo.
 
 Menu da nave: Options tem "Setup..." (antes do Done), que abre o mesmo
 `setupMenu()` da tela de título e volta com `returnToItemScreen()`
@@ -161,6 +164,17 @@ Telas de ajuda: `padHelpText()` em `src/helptext.c` troca, só quando há um
 controle conectado, as menções a teclas dos textos do `tyrian.hdt` (Enter, ESC,
 setas, Alt-X, "[/]") pelos nomes dos botões do controle (conforme o mapeamento
 atual). Texto que não reconhece fica igual.
+
+Ícones dos botões: `src/padglyph.c` desenha em código (pixel art própria, sem
+logos) ícones de botão para as famílias Xbox, PlayStation, Nintendo e Steam
+Deck (`Pad_family` em `joystick.h`; o Deck é reconhecido pelo nome ou por
+SteamDeck=1 com controle da Valve) e os acrescenta às
+três tabelas de fonte (sprites 128+, códigos de caractere 0xB0+, ver
+`padglyph.h`), então qualquer rotina de texto os desenha como letras, na cor
+do texto. `joystick_button_icon()`, `joystick_action_icons()` e
+`joystick_assignments_to_icons()` (`src/joystick.c`) dão o texto com ícones;
+as versões `*_label`/`*_to_string` continuam em texto (testes, logs). Família
+sem ícone para um botão cai no nome em texto.
 
 ## Vídeo
 

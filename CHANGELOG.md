@@ -8,6 +8,17 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Compare items in the shop**: in the ship's upgrade menu, each item shows
+  a number next to its price, in green when it beats what your ship has and
+  in red when it is weaker: damage per second for guns and sidekicks (at the
+  power level shown), armor for ships, strength for shields and power for
+  generators. The numbers come from the game's own data, which is not
+  changed.
+- Portuguese: the power level under the weapon preview reads "NIVEL" and no
+  longer runs into the upgrade price.
+
 ## v1.1 (2026-10-20)
 
 - **Continue** on the title screen: loads the game last saved or loaded

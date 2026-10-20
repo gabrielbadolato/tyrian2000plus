@@ -47,6 +47,9 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - Teclado na tela para digitar com o controle o nome do jogo salvo e dos
   recordes, e aviso quando a bateria do controle está fraca.
 - "Continue" (Continuar) na tela de título: volta ao último jogo com um toque.
+- No menu de melhorias da nave, cada item mostra o dano (ou casco, escudo ou
+  energia) em verde quando é melhor do que o da sua nave e em vermelho quando
+  é pior.
 - Música mais fiel: o emulador Nuked OPL3, próximo de uma placa Sound Blaster
   de 1995 de verdade (o som antigo continua em Setup > Sound).
 - Mais opções de vídeo, inclusive na pausa, e o filtro Sharp Bilinear.
@@ -190,6 +193,12 @@ Setup > Controls > Shortcuts):
 - **Para digitar um nome com o controle** (ao salvar o jogo ou num recorde):
   aparece um teclado embaixo do nome. O direcional anda, A digita, B apaga,
   Start termina e Back cancela.
+- **Menu da nave (entre as fases) > Upgrade Ship (Melhorar nave):** ao lado
+  do preço de cada item há um número para comparar com o que a sua nave tem,
+  em verde quando é melhor e em vermelho quando é pior: dano por segundo das
+  armas e sidekicks (na potência mostrada; conta só os acertos diretos, então
+  tiros teleguiados ou que atravessam podem render mais), casco das naves,
+  força dos escudos e energia dos geradores.
 - **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup. Os
   itens Joystick, Keyboard e Mouse de lá abrem as mesmas telas de
   Setup > Controls.

@@ -68,6 +68,18 @@ If the `data` folder is empty, download the data separately (it's free):
 
 ### Windows
 
+The easiest way is the installer: download
+`Tyrian2000Plus-vX.Y.Z-windows-x64-setup.exe` and run it. It needs no
+administrator rights, adds Tyrian 2000+ to the Start menu (and, if you leave
+the box checked, to the desktop) and can be removed in Settings > Apps. Your
+saves and settings stay in `%APPDATA%\Tyrian2000Plus` when you update or
+uninstall. To update, run the installer of the new version.
+
+Windows may show "Windows protected your PC" because the installer is not
+signed: click "More info" > "Run anyway".
+
+Or, without installing:
+
 1. Download `Tyrian2000Plus-vX.Y.Z-windows-x64.zip` (vX.Y.Z is the version,
    for example v1.0.4) and extract it to a folder.
 2. Extract `tyrian2000.zip` and copy **all** the files inside its `tyrian2000`
@@ -77,6 +89,22 @@ If the `data` folder is empty, download the data separately (it's free):
 
 ### Steam Deck and Linux
 
+The easiest way is the installer script, which also updates the game later:
+
+1. In Desktop Mode, download `Tyrian2000Plus-vX.Y.Z-instalar-steam-deck.sh`
+   from the Releases page.
+2. Open Konsole and run `bash ~/Downloads/Tyrian2000Plus-*-instalar-steam-deck.sh`.
+3. It installs the game in `~/Jogos/Tyrian2000Plus` (with the game data),
+   adds menu shortcuts and puts "Tyrian 2000+" in your Steam library. For
+   that, Steam has to close for a few seconds; the script asks first and
+   opens Steam again.
+4. Go back to Game Mode and start Tyrian 2000+ from your library.
+
+To update, use "Atualizar Tyrian 2000+" in the Desktop Mode menu (or run
+`~/Jogos/Tyrian2000Plus/atualizar-tyrian.sh`).
+
+Or by hand:
+
 1. In Desktop Mode, extract `Tyrian2000Plus-vX.Y.Z-linux-x86_64.tar.gz` (right click >
    Extract here) to a folder, for example `/home/deck/Games`.
 2. If the `data` folder is empty, copy the game data into it, as in step 2
@@ -85,10 +113,8 @@ If the `data` folder is empty, download the data separately (it's free):
    `Tyrian2000Plus` file and confirm.
 4. Go back to Game Mode and start Tyrian2000Plus from your library.
 
-`Tyrian2000Plus.png` can be used as the icon in Steam. The
-`atualizar-tyrian.sh` script does steps 1 and 2 for you, adds a menu
-shortcut and later updates the game. If you
-installed through the itch.io app you don't need it: the app updates itself.
+`Tyrian2000Plus.png` can be used as the icon in Steam. If you installed
+through the itch.io app you don't need the script: the app updates itself.
 
 **Deck screen:** the default is "Fit 4:3", true to 1995 monitors. For full
 screen with sharp pixels, use Setup > Graphics > Scaling Mode > "Integer". The
@@ -151,13 +177,15 @@ screen, F1 shows help and F11 changes the brightness.
 ## Problems
 
 The game writes `opentyrian.log` in the user folder, next to the saves and
-the settings: `%APPDATA%\OpenTyrian2000` on Windows (type that path in File
-Explorer's address bar) and `~/.config/opentyrian2000` on Linux and the Steam
+the settings: `%APPDATA%\Tyrian2000Plus` on Windows (type that path in File
+Explorer's address bar) and `~/.config/tyrian2000plus` on Linux and the Steam
 Deck. Please send that file when reporting a problem.
 
 If the game folder has an `opentyrian.cfg` file, all of this stays in the game
-folder itself (portable mode). The user folder is the same as the original
-OpenTyrian2000's, on purpose: players coming from it keep their saves.
+folder itself (portable mode). Up to v1.0.4 the user folder was the original
+OpenTyrian2000's (`%APPDATA%\OpenTyrian2000`, `~/.config/opentyrian2000`):
+the first time the game starts, it copies the saves and settings from there
+and leaves that folder as it was.
 
 ## License
 
@@ -204,7 +232,8 @@ available, and the Tyrian fans who kept the game alive.
 
 ## Building
 
-- Windows x64 (from Linux): `./make_windows.sh`
+- Windows x64 (from Linux): `./make_windows.sh`; installer (needs NSIS):
+  `./make_installer.sh dist/Tyrian2000Plus-windows-x64 setup.exe`
 - Linux x86_64 / Steam Deck: `./make_linux.sh`
 - Tests: `tests/run_tests.sh [game-folder]`
 

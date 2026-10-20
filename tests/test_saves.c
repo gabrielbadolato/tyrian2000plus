@@ -1,4 +1,4 @@
-/* Usage: XDG_CONFIG_HOME=<dir> test_saves <dir>/opentyrian2000
+/* Usage: XDG_CONFIG_HOME=<dir> test_saves <dir>/tyrian2000plus
  * Loads a real Tyrian 2000 TYRIAN.SAV/TYRIAN.CFG with the merged code, saves them again,
  * and checks that the files come out byte-for-byte identical. */
 #include "config.h"

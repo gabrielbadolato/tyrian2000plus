@@ -413,9 +413,9 @@ void aboutScreen(void)
 		if (status != NULL)
 			snprintf(help, sizeof(help), "%s", status);
 		else if (lines[cursor].style == STYLE_LINK)
-			snprintf(help, sizeof(help), "Enter (%s): open this link in your browser.", joystick_button_label(j, SDL_CONTROLLER_BUTTON_A));
+			snprintf(help, sizeof(help), "Enter (%s): open this link in your browser.", joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A));
 		else
-			snprintf(help, sizeof(help), "Up/Down: scroll. Left/Right: page. Esc (%s): back.", joystick_button_label(j, SDL_CONTROLLER_BUTTON_B));
+			snprintf(help, sizeof(help), "Up/Down: scroll. Left/Right: page. Esc (%s): back.", joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		JE_textShade(VGAScreen, TEXT_X, 190, help, 15, 4, PART_SHADE);
 
 		if (fadeIn)

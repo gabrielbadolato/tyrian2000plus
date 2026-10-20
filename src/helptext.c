@@ -153,12 +153,12 @@ const char *padHelpText(const char *text)
 		return text;
 
 	char change[32], leftSidekick[32], rightSidekick[32];
-	joystick_action_label(j, 5, change, sizeof change);
-	joystick_action_label(j, 6, leftSidekick, sizeof leftSidekick);
-	joystick_action_label(j, 7, rightSidekick, sizeof rightSidekick);
+	joystick_action_icons(j, 5, change, sizeof change);
+	joystick_action_icons(j, 6, leftSidekick, sizeof leftSidekick);
+	joystick_action_icons(j, 7, rightSidekick, sizeof rightSidekick);
 
-	const char *const confirm = joystick_button_label(j, SDL_CONTROLLER_BUTTON_A);
-	const char *const cancel = joystick_button_label(j, SDL_CONTROLLER_BUTTON_B);
+	const char *const confirm = joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A);
+	const char *const cancel = joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B);
 
 	char confirmButton[32], pressConfirm[32], PressConfirm[32], doneOrCancel[32], PressCancel[32];
 	char changeButton[64], changeKey[40], sidekickButtons[80];

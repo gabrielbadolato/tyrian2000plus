@@ -42,6 +42,7 @@
 #include "nortvars.h"
 #include "opentyr.h"
 #include "palette.h"
+#include "padglyph.h"
 #include "params.h"
 #include "pcxmast.h"
 #include "picload.h"
@@ -2340,7 +2341,7 @@ void JE_highScoreCheck(void)
 						}
 
 						const Uint8 ch = keyboardInput.ch;
-						if ((ch == ' ' || fontMap[ch] != -1) &&
+						if ((ch == ' ' || (fontMap[ch] != -1 && !is_padglyph(ch))) &&
 						    temp < 28)
 						{
 							stemp[temp] = ch;
@@ -3098,7 +3099,7 @@ void JE_operation(JE_byte slot)
 				}
 
 				const Uint8 ch = keyboardInput.ch;
-				if ((ch == ' ' || fontMap[ch] != -1) &&
+				if ((ch == ' ' || (fontMap[ch] != -1 && !is_padglyph(ch))) &&
 				    temp < 14)
 				{
 					stemp[temp] = ch;

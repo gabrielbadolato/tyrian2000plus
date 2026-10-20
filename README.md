@@ -8,10 +8,22 @@ Tyrian 2000 with modern controllers, for Windows, Linux and the Steam Deck.
 Eclipse Software, Jason Emery or the original publishers. The game data is the
 original freeware release, unchanged.
 
-![Title screen](doc/screenshots/1-tela-titulo.png)
-![A level](doc/screenshots/2-fase.png)
-![Pause menu with Auto Fire and Graphics](doc/screenshots/4-pausa-auto-fire-graphics.png)
-![Controller Map](doc/screenshots/5-controller-map.png)
+**[⬇ Download (GitHub Releases)](https://github.com/gabrielbadolato/tyrian2000plus/releases/latest)** ·
+**[⬇ Download on itch.io](https://gabrielbadolato.itch.io/tyrian2000plus)**
+
+Free, with the original game data included: Windows installer or .zip,
+and Linux / Steam Deck. How to install is [below](#installation).
+
+<table>
+  <tr>
+    <td><img src="doc/screenshots/1-tela-titulo.png" width="400" alt="Title screen"></td>
+    <td><img src="doc/screenshots/2-fase.png" width="400" alt="A level"></td>
+  </tr>
+  <tr>
+    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pause menu with Auto Fire and Graphics"></td>
+    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map"></td>
+  </tr>
+</table>
 
 What changed in each version is in [CHANGELOG.md](CHANGELOG.md).
 

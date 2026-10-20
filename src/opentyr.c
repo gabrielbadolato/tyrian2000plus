@@ -1360,6 +1360,7 @@ int main(int argc, char *argv[])
 	logInfo("%s", "");
 	logInfo("Copyright (C) The OpenTyrian Development Team");
 	logInfo("Copyright (C) Kaito Sinclaire");
+	logInfo("Copyright (C) 2026 Tyrian 2000+ contributors");
 	logInfo("%s", "");
 	logInfo("This program comes with ABSOLUTELY NO WARRANTY.");
 	logInfo("This is free software, and you are welcome to redistribute it");

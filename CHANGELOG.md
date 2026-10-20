@@ -31,7 +31,7 @@ change is in this repository's git log.
   only writes to the repository in the final release step.
 - **Repository cleanup**:
   - Correct copyright in the files written for this project
-    ("Tyrian 2000+ contributors").
+    ("Tyrian 2000+ contributors"), also in the startup log.
   - The packages include `CODIGO-FONTE.txt` with the link to the exact source
     of that version, as the GPL asks (the itch.io ones too).
   - The Linux package also carries the licenses of SDL's internal parts

@@ -36,7 +36,7 @@ typedef struct
 	const char *name;
 	Uint16 vendor, product;
 	SDL_GameControllerType type;
-	const char *labels[10];  // joystick_action_label() of each default action
+	const char *labels[JOYSTICK_ASSIGNMENTS];  // joystick_action_label() of each default action
 	const char *confirm, *cancel;
 	const char *escHelp;     // padHelpText("Press ESC to exit.")
 }
@@ -70,10 +70,10 @@ static bool press_only(int j, int action, const Joystick_assignment *in)
 	poll();
 
 	bool ok = true;
-	for (int d = 0; d < 4; d++)
+	for (int d = 0; d < JOYSTICK_DIRECTIONS; d++)
 		ok &= joystick[j].direction[d] == (d == action);
-	for (int a = 0; a < 6; a++)
-		ok &= joystick[j].action[a] == (a + 4 == action);
+	for (int a = 0; a < JOYSTICK_ACTIONS; a++)
+		ok &= joystick[j].action[a] == (a + JOYSTICK_DIRECTIONS == action);
 	ok &= joystick[j].confirm == (in->type == PAD_BUTTON &&  // A and Start also confirm in menus
 	                             (in->num == SDL_CONTROLLER_BUTTON_A || in->num == SDL_CONTROLLER_BUTTON_START));
 
@@ -83,9 +83,9 @@ static bool press_only(int j, int action, const Joystick_assignment *in)
 		SDL_JoystickSetVirtualAxis(h, in->num, 0);
 	poll();
 
-	for (int d = 0; d < 4; d++)
+	for (int d = 0; d < JOYSTICK_DIRECTIONS; d++)
 		ok &= !joystick[j].direction[d];
-	for (int a = 0; a < 6; a++)
+	for (int a = 0; a < JOYSTICK_ACTIONS; a++)
 		ok &= !joystick[j].action[a];
 
 	if (!ok)
@@ -98,13 +98,13 @@ static const Pad_model pad_models[] =
 	{
 		"Xbox Wireless Controller", 0x045e, 0x0b13, SDL_CONTROLLER_TYPE_XBOXONE,
 		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
-		  "A/RT", "Y", "LB/LT", "RB/X", "MENU", "VIEW" },
+		  "A/RT", "Y", "LB/LT", "RB/X", "MENU", "VIEW", "B" },
 		"A", "B", "Press B to exit.",
 	},
 	{
 		"DualSense Wireless Controller", 0x054c, 0x0ce6, SDL_CONTROLLER_TYPE_PS5,
 		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
-		  "CROSS/R2", "TRI", "L1/L2", "R1/SQUARE", "OPTION", "CREATE" },
+		  "CROSS/R2", "TRI", "L1/L2", "R1/SQUARE", "OPTION", "CREATE", "CIRCLE" },
 		"CROSS", "CIRCLE", "Press CIRCLE to exit.",
 	},
 	{
@@ -112,7 +112,7 @@ static const Pad_model pad_models[] =
 		// bottom button fires, and on a Switch pad that one is labeled B
 		"Nintendo Switch Pro Controller", 0x057e, 0x2009, SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO,
 		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
-		  "B/ZR", "X", "L/ZL", "R/Y", "+", "-" },
+		  "B/ZR", "X", "L/ZL", "R/Y", "+", "-", "A" },
 		"B", "A", "Press A to exit.",
 	},
 };
@@ -196,10 +196,10 @@ int main(int argc, char *argv[])
 	CHECK(strcmp(buf, "LS UP, D-UP") == 0);
 
 	printf("[3a] controller map\n");
-	Joystick_assignment defaults[10][2];
+	Joystick_assignment defaults[JOYSTICK_ASSIGNMENTS][2];
 	joystick_default_gamepad_assignments(defaults);
 	bool sameDefaults = true;
-	for (int a = 0; a < 10; a++)
+	for (int a = 0; a < JOYSTICK_ASSIGNMENTS; a++)
 		for (int i = 0; i < 2; i++)
 			if (defaults[a][i].type != joystick[0].assignment[a][i].type ||
 			    (defaults[a][i].type != NONE && !joystick_assignment_cmp(&defaults[a][i], &joystick[0].assignment[a][i])))
@@ -219,13 +219,13 @@ int main(int argc, char *argv[])
 
 	printf("[4] config round trip\n");
 	save_joystick_assignments(&opentyrian_config, 0);
-	Joystick_assignment saved[10][2];
+	Joystick_assignment saved[JOYSTICK_ASSIGNMENTS][2];
 	memcpy(saved, joystick[0].assignment, sizeof(saved));
 	memset(joystick[0].assignment, 0, sizeof(saved));
 	joystick[0].analog = false;
 	CHECK(load_joystick_assignments(&opentyrian_config, 0));
 	bool same = true;
-	for (int a = 0; a < 10; a++)
+	for (int a = 0; a < JOYSTICK_ASSIGNMENTS; a++)
 		for (int i = 0; i < 2; i++)
 			same &= joystick_assignment_cmp(&saved[a][i], &joystick[0].assignment[a][i]);
 	CHECK(same);
@@ -247,6 +247,31 @@ int main(int argc, char *argv[])
 		CHECK(joystick_axis_reduce(0, 32767) != 0);  // no crash, still moves
 		reset_joystick_assignments(0);
 	}
+
+	printf("[4b] config saved before \"both sidekicks\" existed\n");
+	for (int t = 0; t < 2; t++)
+	{
+		const char *fire = t == 0 ? "A" : "B";  // second file: B already fires
+		Config old;
+		config_init(&old);
+		ConfigSection *section = config_add_section(&old, "gamepad", joystick_display_name(0));
+		config_set_option(section, "fire", fire);
+		CHECK(load_joystick_assignments(&old, 0));
+		char buf[30];
+		joystick_assignments_to_string(0, buf, sizeof(buf), joystick[0].assignment[10]);
+		printf("       fire %s -> both sidekicks: '%s'\n", fire, buf);
+		CHECK(strcmp(buf, t == 0 ? "B" : "") == 0);
+		config_deinit(&old);
+	}
+	reset_joystick_assignments(0);
+
+	printf("[4c] both sidekicks button\n");
+	SDL_JoystickSetVirtualButton(joystick[0].handle, SDL_CONTROLLER_BUTTON_B, 1);
+	poll();
+	CHECK(joystick[0].action[6] && !joystick[0].action[2] && !joystick[0].action[3]);
+	SDL_JoystickSetVirtualButton(joystick[0].handle, SDL_CONTROLLER_BUTTON_B, 0);
+	poll();
+	CHECK(!joystick[0].action[6]);
 
 	printf("[5] hotplug\n");
 	int dev1 = attach_pad("Virtual Second Pad");
@@ -315,7 +340,7 @@ int main(int argc, char *argv[])
 		CHECK(joystick_first_gamepad() == 0);
 
 		bool labels = true;
-		for (int a = 0; a < 10; a++)
+		for (int a = 0; a < JOYSTICK_ASSIGNMENTS; a++)
 		{
 			char label[30];
 			joystick_action_label(0, a, label, sizeof(label));
@@ -331,7 +356,7 @@ int main(int argc, char *argv[])
 		CHECK(strcmp(padHelpText("Press ESC to exit."), model->escHelp) == 0);
 
 		bool actions = true;
-		for (int a = 0; a < 10; a++)
+		for (int a = 0; a < JOYSTICK_ASSIGNMENTS; a++)
 			for (int i = 0; i < 2; i++)
 				if (joystick[0].assignment[a][i].type != NONE)
 					actions &= press_only(0, a, &joystick[0].assignment[a][i]);

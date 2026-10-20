@@ -3751,8 +3751,8 @@ redo:
 						}
 
 						button[0] |= joystick[j].action[0];
-						button[1] |= joystick[j].action[2];
-						button[2] |= joystick[j].action[3];
+						button[1] |= joystick[j].action[2] || joystick[j].action[6];  // left / both sidekicks
+						button[2] |= joystick[j].action[3] || joystick[j].action[6];  // right / both sidekicks
 						button[3] |= joystick[j].action_pressed[1];
 
 						ingamemenu_pressed |= joystick[j].action_pressed[4];

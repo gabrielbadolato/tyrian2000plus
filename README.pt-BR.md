@@ -105,6 +105,7 @@ quadros da Steam.
 | Y                     | Trocar o modo da arma traseira      |
 | LB ou LT              | Sidekick esquerdo                   |
 | RB ou X               | Sidekick direito                    |
+| B                     | Os dois sidekicks juntos            |
 | Start (Menu)          | Menu do jogo                        |
 | Back (View)           | Pausa                               |
 

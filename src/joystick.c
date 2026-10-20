@@ -756,9 +756,9 @@ static void set_assignment(Joystick_assignment *a, Joystick_assignment_types typ
 }
 
 // the default layout of a standardized gamepad (also shown by the controller map)
-void joystick_default_gamepad_assignments(Joystick_assignment as[10][2])
+void joystick_default_gamepad_assignments(Joystick_assignment as[JOYSTICK_ASSIGNMENTS][2])
 {
-	for (uint a = 0; a < 10; a++)
+	for (uint a = 0; a < JOYSTICK_ASSIGNMENTS; a++)
 		for (uint i = 0; i < 2; i++)
 			as[a][i].type = NONE;
 
@@ -787,56 +787,67 @@ void joystick_default_gamepad_assignments(Joystick_assignment as[10][2])
 	set_assignment(&as[8][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_START, false);
 	// pause: Back/View
 	set_assignment(&as[9][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_BACK, false);
+	// both sidekicks at once (like the mouse option): B
+	set_assignment(&as[10][0], PAD_BUTTON, SDL_CONTROLLER_BUTTON_B, false);
+}
+
+// the default layout of slot j, gamepad or raw joystick
+static void default_assignments(int j, Joystick_assignment as[JOYSTICK_ASSIGNMENTS][2])
+{
+	if (joystick[j].controller != NULL)
+	{
+		joystick_default_gamepad_assignments(as);
+		return;
+	}
+
+	for (uint a = 0; a < JOYSTICK_ASSIGNMENTS; a++)
+		for (uint i = 0; i < 2; i++)
+			as[a][i] = (Joystick_assignment){ .type = NONE };
+
+	// raw joystick defaults: first 2 axes, first hat, first 7 buttons
+	for (uint a = 0; a < JOYSTICK_ASSIGNMENTS; a++)
+	{
+		if (a < JOYSTICK_DIRECTIONS)
+		{
+			if (SDL_JoystickNumAxes(joystick[j].handle) >= 2)
+			{
+				as[a][0].type = AXIS;
+				as[a][0].num = (a + 1) % 2;
+				as[a][0].negative_axis = (a == 0 || a == 3);
+			}
+
+			if (SDL_JoystickNumHats(joystick[j].handle) >= 1)
+			{
+				as[a][1].type = HAT;
+				as[a][1].num = 0;
+				as[a][1].x_axis = (a == 1 || a == 3);
+				as[a][1].negative_axis = (a == 0 || a == 3);
+			}
+		}
+		else
+		{
+			if (a - JOYSTICK_DIRECTIONS < (unsigned)SDL_JoystickNumButtons(joystick[j].handle))
+			{
+				as[a][0].type = BUTTON;
+				as[a][0].num = a - JOYSTICK_DIRECTIONS;
+			}
+		}
+	}
 }
 
 void reset_joystick_assignments(int j)
 {
 	assert(j < joysticks);
 
-	// clear assignments
-	for (uint a = 0; a < COUNTOF(joystick[j].assignment); a++)
-		for (uint i = 0; i < COUNTOF(joystick[j].assignment[a]); i++)
-			joystick[j].assignment[a][i].type = NONE;
+	default_assignments(j, joystick[j].assignment);
 
 	if (joystick[j].controller != NULL)
 	{
-		joystick_default_gamepad_assignments(joystick[j].assignment);
-
 		// analog stick gives proportional movement (and aims the Link gun)
 		joystick[j].analog = true;
 		joystick[j].sensitivity = 5;
 		joystick[j].threshold = 4;
 		return;
-	}
-
-	// raw joystick defaults: first 2 axes, first hat, first 6 buttons
-	for (uint a = 0; a < COUNTOF(joystick[j].assignment); a++)
-	{
-		if (a < 4)
-		{
-			if (SDL_JoystickNumAxes(joystick[j].handle) >= 2)
-			{
-				joystick[j].assignment[a][0].type = AXIS;
-				joystick[j].assignment[a][0].num = (a + 1) % 2;
-				joystick[j].assignment[a][0].negative_axis = (a == 0 || a == 3);
-			}
-
-			if (SDL_JoystickNumHats(joystick[j].handle) >= 1)
-			{
-				joystick[j].assignment[a][1].type = HAT;
-				joystick[j].assignment[a][1].num = 0;
-				joystick[j].assignment[a][1].x_axis = (a == 1 || a == 3);
-				joystick[j].assignment[a][1].negative_axis = (a == 0 || a == 3);
-			}
-		}
-		else
-		{
-			if (a - 4 < (unsigned)SDL_JoystickNumButtons(joystick[j].handle))
-			{
-				joystick[j].assignment[a][0].type = BUTTON;
-				joystick[j].assignment[a][0].num = a - 4;
-			}
-		}
 	}
 
 	joystick[j].analog = false;
@@ -856,6 +867,7 @@ static const char* const assignment_names[] =
 	"right sidekick",
 	"menu",
 	"pause",
+	"both sidekicks",
 };
 
 // gamepads get their own config section, so old raw-button configs don't clash
@@ -881,6 +893,8 @@ bool load_joystick_assignments(Config *config, int j)
 	const int threshold = config_get_or_set_int_option(section, "threshold", 5);
 	joystick[j].threshold = threshold < 0 ? 0 : threshold > 10 ? 10 : threshold;
 
+	bool missing[COUNTOF(assignment_names)] = { false };
+
 	for (size_t a = 0; a < COUNTOF(assignment_names); ++a)
 	{
 		for (unsigned int i = 0; i < COUNTOF(joystick[j].assignment[a]); ++i)
@@ -888,7 +902,10 @@ bool load_joystick_assignments(Config *config, int j)
 
 		ConfigOption *option = config_get_option(section, assignment_names[a]);
 		if (option == NULL)
+		{
+			missing[a] = true;
 			continue;
+		}
 
 		foreach_option_i_value(i, value, option)
 		{
@@ -896,6 +913,33 @@ bool load_joystick_assignments(Config *config, int j)
 				break;
 
 			code_to_assignment(&joystick[j].assignment[a][i], value);
+		}
+	}
+
+	// an action added after the file was saved (ex. "both sidekicks") gets its
+	// default inputs, unless the player already uses them for something else
+	Joystick_assignment defaults[JOYSTICK_ASSIGNMENTS][2];
+	default_assignments(j, defaults);
+
+	for (size_t a = 0; a < COUNTOF(assignment_names); ++a)
+	{
+		if (!missing[a])
+			continue;
+
+		unsigned int k = 0;
+		for (unsigned int i = 0; i < COUNTOF(defaults[a]); ++i)
+		{
+			if (defaults[a][i].type == NONE)
+				continue;
+
+			bool used = false;
+			for (size_t b = 0; b < COUNTOF(assignment_names); ++b)
+				for (unsigned int n = 0; n < COUNTOF(joystick[j].assignment[b]); ++n)
+					used |= joystick[j].assignment[b][n].type != NONE &&
+					        joystick_assignment_cmp(&joystick[j].assignment[b][n], &defaults[a][i]);
+
+			if (!used)
+				joystick[j].assignment[a][k++] = defaults[a][i];
 		}
 	}
 

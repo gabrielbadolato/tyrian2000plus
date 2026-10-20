@@ -106,6 +106,12 @@ essa, ou fechar a Steam ou abrir o jogo por ela; não tentar de novo sem ele ped
 continua com SDL2 estático (lá o controle 2026 precisa da Steam). Tudo isso
 está explicado no `README.pt-BR.md` (que vai no pacote como LEIA-ME.txt).
 
+Ações do controle: 4 direções + 7 ações (`JOYSTICK_ASSIGNMENTS` em
+`src/joystick.h`); a 7ª, "Both Sidekicks" (`both sidekicks` no cfg, padrão B),
+dispara os dois sidekicks. Ação que falta num cfg antigo recebe o botão padrão
+se ele estiver livre (`load_joystick_assignments`). No menu Joystick da nave a
+ordem das linhas vem de `joystick_menu_assignment` (`src/game_menu.c`).
+
 Tiro automático: opção "Auto Fire" em Setup > Controls (seção "gameplay",
 `auto_fire` no opentyrian.cfg). Cada toque no tiro liga/desliga o disparo
 contínuo, por jogador (`src/mainint.c`). O submenu Controls é onde entram as

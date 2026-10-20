@@ -14,12 +14,21 @@ set -euo pipefail
 PKG="$1"
 EOL="${2:-}"
 DATA_URL="https://www.camanis.net/tyrian/tyrian2000.zip"
+# sha256 of that zip: the package promises the original data, unchanged, so a
+# different file stops the release instead of being shipped.  The Steam Deck
+# updater (linux/atualizar-tyrian.sh) checks the same value.
+DATA_SHA256="348bc76e73514e452279b8730cf217daf0f70a282f07b6b94af653d87e921667"
 
 [ -d "$PKG/data" ] || { echo "no $PKG/data" >&2; exit 1; }
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 curl -fsSL --retry 4 -o "$TMP/tyrian2000.zip" "$DATA_URL"
+got=$(sha256sum "$TMP/tyrian2000.zip" | cut -d' ' -f1)
+if [ "$got" != "$DATA_SHA256" ]; then
+    echo "ERROR: $DATA_URL has sha256 $got, expected $DATA_SHA256" >&2
+    exit 1
+fi
 
 python3 - "$TMP/tyrian2000.zip" "$PKG/data" <<'EOF'
 import os, sys, zipfile

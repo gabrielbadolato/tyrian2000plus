@@ -53,9 +53,16 @@ pequenas e podem seguir as regras acima normalmente.
   anexados a uma release publicada. Só os pacotes da release levam os dados
   do jogo (originais, sem alteração, baixados por `add_game_data.sh`, com
   LEIA-ME-DADOS.txt de licença/créditos); os builds de cada push não levam.
+  Segurança: todo download (llvm-mingw, SDL, sdl2-compat, dados, butler) é
+  conferido por sha256 fixo nos scripts (trocou a versão, troque o sha256);
+  o workflow só lê o repositório, e apenas o job "release" (que não roda nada
+  baixado) escreve, anexando os pacotes e um SHA256SUMS. Actions fixadas por
+  commit. O butler tem versão fixa em `itch_push.sh`.
 - Steam Deck: `linux/atualizar-tyrian.sh` instala/atualiza pela última
-  Release (sem chave, repositório público); com uma chave do GitHub em
-  ~/.config/tyrian2000plus/github-token pega o build mais novo do Actions.
+  Release (sem chave, repositório público), conferindo o SHA256SUMS; com uma
+  chave do GitHub em ~/.config/tyrian2000plus/github-token pega o build mais
+  novo do Actions no main (conferido pelo digest do artifact). Só apaga a
+  chave se o GitHub responder 401.
 - Os dados do jogo (freeware) ficam em `data/` ao lado do executável e não
   vão para o repositório.
 - Testes: `tests/run_tests.sh [pasta-do-jogo]` compila e roda

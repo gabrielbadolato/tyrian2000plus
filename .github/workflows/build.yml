@@ -6,6 +6,11 @@ name: Build
 # the freeware game data (unchanged, see add_game_data.sh); the per-push
 # builds stay without it.  With the BUTLER_API_KEY secret set, a release is
 # also sent to the itch.io page (itch_push.sh).
+#
+# The build jobs download tools from outside (compiler, SDL, butler), so they
+# only get read access to the repository.  Only the small "release" job, which
+# runs nothing downloaded, may write: it attaches the packages and a
+# SHA256SUMS file to the release.  Third-party actions are pinned by commit.
 
 on:
   push:
@@ -15,7 +20,7 @@ on:
     types: [published]
 
 permissions:
-  contents: write        # needed to attach assets on release events
+  contents: read
 
 jobs:
   linux:
@@ -25,9 +30,10 @@ jobs:
     # it run on more machines.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0   # git describe --tags for the version string
+          persist-credentials: false
       - name: Install dependencies
         # The distro libsdl2-dev is only for the -Werror compile check.  The
         # release links a static SDL2 built from source
@@ -47,7 +53,7 @@ jobs:
           make -j"$(nproc)" debug
           make clean
       - name: Cache static SDL2 build
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: build/sdl
           key: sdl2-static-x86_64-${{ hashFiles('make_linux.sh') }}
@@ -66,66 +72,109 @@ jobs:
             /pkg/Tyrian2000Plus-linux-x86_64/Tyrian2000Plus --help
       # The .tar.gz keeps the binary's executable permission, which a plain
       # artifact zip would lose.
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: Tyrian2000Plus-linux-x86_64
           path: dist/Tyrian2000Plus-linux-x86_64.tar.gz
-      - name: Attach to release
+      # Release only: add the game data and the Deck updater, send that to
+      # itch.io and hand the package to the "release" job.
+      - name: Add the game data and the updater (release)
         if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          tag="${{ github.event.release.tag_name }}"
-          asset="Tyrian2000Plus-$tag-linux-x86_64.tar.gz"
           ./add_game_data.sh dist/Tyrian2000Plus-linux-x86_64
           cp linux/atualizar-tyrian.sh dist/Tyrian2000Plus-linux-x86_64/
           chmod +x dist/Tyrian2000Plus-linux-x86_64/atualizar-tyrian.sh
-          tar -czf "$asset" -C dist Tyrian2000Plus-linux-x86_64
-          gh release upload "$tag" "$asset" --clobber
       - name: Send to itch.io
         # Skipped (with a note in the log) while the BUTLER_API_KEY secret is
-        # not set.  Runs after "Attach to release", so the package has the data.
+        # not set.
         if: github.event_name == 'release'
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: ./itch_push.sh dist/Tyrian2000Plus-linux-x86_64 linux "${{ github.event.release.tag_name }}"
+          TAG: ${{ github.event.release.tag_name }}
+        run: ./itch_push.sh dist/Tyrian2000Plus-linux-x86_64 linux "$TAG"
+      - name: Release package
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          mkdir -p release
+          tar -czf "release/Tyrian2000Plus-$TAG-linux-x86_64.tar.gz" -C dist Tyrian2000Plus-linux-x86_64
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: github.event_name == 'release'
+        with:
+          name: release-linux
+          path: release/
 
   windows:
     name: Windows x64
     # Cross-compiled with llvm-mingw, the same way as the local builds.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends make curl xz-utils zip unzip python3
       - name: Cache toolchain and SDL2
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: build/win
           key: win-x64-${{ hashFiles('make_windows.sh') }}
       - name: Build and package (make_windows.sh)
         run: ./make_windows.sh
       # Uploading the folder makes the artifact zip hold the files directly.
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: Tyrian2000Plus-windows-x64
           path: dist/Tyrian2000Plus-windows-x64/
-      - name: Attach to release
+      - name: Add the game data (release)
         if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          tag="${{ github.event.release.tag_name }}"
-          asset="Tyrian2000Plus-$tag-windows-x64.zip"
-          ./add_game_data.sh dist/Tyrian2000Plus-windows-x64 crlf
-          (cd dist && zip -qr "../$asset" Tyrian2000Plus-windows-x64)
-          gh release upload "$tag" "$asset" --clobber
+        run: ./add_game_data.sh dist/Tyrian2000Plus-windows-x64 crlf
       - name: Send to itch.io
         if: github.event_name == 'release'
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: ./itch_push.sh dist/Tyrian2000Plus-windows-x64 windows "${{ github.event.release.tag_name }}"
+          TAG: ${{ github.event.release.tag_name }}
+        run: ./itch_push.sh dist/Tyrian2000Plus-windows-x64 windows "$TAG"
+      - name: Release package
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          mkdir -p release
+          (cd dist && zip -qr "../release/Tyrian2000Plus-$TAG-windows-x64.zip" Tyrian2000Plus-windows-x64)
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: github.event_name == 'release'
+        with:
+          name: release-windows
+          path: release/
+
+  release:
+    name: Attach to the release
+    if: github.event_name == 'release'
+    needs: [linux, windows]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write    # upload the release assets
+      actions: read      # download this run's artifacts
+    steps:
+      - name: Attach the packages and SHA256SUMS
+        # SHA256SUMS lets anyone (and linux/atualizar-tyrian.sh) check that a
+        # downloaded package is exactly the one built here.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          mkdir release && cd release
+          gh run download "$RUN_ID" -n release-linux
+          gh run download "$RUN_ID" -n release-windows
+          sha256sum Tyrian2000Plus-* > SHA256SUMS
+          cat SHA256SUMS
+          gh release upload "$TAG" Tyrian2000Plus-* SHA256SUMS --clobber
+
+

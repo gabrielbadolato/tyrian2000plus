@@ -40,3 +40,6 @@ tyrian.sav
 
 # Release packages (make_linux.sh, make_windows.sh)
 /dist/
+
+# Steam Deck updater key (linux/atualizar-tyrian.sh)
+github-token*.txt

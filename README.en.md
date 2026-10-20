@@ -78,8 +78,9 @@ If the `data` folder is empty, download the data separately (it's free):
 4. Go back to Game Mode and start Tyrian2000Plus from your library.
 
 `Tyrian2000Plus.png` can be used as the icon in Steam. The
-`atualizar-tyrian.sh` script does steps 1 and 2 for you and adds a menu
-shortcut.
+`atualizar-tyrian.sh` script does steps 1 and 2 for you, adds a menu
+shortcut and later updates the game. If you
+installed through the itch.io app you don't need it: the app updates itself.
 
 **Deck screen:** the default is "Fit 4:3", true to 1995 monitors. For full
 screen with sharp pixels, use Setup > Graphics > Scaling Mode > "Integer". The

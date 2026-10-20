@@ -30,9 +30,23 @@ cd "$(dirname "$0")"
 
 SDL2_VER="2.32.10"
 SDL2_NET_VER="2.4.0"
+# sha256 of the source tarballs: a changed file stops the build instead of
+# being compiled in.  Update them together with the versions.
+SDL2_SHA256="5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165"
+SDL2_NET_SHA256="9cbca2527feb3f1a622d48ba65cc7dee9b1e3f2c55ceafb7d7720bb058aafb30"
 PREFIX="$PWD/build/sdl"
 NPROC="$(nproc 2>/dev/null || echo 4)"
 NAME="Tyrian2000Plus-linux-x86_64"
+
+check_sha256() {  # $1 = file, $2 = expected sha256
+    local got
+    got=$(sha256sum "$1" | cut -d' ' -f1)
+    if [ "$got" != "$2" ]; then
+        echo "ERROR: $1 has sha256 $got, expected $2" >&2
+        rm -f "$1"
+        exit 1
+    fi
+}
 
 # The license of anything we link in has to travel with the binary.  Keep the
 # copies inside the prefix, since that is what CI caches: on a cache hit the
@@ -55,6 +69,7 @@ if [ ! -f "$PREFIX/lib/libSDL2.a" ]; then
     mkdir -p build/vendor
     curl -fsSL -o build/vendor/SDL2.tar.gz \
         "https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VER/SDL2-$SDL2_VER.tar.gz"
+    check_sha256 build/vendor/SDL2.tar.gz "$SDL2_SHA256"
     rm -rf "build/vendor/SDL2-$SDL2_VER"
     tar -xzf build/vendor/SDL2.tar.gz -C build/vendor
     cmake -S "build/vendor/SDL2-$SDL2_VER" -B "build/vendor/SDL2-$SDL2_VER/build" \
@@ -74,6 +89,7 @@ if [ ! -f "$PREFIX/lib/libSDL2_net.a" ]; then
     mkdir -p build/vendor
     curl -fsSL -o build/vendor/SDL2_net.tar.gz \
         "https://github.com/libsdl-org/SDL_net/releases/download/release-$SDL2_NET_VER/SDL2_net-$SDL2_NET_VER.tar.gz"
+    check_sha256 build/vendor/SDL2_net.tar.gz "$SDL2_NET_SHA256"
     rm -rf "build/vendor/SDL2_net-$SDL2_NET_VER"
     tar -xzf build/vendor/SDL2_net.tar.gz -C build/vendor
     # Work around SDL2_net not creating a .pc file

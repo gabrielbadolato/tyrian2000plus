@@ -60,12 +60,13 @@ void opl_update(Bit16s *buf, Bits num)
 	}
 
 	// The music is OPL2 (mono): Nuked sends it to both sides, keep one.
-	// Nuked is about half as loud as the DOSBox emulator, so double it.
+	// Nuked is a little quieter than the DOSBox emulator (measured over all
+	// the songs), so raise it to the same loudness.
 	for (Bits i = 0; i < num; ++i)
 	{
 		Bit16s stereo[2];
 		OPL3_GenerateResampled(&nuked, stereo);
-		const int sample = stereo[0] * 2;
+		const int sample = stereo[0] * 6 / 5;
 		buf[i] = (Bit16s)(sample > INT16_MAX ? INT16_MAX : sample < INT16_MIN ? INT16_MIN : sample);
 	}
 }

@@ -101,16 +101,14 @@ void osk_close(Osk *osk, SDL_Surface *surface)
 		memcpy((Uint8 *)surface->pixels + surface->pitch * y, &osk->background[320 * (y - OSK_Y)], 320);
 }
 
-// one key: dark box, or the cursor's color when selected
+// one key: light text, or dark text on the cursor's color when selected
 static void drawKey(SDL_Surface *surface, int x, int y, int w, const char *label, bool selected)
 {
 	if (selected)
 		fill_rectangle_xy(surface, x + 1, y, x + w - 1, y + H_KEY - 2, 8 * 16 + 10);
-	else
-		JE_barShade(surface, x + 1, y, x + w - 1, y + H_KEY - 2);
 
 	const int xText = x + (w - JE_textWidth(label, TINY_FONT)) / 2 + 1;
-	JE_outText(surface, xText, y + 1, label, selected ? 8 : 15, selected ? 0 : 3);
+	JE_outText(surface, xText, y + 1, label, 15, selected ? -1 : 3);
 }
 
 void osk_draw(Osk *osk, SDL_Surface *surface)
@@ -120,7 +118,7 @@ void osk_draw(Osk *osk, SDL_Surface *surface)
 	if (!shown())
 		return;
 
-	JE_barShade(surface, X_KEYS - 4, OSK_Y, X_KEYS + COLS * W_KEY + 3, 199);
+	fill_rectangle_xy(surface, X_KEYS - 4, OSK_Y, X_KEYS + COLS * W_KEY + 3, 199, 0);
 
 	char label[2] = { 0, 0 };
 	for (int row = 0; row < ROWS - 1; ++row)

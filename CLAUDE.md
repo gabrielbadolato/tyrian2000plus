@@ -169,6 +169,22 @@ Scaling Mode, Sharp Bilinear, VSync, Brightness), uma segunda página na mesma
 caixa da pausa, desenhada sobre a fase com a paleta dela; mudanças valem na
 hora. Controls e Graphics ficam escondidos em jogo em rede.
 
+Vibração: Setup > Controls > "Vibration" (`rumble_strength` em
+`src/joystick.c`, `vibration` = off/weak/strong na seção "gameplay"; Weak é
+40% da força). Bateria: `check_joystick_batteries()` (no hotplug) avisa uma
+vez por controle quando fica fraca; a fase mostra o aviso
+(`joystick_take_low_battery()`) e o Controller Map mostra o nível.
+
+Teclado na tela (`src/osk.c`): ao digitar o nome do save (`JE_operation`) e
+dos recordes (`JE_highScoreCheck`, em `src/mainint.c`), com controle
+conectado aparece um teclado embaixo da caixa do nome. Só reage aos toques
+do controle (as teclas que `push_joysticks_as_keyboard()` gera têm `sym` 0);
+Start (segurado na hora do Enter) termina e Back (no Esc) cancela.
+
+Continuar: item "Continue" na tela de título (`menuText[0]`, escondido sem
+jogo salvo), carrega `lastSaveSlot` (último slot salvo ou carregado,
+`last_save` na seção "gameplay"; sem ele, o "LAST LEVEL" do slot 11).
+
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).
 
@@ -238,6 +254,12 @@ desligada por padrão) amplia primeiro por um número inteiro (pixels nítidos)
 e depois encaixa na janela com filtro bilinear, para os pixels ficarem do
 mesmo tamanho quando a ampliação não é inteira (`sharp_bilinear_prescale()`
 em `src/video.c`). Em múltiplos exatos nada muda.
+
+Música: Setup > Sound > "Music Sound" (`src/oplchip.c`, `music_chip` =
+accurate/classic na seção "sound"). Accurate (padrão) usa o Nuked OPL3 1.8
+(`src/opl3.c`, LGPL 2.1+, sem alteração); Classic é o emulador do DOSBox
+(`src/opl.c`). Os dois recebem todas as escritas; o volume do Nuked foi
+igualado medindo as 41 músicas (fator 6/5).
 
 Brilho: Setup > Graphics > Brightness é o mesmo `gammaCorrection` da tecla
 F11 (salvo no tyrian.cfg); só vale dentro das fases.

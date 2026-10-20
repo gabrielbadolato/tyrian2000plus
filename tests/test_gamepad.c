@@ -5,6 +5,7 @@
 #include "helptext.h"
 #include "padglyph.h"
 #include "config.h"
+#include "osk.h"
 #include "SDL.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -420,6 +421,102 @@ int main(int argc, char *argv[])
 			fclose(f);
 		}
 		CHECK(strcmp(text, "not a save file") == 0);
+	}
+
+	printf("[8] on-screen keyboard\n");
+	{
+		SDL_Surface *screen = SDL_CreateRGBSurface(0, 320, 200, 8, 0, 0, 0, 0);
+		static Osk osk;
+		osk_init(&osk, screen);
+
+		// a controller's press has no key symbol; the real keyboard's has one
+		KeyboardInput pad = { .sym = 0 }, key = { .sym = SDLK_RETURN, .scancode = SDL_SCANCODE_RETURN };
+		Uint8 ch = 0;
+
+		CHECK(osk_key(&osk, &key, &ch) == OSK_NONE);     // nothing connected: as before
+		CHECK(joysticks == 0);
+
+		attach_pad("Virtual Xbox Pad");
+		advance(600);
+		poll();
+		CHECK(joysticks == 1);
+		SDL_Joystick *p = joystick[0].handle;
+
+		CHECK(osk_key(&osk, &key, &ch) == OSK_NONE);     // the real keyboard still types
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_CHAR && ch == 'A');
+		pad.scancode = SDL_SCANCODE_RIGHT;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_HANDLED);
+		pad.scancode = SDL_SCANCODE_DOWN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_HANDLED);
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_CHAR && ch == 'O');
+		pad.scancode = SDL_SCANCODE_LEFT;
+		osk_key(&osk, &pad, &ch);
+		osk_key(&osk, &pad, &ch);                        // wraps to the last column
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_CHAR && ch == 'Z');
+
+		pad.scancode = SDL_SCANCODE_DOWN;
+		osk_key(&osk, &pad, &ch);
+		osk_key(&osk, &pad, &ch);                        // special keys: on OK
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_ACCEPT);
+		pad.scancode = SDL_SCANCODE_LEFT;
+		osk_key(&osk, &pad, &ch);                        // Delete
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_DELETE);
+		pad.scancode = SDL_SCANCODE_LEFT;
+		osk_key(&osk, &pad, &ch);                        // Space
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_CHAR && ch == ' ');
+		pad.scancode = SDL_SCANCODE_LEFT;
+		osk_key(&osk, &pad, &ch);                        // abc
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_HANDLED);
+		pad.scancode = SDL_SCANCODE_UP;
+		osk_key(&osk, &pad, &ch);
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_CHAR && ch == '0');  // digits have no case
+		pad.scancode = SDL_SCANCODE_UP;
+		osk_key(&osk, &pad, &ch);
+		pad.scancode = SDL_SCANCODE_RETURN;
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_CHAR && ch == 'n');  // lowercase now
+
+		pad.scancode = SDL_SCANCODE_ESCAPE;                // B erases, Back leaves
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_DELETE);
+		SDL_JoystickSetVirtualButton(p, SDL_CONTROLLER_BUTTON_BACK, 1);
+		SDL_JoystickUpdate();
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_CANCEL);
+		SDL_JoystickSetVirtualButton(p, SDL_CONTROLLER_BUTTON_BACK, 0);
+		SDL_JoystickSetVirtualButton(p, SDL_CONTROLLER_BUTTON_START, 1);
+		SDL_JoystickUpdate();
+		pad.scancode = SDL_SCANCODE_RETURN;                // Start finishes
+		CHECK(osk_key(&osk, &pad, &ch) == OSK_ACCEPT);
+		SDL_JoystickSetVirtualButton(p, SDL_CONTROLLER_BUTTON_START, 0);
+		SDL_JoystickUpdate();
+
+		MouseInput click = { .x = 160, .y = OSK_Y + 2 + 5, .button = SDL_BUTTON_LEFT };
+		CHECK(osk_mouse(&osk, &click, &ch) == OSK_CHAR && ch == 'g');  // the middle of the first row
+		click.y = 100;
+		CHECK(osk_mouse(&osk, &click, &ch) == OSK_NONE);  // outside: the game's own buttons
+
+		osk_draw(&osk, screen);
+		osk_close(&osk, screen);
+
+		printf("[9] vibration strength\n");
+		rumble_strength = RUMBLE_WEAK;
+		joystick_rumble(0, 0xFFFF, 0xFFFF, 10);  // harmless at any strength
+		rumble_strength = RUMBLE_OFF;
+		joystick_rumble(0, 0xFFFF, 0xFFFF, 10);
+		rumble_strength = RUMBLE_STRONG;
+		CHECK(joystick_battery_name(0) == NULL || joystick_battery_name(0)[0] != '\0');
+		CHECK(joystick_take_low_battery() == -1);  // a virtual pad has no battery
+
+		SDL_JoystickDetachVirtual(SDL_NumJoysticks() - 1);
+		advance(600);
+		poll();
+		SDL_FreeSurface(screen);
 	}
 
 	deinit_joysticks();

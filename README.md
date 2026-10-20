@@ -172,6 +172,8 @@ Controls > Shortcuts):
 | F1        | Help, in a level or in the ship menu            |
 | F11       | Brightness, during a level                      |
 
+In a window, the game opens where it was last time, with the same size.
+
 ## Where each option is
 
 - **Title screen > About:** what the game is, where it came from, the credits
@@ -180,7 +182,8 @@ Controls > Shortcuts):
   Controls, game speed, Jukebox, Language, Check Updates, Statistics and
   About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
-  game also saves "LAST LEVEL" when a level starts). Shown when there is one.
+  game also saves "LAST LEVEL" when you arrive at the ship after a level and
+  when a level starts). Shown when there is one.
 - **Setup > Sound > Music Sound:** "Accurate" (the default, Nuked OPL3) or
   "Classic" (the emulator OpenTyrian always used).
 - **Setup > Controls:** keyboard, controller, mouse, Auto Fire, Vibration,

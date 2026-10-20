@@ -275,6 +275,26 @@ static void loadOpenTyrianConfig(void)
 		bool sharpBilinear;
 		if (config_get_bool_option(section, "sharp_bilinear", &sharpBilinear))
 			sharp_bilinear_enabled = sharpBilinear;
+
+		int w, h;
+		if (config_get_int_option(section, "window_width", &w) && config_get_int_option(section, "window_height", &h) &&
+		    w > 0 && h > 0 && w <= 16384 && h <= 16384)
+		{
+			window_geometry.w = w;
+			window_geometry.h = h;
+
+			int x, y;
+			window_geometry.has_position = config_get_int_option(section, "window_x", &x) && config_get_int_option(section, "window_y", &y);
+			if (window_geometry.has_position)
+			{
+				window_geometry.x = x;
+				window_geometry.y = y;
+			}
+
+			bool maximized;
+			if (config_get_bool_option(section, "window_maximized", &maximized))
+				window_geometry.maximized = maximized;
+		}
 	}
 
 	section = config_find_section(config, "gameplay", NULL);
@@ -381,6 +401,18 @@ static void saveOpenTyrianConfig(void)
 
 	config_set_bool_option(section, "sharp_bilinear", sharp_bilinear_enabled, OFF_ON);
 
+	if (window_geometry.w > 0)
+	{
+		config_set_int_option(section, "window_width", window_geometry.w);
+		config_set_int_option(section, "window_height", window_geometry.h);
+		if (window_geometry.has_position)
+		{
+			config_set_int_option(section, "window_x", window_geometry.x);
+			config_set_int_option(section, "window_y", window_geometry.y);
+		}
+		config_set_bool_option(section, "window_maximized", window_geometry.maximized, NO_YES);
+	}
+
 	section = config_find_or_add_section(config, "gameplay", NULL);
 	if (section == NULL)
 		exit(EXIT_FAILURE);  // out of memory
@@ -484,6 +516,7 @@ void JE_saveGame(JE_byte slot, const char *name)
 {
 	assert(strlen(name) >= 14);
 
+	const bool lastSaveSlotChanged = lastSaveSlot != slot;
 	lastSaveSlot = slot;
 
 	saveFiles[slot-1].initialDifficulty = initialDifficulty;
@@ -539,6 +572,10 @@ void JE_saveGame(JE_byte slot, const char *name)
 	}
 	
 	saveSaves();
+
+	// keep Continue pointing at this save even if the game does not close normally
+	if (lastSaveSlotChanged)
+		saveOpenTyrianConfig();
 }
 
 void JE_loadGame(JE_byte slot)

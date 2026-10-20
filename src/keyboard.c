@@ -24,6 +24,7 @@
 #include "network.h"
 #include "nortsong.h"
 #include "opentyr.h"
+#include "varz.h"
 #include "video.h"
 
 #include "SDL.h"
@@ -199,6 +200,13 @@ void handleSdlEvents(void)
 
 				case SDL_WINDOWEVENT_RESIZED:
 					video_on_win_resize();
+					video_remember_window();
+					break;
+
+				case SDL_WINDOWEVENT_MOVED:
+				case SDL_WINDOWEVENT_MAXIMIZED:
+				case SDL_WINDOWEVENT_RESTORED:
+					video_remember_window();
 					break;
 				}
 				break;
@@ -364,7 +372,7 @@ void handleSdlEvents(void)
 				break;
 
 			case SDL_QUIT:
-				exit(0);
+				JE_tyrianHalt(0);  // closing the window keeps the settings and the window's place, like Quit
 				break;
 		}
 	}

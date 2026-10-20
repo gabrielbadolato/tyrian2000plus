@@ -2522,7 +2522,7 @@ new_game:
 							temp = 22;
 						else
 							temp = 11;
-						JE_saveGame(11, "LAST LEVEL    ");
+						JE_saveGame(temp, "LAST LEVEL    ");  // was always 11, mixing a two-player game into the one-player slot
 						break;
 
 					case 'i':  // Set menu music track.
@@ -2545,6 +2545,16 @@ new_game:
 							while (str_pop_int(buf, &temp))
 								itemAvail[i][j++] = temp;
 							itemAvailMax[i] = j;
+						}
+
+						// Tyrian 2000+: also save "Last Level" on arriving at the ship, so that
+						// Continue comes back here instead of to the start of the level just
+						// finished (the game saves it again when the next level starts).  Not
+						// right after loading a game: it would only copy that save over Last Level.
+						if (!playDemo && !doNotSaveBackup && !timedBattleMode && !gameJustLoaded)
+						{
+							JE_saveGame(twoPlayerMode ? 22 : 11, "LAST LEVEL    ");
+							logInfo("Saved \"Last Level\" on arriving at the ship (%s).", lastLevelName);
 						}
 
 						JE_itemScreen();
@@ -3250,7 +3260,8 @@ static bool drawUpdateNotice(SDL_Surface *surface)
 }
 
 // the saved game that Continue loads: the one last saved or loaded (the game
-// also saves "LAST LEVEL" when a level starts), or 0 if there is none
+// also saves "LAST LEVEL" when a level starts and on arriving at the ship), or 0
+// if there is none
 static int continueSaveSlot(void)
 {
 	if (lastSaveSlot >= 1 && lastSaveSlot <= SAVE_FILES_NUM && saveFiles[lastSaveSlot - 1].level > 0)

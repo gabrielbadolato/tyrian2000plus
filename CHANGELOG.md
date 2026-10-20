@@ -24,6 +24,20 @@ change is in this repository's git log.
   changed.
 - Portuguese: the power level under the weapon preview reads "NIVEL" and no
   longer runs into the upgrade price.
+- **Automatic save at the ship**: the game's own automatic save, "Last Level",
+  is now also written when you finish a level and arrive at the ship, as its
+  help text promised. Continue (and Load Game > Last Level) bring you back to
+  the ship with the level you just finished, even if the game was closed
+  without saving. Your own save slots are never touched.
+- Two-player games no longer overwrite the one-player "Last Level" before a
+  bonus game.
+- **The window remembers its size and place**: when the game is not
+  fullscreen, it opens where it was last time, with the same size (or
+  maximized). If that place is no longer on a screen, e.g. a monitor was
+  unplugged, it opens centered. Leaving fullscreen with Alt-Enter also puts it
+  back there.
+- Closing the window with its X button now keeps your settings, like Quit
+  does (before, changes made in that session were lost).
 
 ## v1.1 (2026-10-20)
 

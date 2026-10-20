@@ -36,7 +36,15 @@ typedef enum {
 
 extern const char *const scaling_mode_names[ScalingMode_MAX];
 
+typedef struct
+{
+	int x, y, w, h;     // w = 0: nothing remembered yet
+	bool has_position;  // false where the position is unknown (Wayland)
+	bool maximized;
+} WindowGeometry;
+
 extern int fullscreen_display; // -1 means windowed
+extern WindowGeometry window_geometry;
 extern ScalingMode scaling_mode;
 extern bool vsync_enabled;
 extern bool sharp_bilinear_enabled;
@@ -54,6 +62,7 @@ extern SDL_PixelFormat *main_window_tex_format;
 void init_video(void);
 
 void video_on_win_resize(void);
+void video_remember_window(void);
 void reinit_fullscreen(int new_display);
 void toggle_fullscreen(void);
 bool init_scaler(unsigned int new_scaler);

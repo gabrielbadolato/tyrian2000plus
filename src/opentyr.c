@@ -150,6 +150,32 @@ static const char *getScalingModePickerItem(size_t i, char *buffer, size_t buffe
 	return tr(scaling_mode_names[i]);
 }
 
+// the detail levels the pause menu steps through (5 and 6 only come from
+// old saves and a cheat key, and are kept until another one is chosen)
+static size_t getDetailLevelPickerItemsCount(void)
+{
+	return 4;
+}
+
+static const char *getDetailLevelPickerItem(size_t i, char *buffer, size_t bufferSize)
+{
+	(void)buffer, (void)bufferSize;
+
+	return detailLevel[i];
+}
+
+static size_t getGameSpeedPickerItemsCount(void)
+{
+	return COUNTOF(gameSpeedText);
+}
+
+static const char *getGameSpeedPickerItem(size_t i, char *buffer, size_t bufferSize)
+{
+	(void)buffer, (void)bufferSize;
+
+	return gameSpeedText[i];
+}
+
 static size_t getLanguagePickerItemsCount(void)
 {
 	return lang_setting_count();
@@ -227,9 +253,8 @@ static void captureKeySetting(size_t i, int x, int y, int w, int xStatus, const 
 	keySettings[i] = scancode;
 }
 
-// controlsOnly: open straight on Controls and leave when backing out of it
-// (the pause menu during a level)
-static void runSetupMenu(bool controlsOnly)
+// opens on the given page and leaves when backing out of it
+void setupMenuPage(SetupPage page)
 {
 	typedef enum
 	{
@@ -247,6 +272,10 @@ static void runSetupMenu(bool controlsOnly)
 		MENU_ITEM_VSYNC,
 		MENU_ITEM_SHARP_BILINEAR,
 		MENU_ITEM_BRIGHTNESS,
+		MENU_ITEM_DETAIL_LEVEL,
+		MENU_ITEM_GAME_SPEED,
+		MENU_ITEM_SHORTCUTS,
+		MENU_ITEM_SHORTCUT,  // a line of Shortcuts, nothing to change
 		MENU_ITEM_AUTO_FIRE,
 		MENU_ITEM_UPDATE_CHECK,
 		MENU_ITEM_LANGUAGE,
@@ -290,6 +319,7 @@ static void runSetupMenu(bool controlsOnly)
 		MENU_JOYSTICK,
 		MENU_JOYSTICK_BUTTONS,
 		MENU_MOUSE,
+		MENU_SHORTCUTS,
 	} MenuId;
 
 	typedef struct
@@ -299,6 +329,7 @@ static void runSetupMenu(bool controlsOnly)
 		const char *description;
 		size_t (*getPickerItemsCount)(void);
 		const char *(*getPickerItem)(size_t i, char *buffer, size_t bufferSize);
+		const char *value;  // fixed text in the value column
 	} MenuItem;
 
 	typedef struct
@@ -316,6 +347,7 @@ static void runSetupMenu(bool controlsOnly)
 				{ MENU_ITEM_GRAPHICS, "Graphics...", "Change the graphics settings." },
 				{ MENU_ITEM_SOUND, "Sound...", "Change the sound settings." },
 				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
+				{ MENU_ITEM_GAME_SPEED, "Game Speed:", "Change how fast the levels run.", getGameSpeedPickerItemsCount, getGameSpeedPickerItem },
 				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
 				{ MENU_ITEM_LANGUAGE, "Language:", "Choose the language of the menus and help.", getLanguagePickerItemsCount, getLanguagePickerItem },
@@ -334,6 +366,7 @@ static void runSetupMenu(bool controlsOnly)
 				{ MENU_ITEM_SHARP_BILINEAR, "Sharp Bilinear:", "Keep pixels even when the scale is not exact.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_BRIGHTNESS, "Brightness:", "Brighten the levels (F11 also works in game).", getBrightnessPickerItemsCount, getBrightnessPickerItem },
+				{ MENU_ITEM_DETAIL_LEVEL, "Detail Level:", "Show fewer or more effects in the levels.", getDetailLevelPickerItemsCount, getDetailLevelPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -341,8 +374,8 @@ static void runSetupMenu(bool controlsOnly)
 		[MENU_SOUND] = {
 			.header = "Sound",
 			.items = {
-				{ MENU_ITEM_MUSIC_VOLUME, "Music Volume", "Change volume with the left/right arrow keys." },
-				{ MENU_ITEM_SOUND_VOLUME, "Sound Volume", "Change volume with the left/right arrow keys." },
+				{ MENU_ITEM_MUSIC_VOLUME, "Music Volume", "Left/right change the volume, Enter mutes." },
+				{ MENU_ITEM_SOUND_VOLUME, "Sound Volume", "Left/right change the volume, Enter mutes." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -354,6 +387,7 @@ static void runSetupMenu(bool controlsOnly)
 				{ MENU_ITEM_JOYSTICK, "Controller...", "Change the controller (gamepad) settings." },
 				{ MENU_ITEM_CONTROLLER_MAP, "Controller Map...", "See what each controller button does." },
 				{ MENU_ITEM_MOUSE, "Mouse...", "Change the mouse buttons." },
+				{ MENU_ITEM_SHORTCUTS, "Shortcuts...", "See the keys that work anywhere in the game." },
 				{ MENU_ITEM_AUTO_FIRE, "Auto Fire:", "Press fire once to start or stop firing.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
@@ -422,6 +456,27 @@ static void runSetupMenu(bool controlsOnly)
 				{ -1 }
 			},
 		},
+		[MENU_SHORTCUTS] = {
+			.header = "Shortcuts",
+			.wItemName = 80,
+			.items = {
+				{ MENU_ITEM_SHORTCUT, "Alt-Enter", "Switch between full screen and a window.", NULL, NULL, "Full Screen" },
+				{ MENU_ITEM_SHORTCUT, "Esc", "Open the menu during a level; go back in menus.", NULL, NULL, "Menu" },
+				{ MENU_ITEM_SHORTCUT, "P", "Pause the game during a level.", NULL, NULL, "Pause" },
+				{ MENU_ITEM_SHORTCUT, "F1", "Show the help, in a level or in the ship menu.", NULL, NULL, "Help" },
+				{ MENU_ITEM_SHORTCUT, "F11", "Change the brightness during a level.", NULL, NULL, "Brightness" },
+				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
+				{ -1 }
+			},
+		},
+	};
+
+	static const MenuId pageMenus[] = {
+		[SETUP_PAGE_MAIN] = MENU_SETUP,
+		[SETUP_PAGE_CONTROLS] = MENU_CONTROLS,
+		[SETUP_PAGE_KEYBOARD] = MENU_KEYBOARD,
+		[SETUP_PAGE_CONTROLLER] = MENU_JOYSTICK,
+		[SETUP_PAGE_MOUSE] = MENU_MOUSE,
 	};
 
 	char buffer[100];
@@ -433,7 +488,7 @@ static void runSetupMenu(bool controlsOnly)
 
 	MenuId menuParents[COUNTOF(menus)] = { MENU_NONE };
 	size_t selectedMenuItemIndexes[COUNTOF(menus)] = { 0 };
-	MenuId currentMenu = controlsOnly ? MENU_CONTROLS : MENU_SETUP;
+	MenuId currentMenu = pageMenus[page];
 	MenuItemId currentPicker = MENU_ITEM_NONE;
 	size_t pickerSelectedIndex = 0;
 
@@ -555,6 +610,15 @@ static void runSetupMenu(bool controlsOnly)
 
 			case MENU_ITEM_BRIGHTNESS:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+			case MENU_ITEM_DETAIL_LEVEL:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, detailLevel[processorType - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+			case MENU_ITEM_GAME_SPEED:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, gameSpeedText[gameSpeed - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+			case MENU_ITEM_SHORTCUT:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(menuItem->value), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_AUTO_FIRE:
@@ -908,6 +972,9 @@ static void runSetupMenu(bool controlsOnly)
 				case MENU_ITEM_MOUSE:
 					subMenu = MENU_MOUSE;
 					break;
+				case MENU_ITEM_SHORTCUTS:
+					subMenu = MENU_SHORTCUTS;
+					break;
 				case MENU_ITEM_CONTROLLER_MAP:
 				{
 					JE_playSampleNum(S_SELECT);
@@ -1110,6 +1177,22 @@ static void runSetupMenu(bool controlsOnly)
 
 					currentPicker = selectedMenuItemId;
 					pickerSelectedIndex = gammaCorrection % COUNTOF(brightnessNames);
+					break;
+				}
+				case MENU_ITEM_DETAIL_LEVEL:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = processorType >= 1 && processorType <= 4 ? processorType - 1 : 3;
+					break;
+				}
+				case MENU_ITEM_GAME_SPEED:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = gameSpeed >= 1 && gameSpeed <= 5 ? gameSpeed - 1 : 3;
 					break;
 				}
 				case MENU_ITEM_AUTO_FIRE:
@@ -1322,6 +1405,18 @@ static void runSetupMenu(bool controlsOnly)
 					gammaCorrection = pickerSelectedIndex;  // applied when a level starts
 					break;
 				}
+				case MENU_ITEM_DETAIL_LEVEL:
+				{
+					processorType = pickerSelectedIndex + 1;
+					JE_initProcessorType();  // the game speed is applied when a level starts
+					break;
+				}
+				case MENU_ITEM_GAME_SPEED:
+				{
+					gameSpeed = pickerSelectedIndex + 1;
+					JE_initProcessorType();
+					break;
+				}
 				case MENU_ITEM_AUTO_FIRE:
 				{
 					autoFireToggle = pickerSelectedIndex == 1;
@@ -1361,12 +1456,12 @@ static void *defaultLogUserdata;
 
 void setupMenu(void)
 {
-	runSetupMenu(false);
+	setupMenuPage(SETUP_PAGE_MAIN);
 }
 
 void controlsMenu(void)
 {
-	runSetupMenu(true);
+	setupMenuPage(SETUP_PAGE_CONTROLS);
 }
 
 // copies every log message to opentyrian.log in the user directory

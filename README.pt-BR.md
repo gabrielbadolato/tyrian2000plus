@@ -155,18 +155,29 @@ botões nas mesmas posições fazem a mesma coisa. Os botões podem ser trocados
 em Setup > Controls > Controller... > Buttons.
 
 Teclado: setas movem, Espaço atira, Enter troca a arma traseira, Ctrl e Alt
-usam os sidekicks, Esc abre o menu, P pausa, Alt+Enter alterna a tela cheia,
-F1 mostra a ajuda e F11 muda o brilho.
+usam os sidekicks. Teclas que valem em todo o jogo (também listadas em
+Setup > Controls > Shortcuts):
+
+| Tecla     | O que faz                                        |
+|-----------|--------------------------------------------------|
+| Alt+Enter | Alterna entre tela cheia e janela                |
+| Esc       | Abre o menu durante a fase; nos menus, volta     |
+| P         | Pausa o jogo durante a fase                      |
+| F1        | Ajuda, na fase ou no menu da nave                |
+| F11       | Brilho, durante a fase                           |
 
 ## Onde fica cada opção
 
 - **Tela de título > About:** o que é o jogo, de onde veio, os créditos e os
   links (Enter ou A abre o link no navegador).
-- **Tela de título > Setup:** vídeo (Graphics), som (Sound), controles
-  (Controls), Jukebox, idioma (Language), Check Updates e About.
-- **Setup > Controls:** teclado, controle, mouse, Auto Fire e o desenho do
-  controle (Controller Map).
-- **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup.
+- **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
+  (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
+  idioma (Language), Check Updates e About.
+- **Setup > Controls:** teclado, controle, mouse, Auto Fire, o desenho do
+  controle (Controller Map) e a lista de atalhos do teclado (Shortcuts).
+- **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup. Os
+  itens Joystick, Keyboard e Mouse de lá abrem as mesmas telas de
+  Setup > Controls.
 - **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire,
   Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
   Sharp Bilinear, VSync e brilho, aplicados na hora).

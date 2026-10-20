@@ -68,7 +68,7 @@ static const int joystick_analog_max = 32767;
 static const Uint32 hotplug_check_interval = 500; // milliseconds
 static Uint32 next_hotplug_check = 0;
 
-static bool rumble_enabled = true;
+int rumble_strength = RUMBLE_STRONG;  // Setup > Controls > Vibration
 
 /* Standardized gamepad button codes (stored in the config file) */
 static const char *const pad_button_codes[] =
@@ -687,6 +687,58 @@ bool joystick_take_lost(void)
 	return lost;
 }
 
+// set by check_joystick_hotplug() when a controller's battery gets low
+static int joystick_low_battery = -1;
+
+// returns (once) the controller whose battery got low, or -1
+int joystick_take_low_battery(void)
+{
+	int j = joystick_low_battery;
+	joystick_low_battery = -1;
+	return j < joysticks ? j : -1;
+}
+
+// "Battery: Low" and so on, or NULL when the controller is wired or does not say
+const char *joystick_battery_name(int j)
+{
+	if (j < 0 || j >= joysticks || joystick[j].handle == NULL)
+		return NULL;
+
+	switch (SDL_JoystickCurrentPowerLevel(joystick[j].handle))
+	{
+	case SDL_JOYSTICK_POWER_EMPTY:  return tr("Battery: Empty");
+	case SDL_JOYSTICK_POWER_LOW:    return tr("Battery: Low");
+	case SDL_JOYSTICK_POWER_MEDIUM: return tr("Battery: Medium");
+	case SDL_JOYSTICK_POWER_FULL:   return tr("Battery: Full");
+	default:                        return NULL;  // wired, charging or unknown
+	}
+}
+
+// warns once when a battery gets low, and again only after it was charged
+static void check_joystick_batteries(void)
+{
+	for (int j = 0; j < joysticks; j++)
+	{
+		if (joystick[j].handle == NULL)
+			continue;
+
+		const SDL_JoystickPowerLevel level = SDL_JoystickCurrentPowerLevel(joystick[j].handle);
+		if (level == SDL_JOYSTICK_POWER_LOW || level == SDL_JOYSTICK_POWER_EMPTY)
+		{
+			if (!joystick[j].battery_warned)
+			{
+				logInfo("Controller %d: battery low", j);
+				joystick[j].battery_warned = true;
+				joystick_low_battery = j;
+			}
+		}
+		else if (level == SDL_JOYSTICK_POWER_MEDIUM || level == SDL_JOYSTICK_POWER_FULL || level == SDL_JOYSTICK_POWER_WIRED)
+		{
+			joystick[j].battery_warned = false;
+		}
+	}
+}
+
 // SDL device index of the device with this instance id, or -1 if it is gone
 static int joystick_device_index(SDL_JoystickID instance_id)
 {
@@ -744,6 +796,8 @@ void check_joystick_hotplug(void)
 			changed = lost = true;
 		}
 	}
+
+	check_joystick_batteries();
 
 	const int count = SDL_NumJoysticks();
 	for (int d = 0; d < count; d++)
@@ -826,8 +880,14 @@ void deinit_joysticks(void)
 
 void joystick_rumble(int j, Uint16 low, Uint16 high, Uint32 duration_ms)
 {
-	if (!rumble_enabled || j < 0 || j >= joysticks || joystick[j].handle == NULL)
+	if (rumble_strength == RUMBLE_OFF || j < 0 || j >= joysticks || joystick[j].handle == NULL)
 		return;
+
+	if (rumble_strength == RUMBLE_WEAK)
+	{
+		low = low * 2 / 5;
+		high = high * 2 / 5;
+	}
 
 	if (SDL_JoystickRumble(joystick[j].handle, low, high, duration_ms) != 0 && !joystick[j].rumble_failed)
 	{

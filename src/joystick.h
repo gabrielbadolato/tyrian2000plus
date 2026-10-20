@@ -58,6 +58,7 @@ typedef struct
 	SDL_GameController *controller; // non-NULL when SDL recognizes the device as a gamepad
 	SDL_JoystickID instance_id;
 	bool rumble_failed; // already logged a rumble error for this controller
+	bool battery_warned; // already warned that the battery is low (until it charges)
 	
 	Joystick_assignment assignment[JOYSTICK_ASSIGNMENTS][2]; // 0-3: directions, 4-10: actions
 	
@@ -87,7 +88,11 @@ typedef enum
 }
 Pad_family;
 
+// rumble_strength values
+enum { RUMBLE_OFF, RUMBLE_WEAK, RUMBLE_STRONG, RUMBLE_STRENGTHS };
+
 extern int joystick_repeat_delay;
+extern int rumble_strength;
 extern bool joydown;
 extern bool ignore_joystick;
 extern int joysticks;
@@ -100,6 +105,8 @@ void poll_joystick(int j);
 void poll_joysticks(void);
 void check_joystick_hotplug(void);
 bool joystick_take_lost(void);
+int joystick_take_low_battery(void);
+const char *joystick_battery_name(int j);
 
 void push_key(SDL_Scancode key);
 void push_joysticks_as_keyboard(void);

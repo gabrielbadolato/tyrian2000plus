@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "opentyr.h"
+#include "oplchip.h"
 
 #include "about.h"
 #include "config.h"
@@ -115,6 +116,34 @@ static const char *getBrightnessPickerItem(size_t i, char *buffer, size_t buffer
 	(void)buffer, (void)bufferSize;
 
 	return tr(brightnessNames[i]);
+}
+
+static const char *const vibrationNames[RUMBLE_STRENGTHS] = { "Off", "Weak", "Strong" };
+
+static size_t getVibrationPickerItemsCount(void)
+{
+	return COUNTOF(vibrationNames);
+}
+
+static const char *getVibrationPickerItem(size_t i, char *buffer, size_t bufferSize)
+{
+	(void)buffer, (void)bufferSize;
+
+	return tr(vibrationNames[i]);
+}
+
+static const char *const musicChipNames[] = { "Classic", "Accurate" };
+
+static size_t getMusicChipPickerItemsCount(void)
+{
+	return COUNTOF(musicChipNames);
+}
+
+static const char *getMusicChipPickerItem(size_t i, char *buffer, size_t bufferSize)
+{
+	(void)buffer, (void)bufferSize;
+
+	return tr(musicChipNames[i]);
 }
 
 static const char *const mouseActionNames[] =
@@ -248,6 +277,7 @@ static void runSetupMenu(bool controlsOnly)
 		MENU_ITEM_SHARP_BILINEAR,
 		MENU_ITEM_BRIGHTNESS,
 		MENU_ITEM_AUTO_FIRE,
+		MENU_ITEM_VIBRATION,
 		MENU_ITEM_UPDATE_CHECK,
 		MENU_ITEM_LANGUAGE,
 		MENU_ITEM_KEYBOARD,
@@ -270,6 +300,7 @@ static void runSetupMenu(bool controlsOnly)
 		MENU_ITEM_MOUSE_RESET,
 		MENU_ITEM_MUSIC_VOLUME,
 		MENU_ITEM_SOUND_VOLUME,
+		MENU_ITEM_MUSIC_CHIP,
 	} MenuItemId;
 
 	// items that stand for one of several actions share the first one's id
@@ -343,6 +374,7 @@ static void runSetupMenu(bool controlsOnly)
 			.items = {
 				{ MENU_ITEM_MUSIC_VOLUME, "Music Volume", "Change volume with the left/right arrow keys." },
 				{ MENU_ITEM_SOUND_VOLUME, "Sound Volume", "Change volume with the left/right arrow keys." },
+				{ MENU_ITEM_MUSIC_CHIP, "Music Sound:", "Accurate sounds like a 1995 sound card.", getMusicChipPickerItemsCount, getMusicChipPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -355,6 +387,7 @@ static void runSetupMenu(bool controlsOnly)
 				{ MENU_ITEM_CONTROLLER_MAP, "Controller Map...", "See what each controller button does." },
 				{ MENU_ITEM_MOUSE, "Mouse...", "Change the mouse buttons." },
 				{ MENU_ITEM_AUTO_FIRE, "Auto Fire:", "Press fire once to start or stop firing.", getOffOnPickerItemsCount, getOffOnPickerItem },
+				{ MENU_ITEM_VIBRATION, "Vibration:", "How strongly the controller vibrates.", getVibrationPickerItemsCount, getVibrationPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -561,6 +594,14 @@ static void runSetupMenu(bool controlsOnly)
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, autoFireToggle ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
+			case MENU_ITEM_VIBRATION:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(vibrationNames[rumble_strength]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
+			case MENU_ITEM_MUSIC_CHIP:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(musicChipNames[opl_accurate ? 1 : 0]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
 			case MENU_ITEM_LANGUAGE:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, lang_setting_name((size_t)lang_setting), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
@@ -736,6 +777,8 @@ static void runSetupMenu(bool controlsOnly)
 									case MENU_ITEM_VSYNC:
 									case MENU_ITEM_BRIGHTNESS:
 									case MENU_ITEM_AUTO_FIRE:
+									case MENU_ITEM_VIBRATION:
+									case MENU_ITEM_MUSIC_CHIP:
 									case MENU_ITEM_UPDATE_CHECK:
 									case MENU_ITEM_LANGUAGE:
 									case MENU_ITEM_KEY:
@@ -1120,6 +1163,22 @@ static void runSetupMenu(bool controlsOnly)
 					pickerSelectedIndex = autoFireToggle ? 1 : 0;
 					break;
 				}
+				case MENU_ITEM_MUSIC_CHIP:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = opl_accurate ? 1 : 0;
+					break;
+				}
+				case MENU_ITEM_VIBRATION:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = (size_t)rumble_strength;
+					break;
+				}
 				case MENU_ITEM_UPDATE_CHECK:
 				{
 					JE_playSampleNum(S_CLICK);
@@ -1325,6 +1384,17 @@ static void runSetupMenu(bool controlsOnly)
 				case MENU_ITEM_AUTO_FIRE:
 				{
 					autoFireToggle = pickerSelectedIndex == 1;
+					break;
+				}
+				case MENU_ITEM_MUSIC_CHIP:
+				{
+					opl_set_accurate(pickerSelectedIndex == 1);
+					break;
+				}
+				case MENU_ITEM_VIBRATION:
+				{
+					rumble_strength = (int)pickerSelectedIndex;
+					joysticks_rumble_all(0xFFFF, 0xFFFF, 300);  // a sample of the new strength
 					break;
 				}
 				case MENU_ITEM_UPDATE_CHECK:

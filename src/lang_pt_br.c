@@ -187,9 +187,11 @@ const LangEntry lang_pt_br[] =
 	{ "Quit", "Sair" },
 	{ "Setup", "Configurações" },
 	{ "About", "Sobre" },
+	{ "Continue", "Continuar" },
 
 	// ---- messages during a level, at most 30 characters ----
 	{ "Enemy approaching from behind.", "Inimigo chegando por trás." },
+	{ "Controller %d: battery low!", "Controle %d: bateria fraca!" },
 	{ "Large mass detected ahead!", "Massa enorme à frente!" },
 	{ "Intercepting enemy aircraft.", "Interceptando naves inimigas." },
 	{ "Cleared enemy platforms.", "Plataformas inimigas limpas." },
@@ -587,6 +589,14 @@ const LangEntry lang_pt_br[] =
 	{ "Change the mouse buttons.", "Muda os botões do mouse." },
 	{ "Auto Fire:", "Tiro automático:" },
 	{ "Press fire once to start or stop firing.", "Um toque no tiro liga ou desliga o disparo contínuo." },
+	{ "Vibration:", "Vibração:" },
+	{ "How strongly the controller vibrates.", "A força da vibração do controle." },
+	{ "Weak", "Fraca" },
+	{ "Strong", "Forte" },
+	{ "Music Sound:", "Som da música:" },
+	{ "Accurate sounds like a 1995 sound card.", "Fiel: igual a uma placa de som de 1995." },
+	{ "Classic", "Clássico" },
+	{ "Accurate", "Fiel" },
 	{ "Up", "Cima" },
 	{ "Down", "Baixo" },
 	{ "Left", "Esquerda" },
@@ -654,6 +664,14 @@ const LangEntry lang_pt_br[] =
 	{ "No controller connected. This is the default layout.", "Nenhum controle conectado. Este é o padrão." },
 	{ "In menus: %s = OK, %s = Back.", "Nos menus: %s = OK, %s = Voltar." },
 	{ "Press buttons to test. Hold %s or press Esc to exit.", "Teste os botões. Segure %s ou aperte Esc para sair." },
+	{ "Battery: Empty", "Bateria: vazia" },
+	{ "Battery: Low", "Bateria: fraca" },
+	{ "Battery: Medium", "Bateria: média" },
+	{ "Battery: Full", "Bateria: cheia" },
+
+	// ---- keyboard on the screen (keys at most 9 characters) ----
+	{ "Space", "Espaço" },
+	{ "Delete", "Apagar" },
 
 	// ---- update notice and About ----
 	{ "%s is out! See About.", "%s saiu! Veja em Sobre." },

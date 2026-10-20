@@ -20,12 +20,14 @@
 
 #include "episodes.h"
 #include "file.h"
+#include "joystick.h"
 #include "lang.h"
 #include "logging.h"
 #include "loudness.h"
 #include "memreader.h"
 #include "memwriter.h"
 #include "mtrand.h"
+#include "oplchip.h"
 #include "nortsong.h"
 #include "opentyr.h"
 #include "player.h"
@@ -147,6 +149,8 @@ KeySettings keySettings;
 /* Mouse settings */
 MouseSettings mouseSettings;
 
+int lastSaveSlot = 0;  // save slot last saved or loaded (1-based), 0 = none; for Continue
+static const char *const rumbleStrengthCodes[RUMBLE_STRENGTHS] = { "off", "weak", "strong" };
 bool autoFireToggle = false;  // fire button toggles constant fire instead of being held
 
 /* Configuration */
@@ -279,6 +283,26 @@ static void loadOpenTyrianConfig(void)
 		bool autoFire;
 		if (config_get_bool_option(section, "auto_fire", &autoFire))
 			autoFireToggle = autoFire;
+
+		const char *vibration;
+		if (config_get_string_option(section, "vibration", &vibration))
+		{
+			for (int i = 0; i < RUMBLE_STRENGTHS; ++i)
+				if (strcmp(vibration, rumbleStrengthCodes[i]) == 0)
+					rumble_strength = i;
+		}
+
+		int lastSlot;
+		if (config_get_int_option(section, "last_save", &lastSlot) && lastSlot >= 1 && lastSlot <= SAVE_FILES_NUM)
+			lastSaveSlot = lastSlot;
+	}
+
+	section = config_find_section(config, "sound", NULL);
+	if (section != NULL)
+	{
+		const char *chip;
+		if (config_get_string_option(section, "music_chip", &chip))
+			opl_accurate = strcmp(chip, "classic") != 0;
 	}
 
 	section = config_find_section(config, "language", NULL);
@@ -362,6 +386,15 @@ static void saveOpenTyrianConfig(void)
 		exit(EXIT_FAILURE);  // out of memory
 
 	config_set_bool_option(section, "auto_fire", autoFireToggle, OFF_ON);
+	config_set_string_option(section, "vibration", rumbleStrengthCodes[rumble_strength]);
+	if (lastSaveSlot > 0)
+		config_set_int_option(section, "last_save", lastSaveSlot);
+
+	section = config_find_or_add_section(config, "sound", NULL);
+	if (section == NULL)
+		exit(EXIT_FAILURE);  // out of memory
+
+	config_set_string_option(section, "music_chip", opl_accurate ? "accurate" : "classic");
 
 	section = config_find_or_add_section(config, "language", NULL);
 	if (section == NULL)
@@ -451,6 +484,8 @@ void JE_saveGame(JE_byte slot, const char *name)
 {
 	assert(strlen(name) >= 14);
 
+	lastSaveSlot = slot;
+
 	saveFiles[slot-1].initialDifficulty = initialDifficulty;
 	saveFiles[slot-1].gameHasRepeated = gameHasRepeated;
 	saveFiles[slot-1].level = saveLevel;
@@ -514,6 +549,8 @@ void JE_loadGame(JE_byte slot)
 	extraGame = false;
 	galagaMode = false;
 	timedBattleMode = false;
+
+	lastSaveSlot = slot;
 
 	initialDifficulty = saveFiles[slot-1].initialDifficulty;
 	gameHasRepeated   = saveFiles[slot-1].gameHasRepeated;

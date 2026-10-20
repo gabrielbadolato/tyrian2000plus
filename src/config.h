@@ -139,6 +139,7 @@ extern JE_byte mainLevel, nextLevel, saveLevel;
 extern KeySettings keySettings;
 extern MouseSettings mouseSettings;
 extern bool autoFireToggle;
+extern int lastSaveSlot;
 extern JE_shortint levelFilter, levelFilterNew, levelBrightness, levelBrightnessChg;
 extern JE_boolean filtrationAvail, filterActive, filterFade, filterFadeStart;
 extern JE_boolean gameJustLoaded;

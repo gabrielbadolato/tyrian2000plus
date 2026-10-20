@@ -3242,11 +3242,25 @@ static bool drawUpdateNotice(SDL_Surface *surface)
 	return true;
 }
 
+// the saved game that Continue loads: the one last saved or loaded (the game
+// also saves "LAST LEVEL" when a level starts), or 0 if there is none
+static int continueSaveSlot(void)
+{
+	if (lastSaveSlot >= 1 && lastSaveSlot <= SAVE_FILES_NUM && saveFiles[lastSaveSlot - 1].level > 0)
+		return lastSaveSlot;
+
+	if (saveFiles[11 - 1].level > 0)  // one-player "LAST LEVEL", from before Continue existed
+		return 11;
+
+	return 0;
+}
+
 bool titleScreen(void)
 {
 	enum MenuItemIndex
 	{
-		MENU_ITEM_NEW_GAME = 0,
+		MENU_ITEM_CONTINUE = 0,
+		MENU_ITEM_NEW_GAME,
 		MENU_ITEM_LOAD_GAME,
 		MENU_ITEM_HIGH_SCORES,
 		MENU_ITEM_INSTRUCTIONS,
@@ -3262,12 +3276,14 @@ bool titleScreen(void)
 	bool restart = true;
 	bool updateNoticeShown = false;
 
-	size_t selectedIndex = MENU_ITEM_NEW_GAME;
+	int continueSlot = continueSaveSlot();
+	size_t firstIndex = continueSlot > 0 ? MENU_ITEM_CONTINUE : MENU_ITEM_NEW_GAME;  // Continue is hidden without a saved game
+	size_t selectedIndex = firstIndex;
 	size_t specialNameProgress[SA_ENGAGE] = { 0 };
 
 	const int xCenter = VGAScreen->w / 2;
-	const int yMenuItems = 100;
-	const int hMenuItem = 12;
+	int yMenuItems = 100;
+	int hMenuItem = 12;
 	int wMenuItem[COUNTOF(menuText)] = { 0 };
 
 	for (; ; )
@@ -3276,6 +3292,15 @@ bool titleScreen(void)
 
 		if (restart)
 		{
+			continueSlot = continueSaveSlot();
+			firstIndex = continueSlot > 0 ? MENU_ITEM_CONTINUE : MENU_ITEM_NEW_GAME;
+			if (selectedIndex < firstIndex)
+				selectedIndex = firstIndex;
+
+			// with Continue the list closes up a little to stay on the screen
+			yMenuItems = continueSlot > 0 ? 96 : 100;
+			hMenuItem = continueSlot > 0 ? 11 : 12;
+
 			play_song(SONG_TITLE);
 
 			JE_loadPic(VGAScreen, 4, false);
@@ -3312,13 +3337,13 @@ bool titleScreen(void)
 			}
 
 			// Draw menu items.
-			for (size_t i = 0; i < COUNTOF(menuText); ++i)
+			for (size_t i = firstIndex; i < COUNTOF(menuText); ++i)
 			{
 				const char *const text = menuText[i];
 
 				wMenuItem[i] = JE_textWidth(text, FONT_NORMAL);
 				const int x = xCenter - wMenuItem[i] / 2;
-				const int y = yMenuItems + hMenuItem * i;
+				const int y = yMenuItems + hMenuItem * (int)(i - firstIndex);
 
 				drawFontHv(VGAScreen, x - 1, y - 1, menuText[i], FONT_NORMAL, 15, -10);
 				drawFontHv(VGAScreen, x + 1, y + 1, menuText[i], FONT_NORMAL, 15, -10);
@@ -3340,7 +3365,7 @@ bool titleScreen(void)
 		memcpy(VGAScreen->pixels, VGAScreen2->pixels, VGAScreen->pitch * VGAScreen->h);
 
 		// Highlight selected menu item.
-		drawFontHvAligned(VGAScreen, VGAScreen->w / 2, yMenuItems + hMenuItem * selectedIndex, menuText[selectedIndex], FONT_NORMAL, ALIGN_CENTER, 15, -1);
+		drawFontHvAligned(VGAScreen, VGAScreen->w / 2, yMenuItems + hMenuItem * (int)(selectedIndex - firstIndex), menuText[selectedIndex], FONT_NORMAL, ALIGN_CENTER, 15, -1);
 
 		JE_mouseStartFilter(0xF0);
 		JE_showVGA();
@@ -3390,12 +3415,12 @@ bool titleScreen(void)
 		if (mouseGetInput(INPUT_ANY, &mouseInput))
 		{
 			// Find menu item that was hovered or clicked.
-			for (size_t i = 0; i < COUNTOF(menuText); ++i)
+			for (size_t i = firstIndex; i < COUNTOF(menuText); ++i)
 			{
 				const int xMenuItem = xCenter - wMenuItem[i] / 2;
 				if (mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i])
 				{
-					const int yMenuItem = yMenuItems + hMenuItem * i;
+					const int yMenuItem = yMenuItems + hMenuItem * (int)(i - firstIndex);
 					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
 					{
 						if (selectedIndex != i)
@@ -3432,7 +3457,7 @@ bool titleScreen(void)
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				selectedIndex = selectedIndex == 0
+				selectedIndex = selectedIndex == firstIndex
 					? COUNTOF(menuText) - 1
 					: selectedIndex - 1;
 				break;
@@ -3442,7 +3467,7 @@ bool titleScreen(void)
 				JE_playSampleNum(S_CURSOR);
 
 				selectedIndex = selectedIndex == COUNTOF(menuText) - 1
-					? 0
+					? firstIndex
 					: selectedIndex + 1;
 				break;
 			}
@@ -3519,6 +3544,19 @@ bool titleScreen(void)
 
 			switch (selectedIndex)
 			{
+			case MENU_ITEM_CONTINUE:
+			{
+				fade_black(15);
+
+				performSave = false;
+				JE_operation((JE_byte)continueSlot);  // loads it, as Load Game does
+
+				if (gameLoaded)
+					return true;
+
+				restart = true;
+				break;
+			}
 			case MENU_ITEM_NEW_GAME:
 			{
 				fade_black(15);

@@ -642,10 +642,15 @@ void controllerMapScreen(int j)
 		char text[128];
 		if (j >= 0 && joystick[j].controller != NULL)
 		{
-			// "1: Steam Controller", shortened with "..." if it does not fit
+			// "1: Steam Controller (Battery: Low)", the name shortened with "..." if it does not fit
+			const char *battery = joystick_battery_name(j);
+			char suffix[48] = "";
+			if (battery != NULL)
+				snprintf(suffix, sizeof(suffix), " (%s)", battery);
 			snprintf(text, sizeof(text), "%d: %s", j + 1, joystick_display_name(j));
-			for (size_t len = strlen(text); len > 4 && JE_textWidth(text, FONT_SMALL) > 300; --len)
+			for (size_t len = strlen(text); len > 4 && JE_textWidth(text, FONT_SMALL) + JE_textWidth(suffix, FONT_SMALL) > 300; --len)
 				strcpy(&text[len - 4], "...");
+			SDL_strlcat(text, suffix, sizeof(text));
 		}
 		else
 		{

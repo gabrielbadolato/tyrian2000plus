@@ -51,7 +51,7 @@ extern char pName[21][16];
 extern char miscText[HELPTEXT_MISCTEXT_COUNT][42];
 extern char miscTextB[HELPTEXT_MISCTEXTB_COUNT][HELPTEXT_MISCTEXTB_SIZE];
 extern char keyName[8][18];
-extern char menuText[8][HELPTEXT_MENUTEXT_SIZE];
+extern char menuText[9][HELPTEXT_MENUTEXT_SIZE];
 extern char outputs[9][31];
 extern char topicName[6][21];
 extern char mainMenuHelp[HELPTEXT_MAINMENUHELP_COUNT][66];

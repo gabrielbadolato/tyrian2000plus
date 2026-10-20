@@ -49,6 +49,7 @@
 #include "shots.h"
 #include "update_check.h"
 #include "sprite.h"
+#include "stats.h"
 #include "vga256d.h"
 #include "video.h"
 
@@ -597,6 +598,8 @@ start_level:
 
 	mouseSetRelative(false);
 
+	stats_level_end();  // before galagaMode changes twoPlayerMode
+
 	if (galagaMode)
 		twoPlayerMode = false;
 
@@ -981,7 +984,11 @@ start_level_first:
 	BKwrap2 = BKwrap2to = &megaData2.mainmap[1][0];
 	BKwrap3 = BKwrap3to = &megaData3.mainmap[1][0];
 
+	stats_level_start();
+
 level_loop:
+
+	stats_level_frame();
 
 	//tempScreenSeg = game_screen; /* side-effect of game_screen */
 

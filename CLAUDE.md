@@ -203,9 +203,31 @@ conectado aparece um teclado embaixo da caixa do nome. Só reage aos toques
 do controle (as teclas que `push_joysticks_as_keyboard()` gera têm `sym` 0);
 Start (segurado na hora do Enter) termina e Back (no Esc) cancela.
 
+Comparar na loja: no menu Upgrade Ship da nave, cada item mostra ao lado do
+preço um número (`src/shopstats.c`, desenhado em `JE_itemScreen`): dano por
+segundo estimado para armas (na potência da linha, `temp_weapon_power`) e
+sidekicks, casco (`ships[].dmg`), escudo (`mpwr`) e energia do gerador; verde
+se for melhor que o item comprado (`old_items`), vermelho se pior. O dano só
+conta acertos diretos (tiro que atravessa conta ~20 px de contato; reação em
+cadeia soma um disparo da arma da explosão); alguns níveis do jogo trocam dano
+por espalhamento/teleguiado, então o número pode cair ao subir de nível.
+
 Continuar: item "Continue" na tela de título (`menuText[0]`, escondido sem
 jogo salvo), carrega `lastSaveSlot` (último slot salvo ou carregado,
 `last_save` na seção "gameplay"; sem ele, o "LAST LEVEL" do slot 11).
+
+Estatísticas: Setup > "Statistics..." (`statisticsScreen()` em
+`src/stats.c`) mostra os totais de todos os jogos (tempo nas fases, fases
+concluídas, inimigos, mortes, fases secretas, datacubes, maior pontuação) e
+os recordes de cada fase (episódio + nome: pontos ganhos na fase, menor tempo,
+maior % destruída). Ficam em `statistics.cfg` na pasta do usuário (formato do
+config_file), separado do tyrian.sav. `JE_main` chama
+`stats_level_start/frame/end` (`src/tyrian2.c`); o tempo conta quadros do
+laço da fase (35 por segundo), então pausa e velocidade do jogo não mudam os
+recordes. Demos, `-c`/`-k` e a invencibilidade (tecla C) não contam. Quando
+bate um recorde que já existia, a tela de fim de fase original
+(`JE_endLevelAni`) ganha a linha "New level record!". A tela de resultado
+nova (B3) foi descartada: o jogo já mostra % destruídos e datacubes ali.
 
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).

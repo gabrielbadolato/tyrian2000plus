@@ -46,6 +46,9 @@ the open-source port of Tyrian. What this version adds:
 - A keyboard on the screen to type save and high score names with the
   controller, and a warning when the controller's battery is low.
 - "Continue" on the title screen: back to the last game in one press.
+- In the ship's upgrade menu, each item shows its damage (or armor, shield or
+  power) in green when it beats what your ship has and in red when it is
+  weaker.
 - More faithful music: the Nuked OPL3 emulator, close to a real 1995 Sound
   Blaster card (the old sound is still in Setup > Sound).
 - More graphics options, including in the pause menu, and a Sharp Bilinear
@@ -174,7 +177,8 @@ Controls > Shortcuts):
 - **Title screen > About:** what the game is, where it came from, the credits
   and the links (Enter or A opens a link in your browser).
 - **Title screen > Setup:** Graphics (with the detail level), Sound,
-  Controls, game speed, Jukebox, Language, Check Updates and About.
+  Controls, game speed, Jukebox, Language, Check Updates, Statistics and
+  About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
   game also saves "LAST LEVEL" when a level starts). Shown when there is one.
 - **Setup > Sound > Music Sound:** "Accurate" (the default, Nuked OPL3) or
@@ -185,12 +189,22 @@ Controls > Shortcuts):
 - **Typing a name with the controller** (saving a game, a high score): a
   keyboard appears below the name. The D-pad moves, A types, B erases, Start
   finishes and Back cancels.
+- **Ship menu (between levels) > Upgrade Ship:** next to each item's price is
+  a number to compare it with what your ship has, in green when it is better
+  and in red when it is worse: damage per second for guns and sidekicks (at
+  the power level shown; it counts only direct hits, so homing or piercing
+  shots can do more), armor for ships, strength for shields and power for
+  generators.
 - **Ship menu (between levels) > Options > Setup...:** the same Setup. The
   Joystick, Keyboard and Mouse items there open the same screens as Setup >
   Controls.
 - **During a level, Start or Esc:** volume, detail level, game speed, Auto
   Fire, Controls... (the same Setup > Controls) and Graphics... (full screen,
   scaling, Sharp Bilinear, VSync and brightness, applied right away).
+- **Setup > Statistics:** the totals of all your games (time in levels,
+  levels completed, enemies destroyed, deaths, secret levels, datacubes,
+  highest score) and the records of each level: best score, fastest time and
+  most enemies destroyed. Kept in statistics.cfg, next to the saves.
 - **Setup > About:** the same About screen, to see it in the middle of a
   saved game.
 - **Setup > Language:** English or Portuguese (Brazilian) menus, help and

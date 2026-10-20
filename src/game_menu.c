@@ -38,6 +38,7 @@
 #include "pcxmast.h"
 #include "picload.h"
 #include "player.h"
+#include "shopstats.h"
 #include "shots.h"
 #include "sprite.h"
 #include "tyrian2.h"
@@ -108,6 +109,11 @@ static JE_real navX, navY, newNavX, newNavY;
 static JE_integer tempNavX, tempNavY;
 static JE_byte planetDots[5]; /* [1..5] */
 static JE_integer planetDotX[5][10], planetDotY[5][10]; /* [1..5, 1..10] */
+
+// Tyrian 2000+: text colors of the shop comparison
+#define SHOP_BETTER_HUE 12  // green
+#define SHOP_WORSE_HUE 4    // red
+
 static PlayerItems old_items[2];  // TODO: should not be global if possible
 
 static struct cube_struct cube[4];
@@ -662,6 +668,27 @@ void JE_itemScreen(void)
 
 					snprintf(buf, sizeof buf, tr("Cost: %d"), temp_cost);
 					JE_textShade(VGAScreen, 187, tempY+10, buf, temp2 / 16, temp2 % 16 - 8 - afford_shade, DARKEN);
+
+					// Tyrian 2000+: compare the item with the one the ship has
+					const uint menu = curSel[MENU_UPGRADES];
+					const bool is_weapon = menu == 3 || menu == 4;
+					const uint stat = shop_item_stat(menu, temp, is_weapon ? (uint)temp_weapon_power[tempW-1] : 1);
+					if (stat > 0)
+					{
+						const uint owned = *playeritem_map(&old_items[0], menu - 2);
+						const uint owned_stat = shop_item_stat(menu, owned, is_weapon ? old_items[0].weapon[menu-3].power : 1);
+						// green when better, red when worse (no colors next to a custom ship, which has no number)
+						const bool compare = owned_stat > 0 || owned == 0;
+						const int hue = !compare || stat == owned_stat ? temp2 / 16 : stat > owned_stat ? SHOP_BETTER_HUE : SHOP_WORSE_HUE;
+						const int bright = (tempW == curSel[curMenu]-1 ? 6 : 3) - afford_shade;
+
+						// right-aligned, left of the owned marker; just the number if the label would touch the cost
+						const int cost_end = 187 + JE_textWidth(buf, TINY_FONT);
+						snprintf(buf, sizeof buf, tr(shop_stat_format(menu)), stat);
+						if (296 - JE_textWidth(buf, TINY_FONT) < cost_end + 6)
+							snprintf(buf, sizeof buf, "%u", stat);
+						JE_textShade(VGAScreen, 296 - JE_textWidth(buf, TINY_FONT), tempY+10, buf, hue, hue == temp2 / 16 ? temp2 % 16 - 8 - afford_shade : bright, DARKEN);
+					}
 				}
 			}
 		}

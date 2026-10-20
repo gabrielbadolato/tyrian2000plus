@@ -52,6 +52,7 @@
 #include "shots.h"
 #include "sndmast.h"
 #include "sprite.h"
+#include "stats.h"
 #include "varz.h"
 #include "vga256d.h"
 #include "video.h"
@@ -2912,6 +2913,9 @@ void JE_endLevelAni(void)
 	temp = (totalEnemy == 0) ? 0 : roundf(enemyKilled * 100 / totalEnemy);
 	sprintf(tempStr, "%s %d%%", miscText[63-1], temp);
 	JE_outTextGlow(VGAScreenSeg, 40, 90, tempStr);
+
+	if (stats_new_record)  // Tyrian 2000+: the level beat one of its records (stats.c)
+		JE_outTextGlow(VGAScreenSeg, 40, 104, tr("New level record!"));
 
 	if (!constantPlay)
 		editorLevel += temp / 5;

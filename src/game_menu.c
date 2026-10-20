@@ -188,6 +188,14 @@ static void returnToItemScreen(void)
 	backFromHelp = true;
 }
 
+// opens Setup, or one of its pages, and comes back to the ship menu
+static void openSetupPage(SetupPage page)
+{
+	fade_black(10);
+	setupMenuPage(page);
+	returnToItemScreen();
+}
+
 void JE_itemScreen(void)
 {
 	bool quit = false;
@@ -2768,19 +2776,18 @@ void JE_menuFunction(JE_byte select)
 			performSave = true;
 			quikSave = false;
 			break;
+		// the same screens as Setup > Controls (Tyrian2000 Plus)
 		case 6:
-			curMenu = MENU_JOYSTICK_CONFIG;
+			openSetupPage(SETUP_PAGE_CONTROLLER);
 			break;
 		case 7:
-			curMenu = MENU_KEYBOARD_CONFIG;
+			openSetupPage(SETUP_PAGE_KEYBOARD);
 			break;
 		case 8:
-			curMenu = MENU_MOUSE_CONFIG;
+			openSetupPage(SETUP_PAGE_MOUSE);
 			break;
 		case 9:  // Setup... (Tyrian2000 Plus)
-			fade_black(10);
-			setupMenu();
-			returnToItemScreen();
+			openSetupPage(SETUP_PAGE_MAIN);
 			break;
 		case 10:
 			curMenu = MENU_FULL_GAME;
@@ -3011,10 +3018,10 @@ void JE_menuFunction(JE_byte select)
 		switch (select)
 		{
 		case 2:
-			curMenu = MENU_JOYSTICK_CONFIG;
+			openSetupPage(SETUP_PAGE_CONTROLLER);
 			break;
 		case 3:
-			curMenu = MENU_KEYBOARD_CONFIG;
+			openSetupPage(SETUP_PAGE_KEYBOARD);
 			break;
 		case 6:
 			curMenu = MENU_1_PLAYER_ARCADE;

@@ -18,6 +18,16 @@ change is in this repository's git log.
   are drawn on top of the game's own fonts when they load (the two larger
   fonts show capitals without the accent, since they have no room above
   them). The data cube stories and the in-level texts are still in English.
+- **Keyboard shortcuts** are listed in Setup > Controls > "Shortcuts":
+  Alt+Enter (full screen), Esc (menu), P (pause), F1 (help) and F11
+  (brightness). The README lists them too.
+- **Detail level and game speed in Setup:** until now they were only in the
+  pause menu. Graphics has "Detail Level" and Setup has "Game Speed", so they
+  can be set before starting a game.
+- **The ship menu's Joystick, Keyboard and Mouse items** now open the same
+  screens as Setup > Controls (with button icons, Reset to Defaults and the
+  Both Sidekicks action), instead of the old screens of the original game.
+- The volume help in Setup > Sound says that Enter mutes.
 - Long Setup menus close up a little so their last item no longer covers the
   description at the bottom.
 

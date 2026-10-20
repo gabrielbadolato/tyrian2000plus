@@ -3839,7 +3839,8 @@ redo:
 					// The special weapon fires once per press, so a held button fires it
 					// only once. While auto firing, tap it like a quick player would
 					// (about 9 times a second); it still waits for its own recharge.
-					if (p == 0 && autoFiring[0])
+					// Not in network games: the other side would not see these taps.
+					if (p == 0 && autoFiring[0] && !isNetworkGame)
 					{
 						static uint specialTapTicks;
 						if (++specialTapTicks >= 4)

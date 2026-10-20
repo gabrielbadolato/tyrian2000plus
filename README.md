@@ -81,7 +81,7 @@ signed: click "More info" > "Run anyway".
 Or, without installing:
 
 1. Download `Tyrian2000Plus-vX.Y.Z-windows-x64.zip` (vX.Y.Z is the version,
-   for example v1.0.4) and extract it to a folder.
+   for example v1.0.5) and extract it to a folder.
 2. Extract `tyrian2000.zip` and copy **all** the files inside its `tyrian2000`
    folder (tyrian.hdt, tyrian1.lvl, music.mus etc.) into the `data` folder,
    next to `Tyrian2000Plus.exe`.

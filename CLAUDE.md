@@ -71,6 +71,17 @@ pequenas e podem seguir as regras acima normalmente.
   o workflow só lê o repositório, e apenas o job "release" (que não roda nada
   baixado) escreve, anexando os pacotes e um SHA256SUMS. Actions fixadas por
   commit. O butler tem versão fixa em `itch_push.sh`.
+- Versão: o número é só a tag (o programa lê com `git describe`). Release
+  pelo botão Actions > "Prepare release" (`.github/workflows/prepare-release.yml`
+  + `prepare_release.sh`): escolhe novidade (v1.0.5 -> v1.1), correcao
+  (-> v1.1.1), grande (-> v2.0) ou versão exata; abre o PR `release/vX` que
+  troca "## Next version" do CHANGELOG por "## vX (data)" e dispara o Build
+  nele (push feito pelo GITHUB_TOKEN não dispara workflows sozinho). Ao
+  mesclar, o job "draft" cria um RASCUNHO de release com a seção do CHANGELOG
+  como notas (EN; o PT é colado à mão). O Gabriel publica o rascunho; daí
+  segue o build.yml de sempre. Precisa da opção "Allow GitHub Actions to
+  create and approve pull requests"; sem ela o resumo da execução dá o link
+  para abrir o PR à mão.
 - Steam Deck: `linux/atualizar-tyrian.sh` instala/atualiza pela última
   Release (sem chave, repositório público), conferindo o SHA256SUMS; com uma
   chave do GitHub em ~/.config/tyrian2000plus/github-token pega o build mais

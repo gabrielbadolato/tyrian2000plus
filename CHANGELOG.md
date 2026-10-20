@@ -10,6 +10,12 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Statistics**: Setup > "Statistics..." shows the totals of all your games
+  (time in levels, levels completed, enemies destroyed, deaths, secret levels
+  and datacubes found, highest score) and the records of each level (best
+  score, fastest time and most enemies destroyed). Beating a level's record
+  shows "New level record!" on the end of level screen. They are kept in a
+  file of their own (statistics.cfg), apart from the game's saves.
 - **Compare items in the shop**: in the ship's upgrade menu, each item shows
   a number next to its price, in green when it beats what your ship has and
   in red when it is weaker: damage per second for guns and sidekicks (at the

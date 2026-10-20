@@ -177,7 +177,8 @@ Controls > Shortcuts):
 - **Title screen > About:** what the game is, where it came from, the credits
   and the links (Enter or A opens a link in your browser).
 - **Title screen > Setup:** Graphics (with the detail level), Sound,
-  Controls, game speed, Jukebox, Language, Check Updates and About.
+  Controls, game speed, Jukebox, Language, Check Updates, Statistics and
+  About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
   game also saves "LAST LEVEL" when a level starts). Shown when there is one.
 - **Setup > Sound > Music Sound:** "Accurate" (the default, Nuked OPL3) or
@@ -200,6 +201,10 @@ Controls > Shortcuts):
 - **During a level, Start or Esc:** volume, detail level, game speed, Auto
   Fire, Controls... (the same Setup > Controls) and Graphics... (full screen,
   scaling, Sharp Bilinear, VSync and brightness, applied right away).
+- **Setup > Statistics:** the totals of all your games (time in levels,
+  levels completed, enemies destroyed, deaths, secret levels, datacubes,
+  highest score) and the records of each level: best score, fastest time and
+  most enemies destroyed. Kept in statistics.cfg, next to the saves.
 - **Setup > About:** the same About screen, to see it in the middle of a
   saved game.
 - **Setup > Language:** English or Portuguese (Brazilian) menus, help and

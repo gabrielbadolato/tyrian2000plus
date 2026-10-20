@@ -91,16 +91,9 @@ static const char *const pad_axis_codes[][2] =
 	{ "RT", "RT-" },
 };
 
-/* What gets printed on screen, which depends on the controller family.
- * Every label must fit in 6 characters (see assignment_to_code). */
-typedef enum
-{
-	FAMILY_XBOX,
-	FAMILY_PLAYSTATION,
-	FAMILY_NINTENDO,
-	FAMILY_COUNT
-}
-Pad_family;
+/* What gets printed on screen, which depends on the controller family
+ * (Pad_family, joystick.h).  Every label must fit in 6 characters (see
+ * assignment_to_code). */
 
 static const char *const pad_button_labels[FAMILY_COUNT][COUNTOF(pad_button_codes)] =
 {
@@ -129,6 +122,14 @@ static const char *const pad_button_labels[FAMILY_COUNT][COUNTOF(pad_button_code
 		"D-UP", "D-DOWN", "D-LEFT", "D-RGHT",
 		"CAPTUR", "P1", "P2", "P3", "P4", "TOUCH",
 	},
+	[FAMILY_STEAM_DECK] = {
+		"A", "B", "X", "Y",
+		"VIEW", "STEAM", "MENU",
+		"L3", "R3",
+		"L1", "R1",
+		"D-UP", "D-DOWN", "D-LEFT", "D-RGHT",
+		"QAM", "R4", "L4", "R5", "L5", "TOUCH",
+	},
 };
 
 static const char *const pad_axis_labels[FAMILY_COUNT][COUNTOF(pad_axis_codes)][2] =
@@ -147,6 +148,11 @@ static const char *const pad_axis_labels[FAMILY_COUNT][COUNTOF(pad_axis_codes)][
 		{ "LS RT", "LS LT" }, { "LS DN", "LS UP" },
 		{ "RS RT", "RS LT" }, { "RS DN", "RS UP" },
 		{ "ZL", "ZL-" }, { "ZR", "ZR-" },
+	},
+	[FAMILY_STEAM_DECK] = {
+		{ "LS RT", "LS LT" }, { "LS DN", "LS UP" },
+		{ "RS RT", "RS LT" }, { "RS DN", "RS UP" },
+		{ "L2", "L2-" }, { "R2", "R2-" },
 	},
 };
 
@@ -170,6 +176,22 @@ static const Uint8 pad_button_icons[FAMILY_COUNT][COUNTOF(pad_button_codes)] =
 		PADGLYPH_PS_L1, PADGLYPH_PS_R1,
 		DPAD_ICONS,
 	},
+	[FAMILY_NINTENDO] = {
+		// positional, like the labels: bottom B, right A, left Y, top X
+		PADGLYPH_XBOX_B, PADGLYPH_XBOX_A, PADGLYPH_XBOX_Y, PADGLYPH_XBOX_X,
+		PADGLYPH_NINTENDO_MINUS, PADGLYPH_PS_HOME, PADGLYPH_NINTENDO_PLUS,
+		PADGLYPH_XBOX_LS, PADGLYPH_XBOX_RS,
+		PADGLYPH_NINTENDO_L, PADGLYPH_NINTENDO_R,
+		DPAD_ICONS,
+		PADGLYPH_NINTENDO_CAPTURE,
+	},
+	[FAMILY_STEAM_DECK] = {
+		PADGLYPH_XBOX_A, PADGLYPH_XBOX_B, PADGLYPH_XBOX_X, PADGLYPH_XBOX_Y,
+		PADGLYPH_XBOX_VIEW, 0, PADGLYPH_XBOX_MENU,
+		PADGLYPH_PS_L3, PADGLYPH_PS_R3,
+		PADGLYPH_PS_L1, PADGLYPH_PS_R1,
+		DPAD_ICONS,
+	},
 };
 
 // sticks are a stick icon and an arrow; [family][axis][negative]
@@ -189,12 +211,35 @@ static const Uint8 pad_axis_icons[FAMILY_COUNT][COUNTOF(pad_axis_codes)][2][2] =
 		STICK_ICONS,
 		{ { PADGLYPH_PS_L2 }, { 0 } }, { { PADGLYPH_PS_R2 }, { 0 } },
 	},
+	[FAMILY_NINTENDO] = {
+		STICK_ICONS,
+		{ { PADGLYPH_NINTENDO_ZL }, { 0 } }, { { PADGLYPH_NINTENDO_ZR }, { 0 } },
+	},
+	[FAMILY_STEAM_DECK] = {
+		STICK_ICONS,
+		{ { PADGLYPH_PS_L2 }, { 0 } }, { { PADGLYPH_PS_R2 }, { 0 } },
+	},
 };
+
+// the Steam Deck's own controls, or Steam's virtual pad for them in Game Mode
+static bool is_steam_deck(const Joystick *js)
+{
+	const char *name = SDL_GameControllerName(js->controller);
+	if (name != NULL && SDL_strstr(name, "Steam Deck") != NULL)
+		return true;
+
+	const char *deck = SDL_getenv("SteamDeck");  // set by SteamOS on the Deck
+	return deck != NULL && SDL_strcmp(deck, "1") == 0 &&
+	       SDL_GameControllerGetVendor(js->controller) == 0x28de;  // Valve
+}
 
 static Pad_family pad_family(const Joystick *js)
 {
 	if (js->controller == NULL)
 		return FAMILY_XBOX;
+
+	if (is_steam_deck(js))
+		return FAMILY_STEAM_DECK;
 
 	switch (SDL_GameControllerGetType(js->controller))
 	{
@@ -214,8 +259,15 @@ static Pad_family pad_family(const Joystick *js)
 		return FAMILY_NINTENDO;
 
 	default:
-		return FAMILY_XBOX;  // Xbox, Steam Controller, Steam Deck, generic XInput
+		return FAMILY_XBOX;  // Xbox, Steam Controller, generic XInput
 	}
+}
+
+Pad_family joystick_family(int j)
+{
+	assert(j < joysticks);
+
+	return j >= 0 ? pad_family(&joystick[j]) : FAMILY_XBOX;
 }
 
 const char *joystick_display_name(int j)

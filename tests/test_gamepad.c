@@ -115,7 +115,14 @@ static const Pad_model pad_models[] =
 		"Nintendo Switch Pro Controller", 0x057e, 0x2009, SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO,
 		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
 		  "B/ZR", "X", "L/ZL", "R/Y", "+", "-" },
-		"B", "A", "Press A to exit.", 0, 0,
+		"B", "A", "Press A to exit.", PADGLYPH_XBOX_B, PADGLYPH_XBOX_A,
+	},
+	{
+		// Valve's vendor id; the name tells the Deck from a Steam Controller
+		"Steam Deck", 0x28de, 0x1205, SDL_CONTROLLER_TYPE_UNKNOWN,
+		{ "LS UP/D-UP", "LS RT/D-RGHT", "LS DN/D-DOWN", "LS LT/D-LEFT",
+		  "A/R2", "Y", "L1/L2", "R1/X", "MENU", "VIEW" },
+		"A", "B", "Press B to exit.", PADGLYPH_XBOX_A, PADGLYPH_XBOX_B,
 	},
 };
 
@@ -308,7 +315,7 @@ int main(int argc, char *argv[])
 	joysticks_rumble_all(0xFFFF, 0xFFFF, 100); // must be harmless with nothing connected
 	CHECK(strcmp(padHelpText("Press ESC to exit."), "Press ESC to exit.") == 0);  // keyboard texts again
 
-	printf("[6] Xbox, PlayStation and Switch controllers\n");
+	printf("[6] Xbox, PlayStation, Switch and Steam Deck controllers\n");
 	for (size_t m = 0; m < SDL_arraysize(pad_models); m++)
 	{
 		const Pad_model *model = &pad_models[m];
@@ -323,7 +330,8 @@ int main(int argc, char *argv[])
 			continue;
 
 		CHECK(joystick[0].controller != NULL);
-		CHECK(SDL_GameControllerGetType(joystick[0].controller) == model->type);
+		if (model->type != SDL_CONTROLLER_TYPE_UNKNOWN)  // the Deck's type depends on the SDL version
+			CHECK(SDL_GameControllerGetType(joystick[0].controller) == model->type);
 		CHECK(SDL_strstr(joystick_display_name(0), model->name) != NULL);
 		CHECK(joystick_first_gamepad() == 0);
 

@@ -68,6 +68,7 @@ static const char *const letters3x5[][7] =
 	{ "1", ".#.", "##.", ".#.", ".#.", "###" },
 	{ "2", "##.", "..#", ".#.", "#..", "###" },
 	{ "3", "##.", "..#", ".#.", "..#", "##." },
+	{ "Z", "###", "..#", ".#.", "#..", "###" },
 	{ NULL },
 };
 
@@ -84,6 +85,7 @@ static const char *const letters5x7[][8] =
 	{ "1", "..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###." },
 	{ "2", ".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####" },
 	{ "3", "####.", "....#", "....#", ".###.", "....#", "....#", "####." },
+	{ "Z", "#####", "....#", "...#.", "..#..", ".#...", "#....", "#####" },
 	{ NULL },
 };
 
@@ -104,8 +106,11 @@ static const char *const centerSymbols[][5] =
 	{ "###..", "#.#..", "#####", "..#.#", "..###" },  // view: two windows
 	{ "#####", ".....", "#####", ".....", "#####" },  // menu, options: three lines
 	{ ".....", "#.#.#", "#.#.#", "#.#.#", "....." },  // create
+	{ ".....", ".....", "#####", ".....", "....." },  // minus
+	{ "..#..", "..#..", "#####", "..#..", "..#.." },  // plus
+	{ "#####", "#...#", "#.#.#", "#...#", "#####" },  // capture
 };
-enum { CENTER_VIEW, CENTER_LINES, CENTER_CREATE };
+enum { CENTER_VIEW, CENTER_LINES, CENTER_CREATE, CENTER_MINUS, CENTER_PLUS, CENTER_CAPTURE };
 
 static const Size sizeSmall =  { 9,  3, 5, 7, 9, 4 };
 static const Size sizeNormal = { 11, 5, 7, 13, 15, 9 };
@@ -211,18 +216,18 @@ static void drawFace(Canvas *c, const Size *s, char ch, int sym)
 		stamp(c, symbols[sym], 5, (s->h - 5) / 2, (s->h - 5) / 2, 0);
 }
 
-// shoulder buttons, triggers and stick clicks: a tag with two letters cut out
+// shoulder buttons, triggers and stick clicks: a tag with one or two letters cut out
 static void drawTag(Canvas *c, const Size *s, const char *text, int cutTop, int cutBottom)
 {
 	Mask m = { { false } };
-	const int margin = 2;
-	c->w = 2 * s->letterW + 1 + 2 * margin;
+	const int margin = 2, letters = text[1] != '\0' ? 2 : 1;
+	c->w = letters * (s->letterW + 1) - 1 + 2 * margin;
 	maskTag(m, c->w, s->h, cutTop, cutBottom);
 	fillShaded(c, m, s);
 
 	const int y = (s->h - s->letterH) / 2;
-	stamp(c, letter(s, text[0]), s->letterH, margin, y, 0);
-	stamp(c, letter(s, text[1]), s->letterH, margin + s->letterW + 1, y, 0);
+	for (int i = 0; i < letters; ++i)
+		stamp(c, letter(s, text[i]), s->letterH, margin + i * (s->letterW + 1), y, 0);
 }
 
 // small center button (view, menu...): a pill with a symbol cut out
@@ -346,6 +351,14 @@ static void drawGlyph(Canvas *c, const Size *s, PadGlyph g)
 	case PADGLYPH_PS_R1:         drawTag(c, s, "R1", 1, 1); break;
 	case PADGLYPH_PS_L2:         drawTag(c, s, "L2", cut, 1); break;
 	case PADGLYPH_PS_R2:         drawTag(c, s, "R2", cut, 1); break;
+
+	case PADGLYPH_NINTENDO_MINUS:   drawCenter(c, s, CENTER_MINUS); break;
+	case PADGLYPH_NINTENDO_PLUS:    drawCenter(c, s, CENTER_PLUS); break;
+	case PADGLYPH_NINTENDO_CAPTURE: drawCenter(c, s, CENTER_CAPTURE); break;
+	case PADGLYPH_NINTENDO_L:       drawTag(c, s, "L", 1, 1); break;
+	case PADGLYPH_NINTENDO_R:       drawTag(c, s, "R", 1, 1); break;
+	case PADGLYPH_NINTENDO_ZL:      drawTag(c, s, "ZL", cut, 1); break;
+	case PADGLYPH_NINTENDO_ZR:      drawTag(c, s, "ZR", cut, 1); break;
 
 	case PADGLYPH_END:
 		break;

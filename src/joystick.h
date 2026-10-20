@@ -71,6 +71,17 @@ typedef struct
 }
 Joystick;
 
+// controller families, for the names and icons of the buttons
+typedef enum
+{
+	FAMILY_XBOX,         // also Steam Controller and other XInput pads
+	FAMILY_PLAYSTATION,
+	FAMILY_NINTENDO,
+	FAMILY_STEAM_DECK,
+	FAMILY_COUNT
+}
+Pad_family;
+
 extern int joystick_repeat_delay;
 extern bool joydown;
 extern bool ignore_joystick;
@@ -100,6 +111,7 @@ void joystick_assignments_to_string(int j, char *buffer, size_t buffer_len, cons
 void joystick_assignments_to_icons(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments);
 
 const char *joystick_display_name(int j);
+Pad_family joystick_family(int j);  // j < 0 (no controller): FAMILY_XBOX
 int joystick_first_gamepad(void);
 const char *joystick_button_label(int j, SDL_GameControllerButton button);
 const char *joystick_assignment_label(int j, const Joystick_assignment *assignment);

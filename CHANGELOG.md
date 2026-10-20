@@ -10,13 +10,13 @@ change is in this repository's git log.
 
 ## Next version
 
-- **Button icons**: with an Xbox-style controller (also Steam Controller and
-  Steam Deck) or a PlayStation controller, the help texts, the Controller Map
+- **Button icons**: with an Xbox-style (also Steam Controller), PlayStation,
+  Nintendo Switch or Steam Deck controller, the help texts, the Controller Map
   and the controller menus show small pixel-art icons of the buttons instead
   of their names, and the Controller Map drawing shows them on its buttons.
   Its layout also follows the controller: the left stick above the D-pad on
-  Xbox-style pads, a touchpad on PlayStation ones.
-  Other controllers keep the names for now.
+  Xbox-style and Switch pads, a touchpad on PlayStation ones. The Steam Deck
+  now shows its own names (L1, R1, L2, R2) instead of the Xbox ones.
 
 ## v1.0.4 (2026-10-19)
 

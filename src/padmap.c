@@ -521,17 +521,17 @@ static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Jo
 	drawFontHvShadowAligned(surface, xText, y + 8, actions, FONT_SMALL, align, 15, pressed ? 6 : 3, false, 1);
 }
 
-// the controller's family, as told by the icon of its bottom face button
 static Layout controllerLayout(int j)
 {
 	if (j < 0 || joystick[j].controller == NULL)
 		return LAYOUT_GENERIC;
 
-	switch ((unsigned char)joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A)[0])
+	switch (joystick_family(j))
 	{
-	case PADGLYPH_XBOX_A:   return LAYOUT_XBOX;
-	case PADGLYPH_PS_CROSS: return LAYOUT_PLAYSTATION;
-	default:                return LAYOUT_GENERIC;
+	case FAMILY_XBOX:
+	case FAMILY_NINTENDO:      return LAYOUT_XBOX;  // the Switch Pro also has the left stick on top
+	case FAMILY_PLAYSTATION:   return LAYOUT_PLAYSTATION;
+	default:                   return LAYOUT_GENERIC;  // Steam Deck: sticks between D-pad and buttons
 	}
 }
 

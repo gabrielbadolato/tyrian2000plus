@@ -174,6 +174,8 @@ Setup > Controls > Shortcuts):
 | F1        | Ajuda, na fase ou no menu da nave                |
 | F11       | Brilho, durante a fase                           |
 
+Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
+
 ## Onde fica cada opção
 
 - **Tela de título > About:** o que é o jogo, de onde veio, os créditos e os
@@ -182,8 +184,8 @@ Setup > Controls > Shortcuts):
   (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
   idioma (Language), Check Updates, estatísticas (Statistics) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
-  carregado (o jogo também salva "LAST LEVEL" ao começar cada fase). Só
-  aparece quando existe um.
+  carregado (o jogo também salva "LAST LEVEL" ao chegar na nave depois de
+  cada fase e ao começar cada fase). Só aparece quando existe um.
 - **Setup > Sound > Music Sound (Som da música):** "Accurate" (Fiel, o
   padrão, Nuked OPL3) ou "Classic" (Clássico, o emulador que o OpenTyrian
   sempre usou).

@@ -216,6 +216,18 @@ Continuar: item "Continue" na tela de título (`menuText[0]`, escondido sem
 jogo salvo), carrega `lastSaveSlot` (último slot salvo ou carregado,
 `last_save` na seção "gameplay"; sem ele, o "LAST LEVEL" do slot 11).
 
+Salvamento automático: o slot "LAST LEVEL" (11, ou 22 em dois jogadores; o
+jogador não salva nele) é gravado também ao chegar na nave (evento 'I' em
+`JE_loadMap`, `src/tyrian2.c`), não só ao começar a fase; não grava logo
+depois de carregar um jogo (`gameJustLoaded`). `JE_saveGame` grava o
+opentyrian.cfg quando muda `lastSaveSlot`, para o Continue sobreviver a um
+fechamento à força. Retomar no meio da fase (via demo) é o próximo passo.
+
+Janela: posição, tamanho e maximizado ficam em `window_*` na seção "video"
+(`window_geometry`, `video_remember_window()` em `src/video.c`); volta ao
+abrir e ao sair da tela cheia; se o lugar não está em nenhuma tela, centraliza.
+Fechar a janela (SDL_QUIT) chama `JE_tyrianHalt(0)`, que salva as configurações.
+
 Estatísticas: Setup > "Statistics..." (`statisticsScreen()` em
 `src/stats.c`) mostra os totais de todos os jogos (tempo nas fases, fases
 concluídas, inimigos, mortes, fases secretas, datacubes, maior pontuação) e

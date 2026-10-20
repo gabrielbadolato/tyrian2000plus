@@ -30,6 +30,20 @@ change is in this repository's git log.
   now fixed: the help line at the bottom of the ship menu read past the end
   of its text table (inherited from OpenTyrian2000). The tests are in
   `tests/run_autoplay.sh` for future versions (#38).
+- **Automatic save at the ship**: the game's own automatic save, "Last Level",
+  is now also written when you finish a level and arrive at the ship, as its
+  help text promised. Continue (and Load Game > Last Level) bring you back to
+  the ship with the level you just finished, even if the game was closed
+  without saving. Your own save slots are never touched (#39).
+- Two-player games no longer overwrite the one-player "Last Level" before a
+  bonus game (#39).
+- **The window remembers its size and place**: when the game is not
+  fullscreen, it opens where it was last time, with the same size (or
+  maximized). If that place is no longer on a screen, e.g. a monitor was
+  unplugged, it opens centered. Leaving fullscreen with Alt-Enter also puts it
+  back there (#39).
+- Closing the window with its X button now keeps your settings, like Quit
+  does (before, changes made in that session were lost) (#39).
 
 ## v1.1 (2026-10-20)
 

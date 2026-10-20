@@ -20,6 +20,7 @@
 
 #include "keyboard.h"
 #include "logging.h"
+#include "opentyr.h"
 #include "video_scale.h"
 
 #include <assert.h>
@@ -39,6 +40,9 @@ ScalingMode scaling_mode = SCALE_ASPECT_4_3;  // matches the original 4:3 CRT pr
 bool vsync_enabled = true;  // sync presentation to the display refresh (no tearing)
 bool sharp_bilinear_enabled = false;  // even pixels when the window is not an exact multiple
 static SDL_Rect last_output_rect = { 0, 0, vga_width, vga_height };
+
+// the window's size and position when it is not fullscreen, remembered between sessions
+WindowGeometry window_geometry = { 0, 0, 0, 0, false, false };
 
 SDL_Surface *VGAScreen, *VGAScreenSeg;
 SDL_Surface *VGAScreen2;
@@ -73,6 +77,7 @@ static void deinit_texture(void);
 
 static int window_get_display_index(void);
 static void window_center_in_display(int display_index);
+static bool window_restore_geometry(void);
 static void calc_dst_render_rect(SDL_Surface *src_surface, SDL_Rect *dst_rect);
 static void scale_and_flip(SDL_Surface *);
 
@@ -115,7 +120,12 @@ void init_video(void)
 	init_texture();
 	init_scaler(scaler);
 
+	const bool restored = fullscreen_display == -1 && window_restore_geometry();
+
 	SDL_ShowWindow(main_window);
+
+	if (restored && window_geometry.maximized)
+		SDL_MaximizeWindow(main_window);
 
 	SDL_SetRenderDrawColor(main_window_renderer, 0, 0, 0, 255);
 	SDL_RenderClear(main_window_renderer);
@@ -124,6 +134,8 @@ void init_video(void)
 
 void deinit_video(void)
 {
+	video_remember_window();
+
 	deinit_texture();
 	deinit_renderer();
 
@@ -231,8 +243,82 @@ static void window_center_in_display(int display_index)
 	SDL_SetWindowPosition(main_window, bounds.x + (bounds.w - win_w) / 2, bounds.y + (bounds.h - win_h) / 2);
 }
 
+// Wayland does not let programs read or choose where their window is
+static bool window_position_supported(void)
+{
+	const char *driver = SDL_GetCurrentVideoDriver();
+	return driver == NULL || strcmp(driver, "wayland") != 0;
+}
+
+void video_remember_window(void)
+{
+	if (main_window == NULL || fullscreen_display != -1)
+		return;
+
+	const Uint32 flags = SDL_GetWindowFlags(main_window);
+	if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MINIMIZED | SDL_WINDOW_HIDDEN))
+		return;
+
+	window_geometry.maximized = (flags & SDL_WINDOW_MAXIMIZED) != 0;
+	if (window_geometry.maximized)
+		return;  // keep the size and position it had before, for when it is restored
+
+	SDL_GetWindowSize(main_window, &window_geometry.w, &window_geometry.h);
+
+	window_geometry.has_position = window_position_supported();
+	if (window_geometry.has_position)
+		SDL_GetWindowPosition(main_window, &window_geometry.x, &window_geometry.y);
+}
+
+// the display that shows enough of the top of a window at x, y (its title bar
+// is just above), or -1 if none does, e.g. a monitor that was unplugged
+static int display_showing_window_top(int x, int y, int w)
+{
+	const SDL_Rect top = { x, y, w, 32 };
+
+	for (int i = 0; i < SDL_GetNumVideoDisplays(); ++i)
+	{
+		SDL_Rect bounds, visible;
+		if (SDL_GetDisplayUsableBounds(i, &bounds) == 0 &&
+		    SDL_IntersectRect(&top, &bounds, &visible) &&
+		    visible.w >= 64 && visible.h >= 16)
+			return i;
+	}
+
+	return -1;
+}
+
+// puts the window back where it was in the last session; false if nothing was remembered
+static bool window_restore_geometry(void)
+{
+	if (window_geometry.w <= 0 || window_geometry.h <= 0)
+		return false;
+
+	int display = window_geometry.has_position && window_position_supported()
+		? display_showing_window_top(window_geometry.x, window_geometry.y, window_geometry.w)
+		: -1;
+
+	// no bigger than the display it goes to (it may be a smaller one now), no smaller than the scaler
+	SDL_Rect bounds;
+	if (SDL_GetDisplayUsableBounds(display >= 0 ? display : MAX(0, window_get_display_index()), &bounds) != 0)
+		bounds = (SDL_Rect){ 0, 0, window_geometry.w, window_geometry.h };
+
+	const int w = MAX(MIN(window_geometry.w, bounds.w), (int)scalers[scaler].width),
+	          h = MAX(MIN(window_geometry.h, bounds.h), (int)scalers[scaler].height);
+	SDL_SetWindowSize(main_window, w, h);
+
+	if (display >= 0)
+		SDL_SetWindowPosition(main_window, window_geometry.x, window_geometry.y);
+	else
+		window_center_in_display(window_get_display_index());
+
+	return true;
+}
+
 void reinit_fullscreen(int new_display)
 {
+	video_remember_window();  // while it is still a window
+
 	fullscreen_display = new_display;
 
 	if (fullscreen_display >= SDL_GetNumVideoDisplays())
@@ -245,7 +331,8 @@ void reinit_fullscreen(int new_display)
 
 	if (fullscreen_display == -1)
 	{
-		window_center_in_display(window_get_display_index());
+		if (!window_restore_geometry())
+			window_center_in_display(window_get_display_index());
 	}
 	else
 	{

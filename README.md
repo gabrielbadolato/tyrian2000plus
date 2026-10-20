@@ -16,12 +16,16 @@ and Linux / Steam Deck. How to install is [below](#installation).
 
 <table>
   <tr>
-    <td><img src="doc/screenshots/1-tela-titulo.png" width="400" alt="Title screen"></td>
+    <td><img src="doc/screenshots/1-tela-titulo.png" width="400" alt="Title screen with Continue"></td>
     <td><img src="doc/screenshots/2-fase.png" width="400" alt="A level"></td>
   </tr>
   <tr>
-    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pause menu with Auto Fire and Graphics"></td>
-    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map"></td>
+    <td><img src="doc/screenshots/3-loja.png" width="400" alt="Shop comparing each gun with the ship's (green is better)"></td>
+    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pause menu with Auto Fire, Controls and Graphics"></td>
+  </tr>
+  <tr>
+    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map with Xbox button icons"></td>
+    <td><img src="doc/screenshots/6-estatisticas.png" width="400" alt="Statistics and level records"></td>
   </tr>
 </table>
 

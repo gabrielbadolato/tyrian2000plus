@@ -186,7 +186,10 @@ const char *joystick_display_name(int j)
 	if (name == NULL && joystick[j].handle != NULL)
 		name = SDL_JoystickName(joystick[j].handle);
 
-	return name != NULL ? name : "Unknown Controller";
+	if (name == NULL)
+		name = joystick[j].instance_id == -1 ? "Disconnected" : "Unknown Controller";
+
+	return name;
 }
 
 // eliminates axis movement below the threshold
@@ -465,72 +468,83 @@ static void load_controller_mappings(File file, const char *where)
 	fileClose(&file);
 }
 
-// opens every connected device and loads (or creates) its assignments
-static void open_joysticks(void)
+// marks slot j as free (no controller in it)
+static void clear_joystick_slot(int j)
 {
-	joysticks = SDL_NumJoysticks();
-	if (joysticks < 0)
-		joysticks = 0;
-
-	joystick = calloc(joysticks > 0 ? joysticks : 1, sizeof(*joystick));
-	if (joystick == NULL)
-		exit(EXIT_FAILURE);  // out of memory
-
-	for (int j = 0; j < joysticks; j++)
-	{
-		joystick[j].instance_id = SDL_JoystickGetDeviceInstanceID(j);
-
-		if (SDL_IsGameController(j))
-		{
-			joystick[j].controller = SDL_GameControllerOpen(j);
-			if (joystick[j].controller != NULL)
-				joystick[j].handle = SDL_GameControllerGetJoystick(joystick[j].controller);
-		}
-
-		if (joystick[j].handle == NULL)
-			joystick[j].handle = SDL_JoystickOpen(j);
-
-		if (joystick[j].handle == NULL)
-		{
-			logWarn("Failed to open controller %d: %s", j, SDL_GetError());
-			continue;
-		}
-
-		logInfo("Controller %d: vendor %04x, product %04x, type %d, rumble %s",
-			j,
-			SDL_JoystickGetVendor(joystick[j].handle),
-			SDL_JoystickGetProduct(joystick[j].handle),
-			(int)SDL_JoystickGetType(joystick[j].handle),
-			SDL_JoystickHasRumble(joystick[j].handle) ? "yes" : "no");
-
-		if (joystick[j].controller != NULL)
-		{
-			logInfo("Gamepad detected: %s", joystick_display_name(j));
-		}
-		else
-		{
-			logInfo("Joystick detected: %s (%d axes, %d buttons, %d hats)",
-				joystick_display_name(j),
-				SDL_JoystickNumAxes(joystick[j].handle),
-				SDL_JoystickNumButtons(joystick[j].handle),
-				SDL_JoystickNumHats(joystick[j].handle));
-		}
-
-		if (!load_joystick_assignments(&opentyrian_config, j))
-			reset_joystick_assignments(j);
-
-		// block "press" events from buttons that were already held when connected
-		joystick[j].joystick_delay = SDL_GetTicks() + joystick_repeat_delay;
-	}
+	memset(&joystick[j], 0, sizeof(joystick[j]));
+	joystick[j].instance_id = -1;
 }
 
-static void close_joysticks(bool save)
+// makes room for at least count slots; new slots are free
+static void grow_joysticks(int count)
 {
-	for (int j = 0; j < joysticks; j++)
-	{
-		if (joystick[j].handle == NULL)
-			continue;
+	if (count <= joysticks)
+		return;
 
+	Joystick *grown = realloc(joystick, (size_t)count * sizeof(*joystick));
+	if (grown == NULL)
+		exit(EXIT_FAILURE);  // out of memory
+	joystick = grown;
+
+	for (int j = joysticks; j < count; j++)
+		clear_joystick_slot(j);
+	joysticks = count;
+}
+
+// opens SDL device index device into slot j and loads (or creates) its assignments
+static void open_joystick(int j, int device)
+{
+	clear_joystick_slot(j);
+	joystick[j].instance_id = SDL_JoystickGetDeviceInstanceID(device);
+
+	if (SDL_IsGameController(device))
+	{
+		joystick[j].controller = SDL_GameControllerOpen(device);
+		if (joystick[j].controller != NULL)
+			joystick[j].handle = SDL_GameControllerGetJoystick(joystick[j].controller);
+	}
+
+	if (joystick[j].handle == NULL)
+		joystick[j].handle = SDL_JoystickOpen(device);
+
+	if (joystick[j].handle == NULL)
+	{
+		logWarn("Failed to open controller %d: %s", j, SDL_GetError());
+		return;  // the slot stays taken, so it is not retried until reconnected
+	}
+
+	logInfo("Controller %d: vendor %04x, product %04x, type %d, rumble %s",
+		j,
+		SDL_JoystickGetVendor(joystick[j].handle),
+		SDL_JoystickGetProduct(joystick[j].handle),
+		(int)SDL_JoystickGetType(joystick[j].handle),
+		SDL_JoystickHasRumble(joystick[j].handle) ? "yes" : "no");
+
+	if (joystick[j].controller != NULL)
+	{
+		logInfo("Gamepad detected: %s", joystick_display_name(j));
+	}
+	else
+	{
+		logInfo("Joystick detected: %s (%d axes, %d buttons, %d hats)",
+			joystick_display_name(j),
+			SDL_JoystickNumAxes(joystick[j].handle),
+			SDL_JoystickNumButtons(joystick[j].handle),
+			SDL_JoystickNumHats(joystick[j].handle));
+	}
+
+	if (!load_joystick_assignments(&opentyrian_config, j))
+		reset_joystick_assignments(j);
+
+	// block "press" events from buttons that were already held when connected
+	joystick[j].joystick_delay = SDL_GetTicks() + joystick_repeat_delay;
+}
+
+// closes the controller in slot j (if any) and frees the slot
+static void close_joystick(int j, bool save)
+{
+	if (joystick[j].handle != NULL)
+	{
 		if (save)
 			save_joystick_assignments(&opentyrian_config, j);
 
@@ -539,6 +553,27 @@ static void close_joysticks(bool save)
 		else
 			SDL_JoystickClose(joystick[j].handle);
 	}
+
+	clear_joystick_slot(j);
+}
+
+// opens every connected device
+static void open_joysticks(void)
+{
+	joysticks = 0;
+	joystick = NULL;
+
+	const int count = SDL_NumJoysticks();
+	grow_joysticks(count > 0 ? count : 0);
+
+	for (int j = 0; j < joysticks; j++)
+		open_joystick(j, j);
+}
+
+static void close_joysticks(bool save)
+{
+	for (int j = 0; j < joysticks; j++)
+		close_joystick(j, save);
 
 	free(joystick);
 	joystick = NULL;
@@ -556,7 +591,35 @@ bool joystick_take_lost(void)
 	return lost;
 }
 
-// rebuilds the device list when something was connected or disconnected
+// SDL device index of the device with this instance id, or -1 if it is gone
+static int joystick_device_index(SDL_JoystickID instance_id)
+{
+	const int count = SDL_NumJoysticks();
+	for (int d = 0; d < count; d++)
+		if (SDL_JoystickGetDeviceInstanceID(d) == instance_id)
+			return d;
+
+	return -1;
+}
+
+// slot holding the device with this instance id, or -1 if none
+static int joystick_slot(SDL_JoystickID instance_id)
+{
+	for (int j = 0; j < joysticks; j++)
+		if (joystick[j].instance_id == instance_id)
+			return j;
+
+	return -1;
+}
+
+/*
+ * Closes controllers that were disconnected and opens new ones.  Controllers
+ * that stay connected keep their slot (their index in joystick[]), so in a
+ * two-player game each player keeps their controller; a new controller takes
+ * the first free slot, so one that is reconnected goes back to its player.
+ * The joystick array can be moved, so pointers into it must not be kept
+ * across a call to this (or to poll_joysticks()).
+ */
 void check_joystick_hotplug(void)
 {
 	if (ignore_joystick)
@@ -569,28 +632,52 @@ void check_joystick_hotplug(void)
 
 	SDL_JoystickUpdate();  // lets SDL notice added/removed devices
 
-	bool changed = SDL_NumJoysticks() != joysticks;
+	bool changed = false;
 	bool lost = false;
+
 	for (int j = 0; j < joysticks; j++)
 	{
-		if (joystick[j].handle != NULL && !SDL_JoystickGetAttached(joystick[j].handle))
-			lost = true;
-		else if (SDL_JoystickGetDeviceInstanceID(j) != joystick[j].instance_id)
-			changed = true;
+		if (joystick[j].instance_id == -1)
+			continue;
+
+		if (joystick_device_index(joystick[j].instance_id) < 0 ||
+		    (joystick[j].handle != NULL && !SDL_JoystickGetAttached(joystick[j].handle)))
+		{
+			logInfo("Controller %d disconnected: %s", j, joystick_display_name(j));
+			close_joystick(j, true);
+			changed = lost = true;
+		}
 	}
 
-	if (!changed && !lost)
+	const int count = SDL_NumJoysticks();
+	for (int d = 0; d < count; d++)
+	{
+		const SDL_JoystickID instance_id = SDL_JoystickGetDeviceInstanceID(d);
+		if (instance_id < 0 || joystick_slot(instance_id) >= 0)
+			continue;
+
+		int j = joystick_slot(-1);
+		if (j < 0)
+		{
+			j = joysticks;
+			grow_joysticks(joysticks + 1);
+		}
+		open_joystick(j, d);
+		changed = true;
+	}
+
+	if (!changed)
 		return;
 
-	logInfo("Controller connected or disconnected; rescanning.");
+	// free slots at the end are not needed
+	while (joysticks > 0 && joystick[joysticks - 1].instance_id == -1)
+		--joysticks;
+	if (joysticks == 0)
+	{
+		free(joystick);
+		joystick = NULL;
+	}
 
-	const int oldJoysticks = joysticks;
-
-	close_joysticks(true);
-	open_joysticks();
-
-	if (joysticks < oldJoysticks)
-		lost = true;
 	joystick_lost |= lost;
 
 	if (joysticks == 0)
@@ -786,9 +873,13 @@ bool load_joystick_assignments(Config *config, int j)
 	if (!config_get_bool_option(section, "analog", &joystick[j].analog))
 		joystick[j].analog = false;
 
-	joystick[j].sensitivity = config_get_or_set_int_option(section, "sensitivity", 5);
+	// same range as the menu; out of range values would divide by zero or
+	// invert the stick (joystick_axis_reduce)
+	const int sensitivity = config_get_or_set_int_option(section, "sensitivity", 5);
+	joystick[j].sensitivity = sensitivity < 0 ? 0 : sensitivity > 10 ? 10 : sensitivity;
 
-	joystick[j].threshold = config_get_or_set_int_option(section, "threshold", 5);
+	const int threshold = config_get_or_set_int_option(section, "threshold", 5);
+	joystick[j].threshold = threshold < 0 ? 0 : threshold > 10 ? 10 : threshold;
 
 	for (size_t a = 0; a < COUNTOF(assignment_names); ++a)
 	{
@@ -909,8 +1000,11 @@ static void code_to_assignment(Joystick_assignment *assignment, const char *buff
 	else if (sscanf(buffer, "H %d%c%c", &assignment->num, &axis, &direction) == 3)
 		assignment->type = HAT;
 
-	if (assignment->num == 0)
+	if (assignment->num <= 0)  // codes count from 1; anything else is not valid
+	{
 		assignment->type = NONE;
+		assignment->num = 0;
+	}
 	else
 		--assignment->num;
 

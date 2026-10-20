@@ -208,10 +208,13 @@ const char *padHelpText(const char *text)
 	char *out = buffer[which];
 	which = (which + 1) % COUNTOF(buffer);
 
-	SDL_strlcpy(out, text, sizeof buffer[0]);
+	// at most 254 characters: JE_helpBox() keeps text positions in a byte
+	const size_t size = sizeof buffer[0] - 1;
+
+	SDL_strlcpy(out, text, size);
 
 	for (size_t i = 0; i < COUNTOF(rules); ++i)
-		replaceAll(out, sizeof buffer[0], rules[i].find, rules[i].replacement);
+		replaceAll(out, size, rules[i].find, rules[i].replacement);
 
 	return out;
 }

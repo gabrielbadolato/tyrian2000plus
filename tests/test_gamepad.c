@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L  // mkdtemp, setenv
 /* Headless test for the gamepad layer: virtual controllers (generic, Xbox,
  * PlayStation, Switch), mapping, button names, hotplug, config. */
 #include "joystick.h"
@@ -5,11 +6,13 @@
 #include "config.h"
 #include "SDL.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 extern Config opentyrian_config;
 
 static int failures = 0;
+static char save_path[512];
 #define CHECK(cond) do { if (cond) printf("  ok   %s\n", #cond); else { printf("  FAIL %s  (line %d)\n", #cond, __LINE__); failures++; } } while (0)
 
 static int attach_pad(const char *name)
@@ -117,6 +120,14 @@ static const Pad_model pad_models[] =
 int main(int argc, char *argv[])
 {
 	(void)argc; (void)argv;
+
+	// user files (tyrian.sav) go to a fresh folder
+	char user_dir[] = "/tmp/test_gamepad_XXXXXX";
+	if (mkdtemp(user_dir) == NULL)
+		return 1;
+	setenv("XDG_CONFIG_HOME", user_dir, 1);
+	snprintf(save_path, sizeof save_path, "%s/opentyrian2000/tyrian.sav", user_dir);
+
 	SDL_SetHint(SDL_HINT_VIDEODRIVER, "dummy");
 	SDL_Init(0);
 
@@ -220,6 +231,23 @@ int main(int argc, char *argv[])
 	CHECK(same);
 	CHECK(joystick[0].analog == true);
 
+	printf("[4a] bad values in the config file\n");
+	{
+		ConfigSection *section = config_find_section(&opentyrian_config, "gamepad", joystick_display_name(0));
+		CHECK(section != NULL);
+		config_set_int_option(section, "sensitivity", 15);  // would divide by zero
+		config_set_int_option(section, "threshold", -4);
+		ConfigOption *option = config_set_option(section, "fire", NULL);
+		option = config_set_value(option, NULL);
+		option = config_add_value(option, "BTN -3");        // negative button number
+		CHECK(load_joystick_assignments(&opentyrian_config, 0));
+		CHECK(joystick[0].sensitivity == 10);
+		CHECK(joystick[0].threshold == 0);
+		CHECK(joystick[0].assignment[4][0].type == NONE);
+		CHECK(joystick_axis_reduce(0, 32767) != 0);  // no crash, still moves
+		reset_joystick_assignments(0);
+	}
+
 	printf("[5] hotplug\n");
 	int dev1 = attach_pad("Virtual Second Pad");
 	CHECK(dev1 >= 0);
@@ -227,17 +255,43 @@ int main(int argc, char *argv[])
 	poll();
 	CHECK(joysticks == 2);
 	CHECK(!joystick_take_lost());          // connecting does not pause the game
+	SDL_Joystick *second = joystick[1].handle;
+	joystick[1].assignment[5][0].type = NONE;  // the second pad has a custom layout
+
 	SDL_JoystickDetachVirtual(dev0);
 	advance(600);
 	poll();
-	CHECK(joysticks == 1);
 	CHECK(joystick_take_lost());           // disconnecting pauses the game...
 	CHECK(!joystick_take_lost());          // ...once
-	CHECK(strcmp(joystick_display_name(0), "Virtual Second Pad") == 0);
-	SDL_JoystickDetachVirtual(SDL_NumJoysticks() > 0 ? 0 : 0);
+	CHECK(joysticks == 2);                 // each controller keeps its slot (player)
+	CHECK(joystick[0].handle == NULL);
+	CHECK(strcmp(joystick_display_name(0), "Disconnected") == 0);
+	CHECK(joystick[1].handle == second);
+	CHECK(strcmp(joystick_display_name(1), "Virtual Second Pad") == 0);
+	CHECK(joystick[1].assignment[5][0].type == NONE);  // not reloaded from the config
+	poll_joystick(0);                      // a free slot is harmless
+	joystick_rumble(0, 0xFFFF, 0xFFFF, 10);
+
+	dev0 = attach_pad("Virtual Xbox Pad");  // reconnected: back to its player
+	advance(600);
+	poll();
+	CHECK(joysticks == 2);
+	CHECK(!joystick_take_lost());
+	CHECK(joystick[0].handle != NULL);
+	CHECK(strcmp(joystick_display_name(0), "Virtual Xbox Pad") == 0);
+	CHECK(joystick[1].handle == second);
+
+	for (int d = SDL_NumJoysticks() - 1; d >= 0; d--)  // disconnect the first one again
+		if (SDL_JoystickGetDeviceInstanceID(d) == joystick[0].instance_id)
+			SDL_JoystickDetachVirtual(d);
+	advance(600);
+	poll();
+	CHECK(joysticks == 2 && joystick[0].handle == NULL);
+	SDL_JoystickDetachVirtual(0);          // and the second: no slots left
 	advance(600);
 	poll();
 	CHECK(joysticks == 0);
+	CHECK(joystick_take_lost());
 	joysticks_rumble_all(0xFFFF, 0xFFFF, 100); // must be harmless with nothing connected
 	CHECK(strcmp(padHelpText("Press ESC to exit."), "Press ESC to exit.") == 0);  // keyboard texts again
 
@@ -293,6 +347,24 @@ int main(int argc, char *argv[])
 		advance(600);
 		poll();
 		CHECK(joysticks == 0);
+	}
+
+	printf("[7] an unreadable tyrian.sav is kept as tyrian.sav.bak\n");
+	{
+		FILE *f = fopen(save_path, "wb");
+		fputs("not a save file", f);
+		fclose(f);
+		loadSaves();
+		char bak[600];
+		snprintf(bak, sizeof bak, "%s.bak", save_path);
+		f = fopen(bak, "rb");
+		char text[32] = "";
+		if (f != NULL)
+		{
+			fgets(text, sizeof text, f);
+			fclose(f);
+		}
+		CHECK(strcmp(text, "not a save file") == 0);
 	}
 
 	deinit_joysticks();

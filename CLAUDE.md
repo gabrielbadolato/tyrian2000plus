@@ -71,7 +71,12 @@ pequenas e podem seguir as regras acima normalmente.
 `src/joystick.c` usa SDL_GameController quando o SDL reconhece o dispositivo
 (PAD_BUTTON/PAD_AXIS, seção "gamepad" no opentyrian.cfg) e cai para a API
 antiga de joystick (AXIS/BUTTON/HAT) caso contrário. Hotplug é verificado a
-cada 500 ms, inclusive durante as fases.
+cada 500 ms, inclusive durante as fases. Cada controle fica na sua posição
+(vaga) do array `joystick[]` enquanto estiver conectado; o que sai deixa a
+vaga livre ("Disconnected") e o próximo conectado ocupa a primeira vaga livre,
+para cada jogador manter o seu controle. O array pode ser realocado em
+`poll_joysticks()`/`check_joystick_hotplug()`: não guarde ponteiros para ele
+através dessas chamadas.
 
 Steam Controller (testado com o modelo 2026 via puck): o SDL2 não conhece
 esse controle; o SDL3 (3.4+) tem driver próprio (`SDL_hidapi_steam_triton.c`).

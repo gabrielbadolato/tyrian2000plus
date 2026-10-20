@@ -467,7 +467,7 @@ void setupMenu(void)
 
 		if (joystickIndex >= joysticks)  // a controller was disconnected
 			joystickIndex = 0;
-		Joystick *const joy = joysticks > 0 ? &joystick[joystickIndex] : NULL;
+		Joystick *joy = joysticks > 0 ? &joystick[joystickIndex] : NULL;
 
 		// Draw header.
 		drawFontHvShadowAligned(VGAScreen, xCenter, yMenuHeader, menu->header, FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
@@ -655,6 +655,12 @@ void setupMenu(void)
 
 			setFrameCount(1);
 		}
+
+		// Waiting polls the controllers, which rebuilds the list when one is
+		// connected or disconnected, so look the selected one up again.
+		if (joystickIndex >= joysticks)
+			joystickIndex = 0;
+		joy = joysticks > 0 ? &joystick[joystickIndex] : NULL;
 
 		if (currentPicker == MENU_ITEM_NONE)
 		{

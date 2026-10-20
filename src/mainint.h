@@ -75,6 +75,7 @@ void JE_operation(JE_byte slot);
 void JE_inGameDisplays(void);
 void JE_mainKeyboardInput(void);
 void JE_pauseGame(void);
+void resetAutoFire(void);
 
 void JE_playerMovement(Player *this_player, JE_byte inputDevice, JE_byte playerNum, JE_word shipGr, Sprite2_array *shipGrPtr_, JE_word *mouseX_, JE_word *mouseY_);
 void JE_mainGamePlayerFunctions(void);

@@ -16,12 +16,16 @@ e Linux / Steam Deck. Como instalar está [mais abaixo](#instalação).
 
 <table>
   <tr>
-    <td><img src="doc/screenshots/1-tela-titulo.png" width="400" alt="Tela de título"></td>
+    <td><img src="doc/screenshots/1-tela-titulo.png" width="400" alt="Tela de título com Continue"></td>
     <td><img src="doc/screenshots/2-fase.png" width="400" alt="Uma fase"></td>
   </tr>
   <tr>
-    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pausa com Auto Fire e Graphics"></td>
-    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map"></td>
+    <td><img src="doc/screenshots/3-loja.png" width="400" alt="Loja comparando cada arma com a da nave (verde é melhor)"></td>
+    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pausa com Auto Fire, Controls e Graphics"></td>
+  </tr>
+  <tr>
+    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map com os ícones dos botões do Xbox"></td>
+    <td><img src="doc/screenshots/6-estatisticas.png" width="400" alt="Estatísticas e recordes das fases"></td>
   </tr>
 </table>
 

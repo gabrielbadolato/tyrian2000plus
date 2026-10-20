@@ -44,7 +44,13 @@ pequenas e podem seguir as regras acima normalmente.
 - Windows x64: `./make_windows.sh` (no Linux) cross-compila com llvm-mingw +
   SDL2 2.32 e SDL2_net 2.4, baixando tudo em `build/win`, e gera
   `dist/Tyrian2000Plus-windows-x64.zip` (Tyrian2000Plus.exe + SDL2.dll e SDL3.dll do sdl2-compat +
-  SDL2_net.dll + LEIA-ME.txt (= README.pt-BR.md) e README.txt (= README.md) + licenças). O Makefile embute ícone e manifesto
+  SDL2_net.dll + LEIA-ME.txt (= README.pt-BR.md) e README.txt (= README.md) + licenças).
+  Instalador: `./make_installer.sh <pasta-do-pacote> <saida.exe>` (NSIS,
+  `windows/installer.nsi`): por usuário, sem admin, em
+  %LOCALAPPDATA%\Programs\Tyrian2000Plus; o desinstalador apaga só os arquivos
+  que instalou (lista gerada pelo script). A release anexa
+  `Tyrian2000Plus-vX-windows-x64-setup.exe` (com dados) e
+  `Tyrian2000Plus-vX-instalar-steam-deck.sh` (= linux/atualizar-tyrian.sh). O Makefile embute ícone e manifesto
   UTF-8 de `visualc/resources.rc`, e também nome e versão do exe (Propriedades >
   Detalhes, tirados do `git describe`). Os dois pacotes levam `CODIGO-FONTE.txt`
   (`write_source_note.sh`) com o link do código exato daquela versão (GPL).
@@ -69,7 +75,10 @@ pequenas e podem seguir as regras acima normalmente.
   Release (sem chave, repositório público), conferindo o SHA256SUMS; com uma
   chave do GitHub em ~/.config/tyrian2000plus/github-token pega o build mais
   novo do Actions no main (conferido pelo digest do artifact). Só apaga a
-  chave se o GitHub responder 401.
+  chave se o GitHub responder 401. Também põe o jogo na Steam como jogo
+  não-Steam (edita userdata/*/config/shortcuts.vdf, binário; guarda cópia
+  .antes-tyrian), só no Modo Desktop e fechando a Steam com permissão;
+  atalho que já mencione "tyrian" conta como existente.
 - Os dados do jogo (freeware) ficam em `data/` ao lado do executável e não
   vão para o repositório.
 - Testes: `tests/run_tests.sh [pasta-do-jogo]` compila e roda

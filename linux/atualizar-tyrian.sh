@@ -4,6 +4,9 @@
 # Baixa a versão mais recente publicada em Releases no GitHub, instala em
 # ~/Jogos/Tyrian2000Plus (mantendo saves e configurações) e, se os dados do
 # Tyrian 2000 ainda não estiverem lá, baixa-os do site original (camanis.net).
+# Na primeira vez, também põe o jogo na biblioteca da Steam (como jogo
+# não-Steam), para abrir no Modo de Jogo; para isso a Steam fecha e abre de
+# novo sozinha, se o jogador concordar.
 #
 # Para testar builds novos antes de virarem versão: guarde uma chave do GitHub
 # (fine-grained token, só leitura de Actions deste repositório) em
@@ -27,13 +30,22 @@ DATA_URL="https://www.camanis.net/tyrian/tyrian2000.zip"
 DATA_SHA256="348bc76e73514e452279b8730cf217daf0f70a282f07b6b94af653d87e921667"
 
 have_gui() { [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && command -v kdialog >/dev/null; }
+ask() {  # pergunta sim/não; sem terminal nem janela, a resposta é não
+    if [ -t 0 ] && [ -t 1 ]; then
+        local r
+        read -r -p "$1 [S/n] " r || return 1
+        case "$r" in [nN]*) return 1 ;; esac
+        return 0
+    fi
+    have_gui && kdialog --title "Tyrian 2000+" --yesno "$1"
+}
 say() {
     echo "$1"
-    if have_gui && [ ! -t 1 ]; then kdialog --title "Tyrian2000Plus" --msgbox "$1" || true; fi
+    if have_gui && [ ! -t 1 ]; then kdialog --title "Tyrian 2000+" --msgbox "$1" || true; fi
 }
 fail() {
     echo "ERRO: $1" >&2
-    if have_gui && [ ! -t 1 ]; then kdialog --title "Tyrian2000Plus" --error "$1" || true; fi
+    if have_gui && [ ! -t 1 ]; then kdialog --title "Tyrian 2000+" --error "$1" || true; fi
     exit 1
 }
 
@@ -105,8 +117,138 @@ else:
     run_desc="$versao"
 fi
 
+# ---- atalho na biblioteca da Steam (jogo não-Steam) ----
+# A Steam guarda os jogos não-Steam em userdata/<conta>/config/shortcuts.vdf
+# (um arquivo binário) e só lê esse arquivo ao abrir; aberta, ela regravaria
+# o arquivo por cima. Por isso a Steam precisa estar fechada para a mudança.
+steam_msg=""
+steam_shortcuts() {  # $1 = check | add
+    python3 - "$1" "$DEST" "$HOME/.local/share/Steam" "$HOME/.steam/steam" <<'EOF'
+import os, struct, sys, zlib
+
+mode, dest = sys.argv[1], sys.argv[2]
+exe = os.path.join(dest, "Tyrian2000Plus")
+name = "Tyrian 2000+"
+
+def read_str(b, i):
+    j = b.index(b"\0", i)
+    return b[i:j], j + 1
+
+def read_map(b, i):
+    items = []  # (tipo, chave, valor), na ordem do arquivo
+    while True:
+        t = b[i]; i += 1
+        if t == 8:
+            return items, i
+        key, i = read_str(b, i)
+        if t == 0:
+            v, i = read_map(b, i)
+        elif t == 1:
+            v, i = read_str(b, i)
+        elif t in (2, 3):
+            v, i = b[i:i + 4], i + 4
+        elif t == 7:
+            v, i = b[i:i + 8], i + 8
+        else:
+            raise ValueError("tipo %d desconhecido" % t)
+        items.append((t, key, v))
+
+def write_map(items):
+    out = b""
+    for t, key, v in items:
+        out += bytes([t]) + key + b"\0"
+        out += write_map(v) if t == 0 else (v + b"\0" if t == 1 else v)
+    return out + b"\x08"
+
+def ours(entry):  # já tem um atalho do Tyrian 2000+ (deste script ou feito à mão)
+    for t, key, v in entry:
+        if t == 1 and key.lower() in (b"exe", b"appname") and b"tyrian" in v.lower():
+            return True
+    return False
+
+users = []
+for root in sys.argv[3:]:
+    ud = os.path.join(root, "userdata")
+    if os.path.isdir(ud):
+        users = [os.path.join(ud, u) for u in sorted(os.listdir(ud)) if u.isdigit() and u != "0"]
+        break
+
+pending = []
+for u in users:
+    path = os.path.join(u, "config", "shortcuts.vdf")
+    if os.path.exists(path):
+        data = open(path, "rb").read()
+        root, end = read_map(data, 0)
+        lists = [v for t, k, v in root if t == 0 and k.lower() == b"shortcuts"]
+        if not lists:
+            raise ValueError(path + ": sem a lista de atalhos")
+        shortcuts = lists[0]
+    else:
+        root = [(0, b"shortcuts", [])]
+        shortcuts = root[0][2]
+    if not any(t == 0 and ours(v) for t, k, v in shortcuts):
+        pending.append((path, root, shortcuts))
+
+if mode == "check":
+    sys.exit(0 if pending else 1)
+
+def s(k, v): return (1, k.encode(), v.encode())
+def n(k, v): return (2, k.encode(), struct.pack("<I", v))
+# O mesmo número que a Steam e outros programas dão ao atalho.
+appid = zlib.crc32(('"%s"%s' % (exe, name)).encode()) | 0x80000000
+for path, root, shortcuts in pending:
+    index = max([int(k) for t, k, v in shortcuts if k.isdigit()] + [-1]) + 1
+    shortcuts.append((0, str(index).encode(), [
+        n("appid", appid), s("AppName", name), s("Exe", '"%s"' % exe),
+        s("StartDir", '"%s/"' % dest), s("icon", os.path.join(dest, "Tyrian2000Plus.png")),
+        s("ShortcutPath", ""), s("LaunchOptions", ""), n("IsHidden", 0),
+        n("AllowDesktopConfig", 1), n("AllowOverlay", 1), n("OpenVR", 0),
+        n("Devkit", 0), s("DevkitGameID", ""), n("DevkitOverrideAppID", 0),
+        n("LastPlayTime", 0), s("FlatpakAppID", ""), (0, b"tags", []),
+    ]))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if os.path.exists(path) and not os.path.exists(path + ".antes-tyrian"):
+        os.rename(path, path + ".antes-tyrian")  # cópia do original, por segurança
+    with open(path + ".novo", "wb") as f:
+        f.write(write_map(root))
+    os.replace(path + ".novo", path)
+print(len(pending))
+EOF
+}
+steam_running() { pgrep -x steam >/dev/null 2>&1; }
+
+add_to_steam() {  # põe o jogo na Steam, se faltar; o resultado fica em $steam_msg
+    if command -v python3 >/dev/null && steam_shortcuts check 2>/dev/null; then
+        if [ -n "${SteamAppId:-}${SteamGameId:-}" ] || [ "${XDG_CURRENT_DESKTOP:-}" = gamescope ]; then
+            # Aberto pela própria Steam ou no Modo de Jogo: fechá-la encerraria tudo.
+            steam_msg="Para pôr o jogo na biblioteca da Steam, rode este script de novo no Modo Desktop."
+        elif ! steam_running || ask "Para pôr o Tyrian 2000+ na biblioteca da Steam, a Steam precisa fechar por alguns segundos (ela abre de novo sozinha). Fechar a Steam agora?"; then
+            reopen=""
+            if steam_running; then
+                echo "Fechando a Steam ..."
+                steam -shutdown >/dev/null 2>&1 || true
+                for _ in $(seq 60); do steam_running || break; sleep 1; done
+                reopen=1
+            fi
+            if steam_running; then
+                steam_msg="A Steam não fechou; o jogo não foi posto na biblioteca. Rode o script de novo com a Steam fechada."
+            elif steam_shortcuts add >/dev/null; then
+                steam_msg="O jogo está na biblioteca da Steam, como \"Tyrian 2000+\"."
+            else
+                steam_msg="Não consegui pôr o jogo na biblioteca da Steam; adicione-o lá como jogo não-Steam."
+            fi
+            if [ -n "$reopen" ]; then
+                (setsid steam >/dev/null 2>&1 &)
+            fi
+        else
+            steam_msg="O jogo não foi posto na biblioteca da Steam. Rode o script de novo quando quiser."
+        fi
+    fi
+}
+
 if [ -f "$DEST/.versao" ] && [ "$(cat "$DEST/.versao")" = "$versao" ] && [ -x "$DEST/Tyrian2000Plus" ]; then
-    say "O Tyrian2000Plus já está na versão mais nova ($run_desc)."
+    add_to_steam
+    say "O Tyrian 2000+ já está na versão mais nova ($run_desc).${steam_msg:+ $steam_msg}"
     exit 0
 fi
 
@@ -180,7 +322,7 @@ mkdir -p "$apps"
 cat > "$apps/tyrian2000plus.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Tyrian2000Plus
+Name=Tyrian 2000+
 Exec="$DEST/Tyrian2000Plus"
 Path=$DEST
 Icon=$DEST/Tyrian2000Plus.png
@@ -189,10 +331,12 @@ EOF
 cat > "$apps/atualizar-tyrian2000plus.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Atualizar Tyrian2000Plus
+Name=Atualizar Tyrian 2000+
 Exec=bash "$DEST/atualizar-tyrian.sh"
 Icon=$DEST/Tyrian2000Plus.png
 Categories=Game;
 EOF
 
-say "Tyrian2000Plus instalado na versão $run_desc, em $DEST."
+
+add_to_steam
+say "Tyrian 2000+ instalado na versão $run_desc, em $DEST.${steam_msg:+ $steam_msg}"

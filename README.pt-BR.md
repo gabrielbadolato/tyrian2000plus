@@ -68,6 +68,19 @@ Se a pasta `data` estiver vazia, baixe os dados à parte (são gratuitos):
 
 ### Windows
 
+O jeito mais fácil é o instalador: baixe o
+`Tyrian2000Plus-vX.Y.Z-windows-x64-setup.exe` e abra. Ele não pede senha de
+administrador, põe o Tyrian 2000+ no menu Iniciar (e, se a caixa ficar
+marcada, na área de trabalho) e pode ser removido em Configurações >
+Aplicativos. Os saves e as configurações ficam em `%APPDATA%\OpenTyrian2000`
+ao atualizar ou desinstalar. Para atualizar, abra o instalador da versão nova.
+
+O Windows pode mostrar "O Windows protegeu o computador", porque o
+instalador não é assinado: clique em "Mais informações" > "Executar assim
+mesmo".
+
+Ou, sem instalar:
+
 1. Baixe o `Tyrian2000Plus-vX.Y.Z-windows-x64.zip` (vX.Y.Z é a versão, por
    exemplo v1.0.4) e descompacte numa pasta sua.
 2. Descompacte o `tyrian2000.zip` e copie **todos** os arquivos de dentro da
@@ -77,6 +90,23 @@ Se a pasta `data` estiver vazia, baixe os dados à parte (são gratuitos):
 
 ### Steam Deck e Linux
 
+O jeito mais fácil é o script de instalação, que depois também atualiza o
+jogo:
+
+1. No Modo Desktop, baixe o `Tyrian2000Plus-vX.Y.Z-instalar-steam-deck.sh`
+   da página Releases.
+2. Abra o Konsole e rode `bash ~/Downloads/Tyrian2000Plus-*-instalar-steam-deck.sh`.
+3. Ele instala o jogo em `~/Jogos/Tyrian2000Plus` (com os dados do jogo),
+   cria atalhos no menu e põe o "Tyrian 2000+" na biblioteca da Steam. Para
+   isso, a Steam precisa fechar por alguns segundos; o script pergunta antes
+   e abre a Steam de novo.
+4. Volte ao Modo de Jogo e abra o Tyrian 2000+ pela biblioteca.
+
+Para atualizar, use "Atualizar Tyrian 2000+" no menu do Modo Desktop (ou
+rode `~/Jogos/Tyrian2000Plus/atualizar-tyrian.sh`).
+
+Ou à mão:
+
 1. No Modo Desktop, descompacte o `Tyrian2000Plus-vX.Y.Z-linux-x86_64.tar.gz`
    (botão direito > Extrair aqui) numa pasta sua, por exemplo `/home/deck/Jogos`.
 2. Se a pasta `data` estiver vazia, copie os dados do jogo para ela, como no
@@ -85,10 +115,8 @@ Se a pasta `data` estiver vazia, baixe os dados à parte (são gratuitos):
    escolha o arquivo `Tyrian2000Plus` e confirme.
 4. Volte ao Modo de Jogo e abra o Tyrian2000Plus pela biblioteca.
 
-O arquivo `Tyrian2000Plus.png` pode ser usado como ícone na Steam. O script
-`atualizar-tyrian.sh` faz os passos 1 e 2 sozinho, cria um atalho no menu e
-depois atualiza o jogo. Quem instalou pelo app do itch.io não precisa dele: o
-app atualiza sozinho.
+O arquivo `Tyrian2000Plus.png` pode ser usado como ícone na Steam. Quem
+instalou pelo app do itch.io não precisa do script: o app atualiza sozinho.
 
 **Tela do Deck:** o padrão é "Fit 4:3", fiel aos monitores de 1995. Para tela
 cheia com pixels nítidos, use Setup > Graphics > Scaling Mode > "Integer". O
@@ -205,7 +233,8 @@ disponíveis, e os fãs do Tyrian que mantêm o jogo vivo.
 
 ## Para quem quer compilar
 
-- Windows x64 (a partir do Linux): `./make_windows.sh`
+- Windows x64 (a partir do Linux): `./make_windows.sh`; instalador (precisa do
+  NSIS): `./make_installer.sh dist/Tyrian2000Plus-windows-x64 setup.exe`
 - Linux x86_64 / Steam Deck: `./make_linux.sh`
 - Testes: `tests/run_tests.sh [pasta-do-jogo]`
 

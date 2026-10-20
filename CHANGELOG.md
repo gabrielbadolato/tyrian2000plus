@@ -8,6 +8,18 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Installers** (#24):
+  - Windows: `Tyrian2000Plus-vX.Y.Z-windows-x64-setup.exe` installs the game
+    for the current user (no administrator prompt), with a Start menu
+    shortcut, an optional desktop shortcut and an uninstaller in
+    Settings > Apps. Saves and settings are kept.
+  - Steam Deck / SteamOS: `Tyrian2000Plus-vX.Y.Z-instalar-steam-deck.sh`
+    installs the game and puts it in the Steam library as a non-Steam game
+    (asking first, since Steam has to close for a few seconds). Existing
+    installs get the Steam shortcut on their next update.
+
 ## v1.0.4 (2026-10-19)
 
 - **Fixes** (#19):

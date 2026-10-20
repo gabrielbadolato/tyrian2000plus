@@ -82,7 +82,7 @@ mesmo".
 Ou, sem instalar:
 
 1. Baixe o `Tyrian2000Plus-vX.Y.Z-windows-x64.zip` (vX.Y.Z é a versão, por
-   exemplo v1.0.4) e descompacte numa pasta sua.
+   exemplo v1.0.5) e descompacte numa pasta sua.
 2. Descompacte o `tyrian2000.zip` e copie **todos** os arquivos de dentro da
    pasta `tyrian2000` (tyrian.hdt, tyrian1.lvl, music.mus etc.) para a pasta
    `data`, ao lado do `Tyrian2000Plus.exe`.

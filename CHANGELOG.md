@@ -8,14 +8,14 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## Next version
+## v1.0.5 (2026-10-20)
 
-- **Controls in the pause menu**: during a level, Start or Esc now has
+- **Controls in the pause menu** (#27): during a level, Start or Esc now has
   "Controls...", which opens the same Setup > Controls screens (keyboard,
   controller, buttons, mouse, Auto Fire and the Controller Map). Closing it
   goes back to the pause, and the level continues from where it stopped.
   Hidden in network games.
-- **Button icons**: with an Xbox-style (also Steam Controller), PlayStation,
+- **Button icons** (#25): with an Xbox-style (also Steam Controller), PlayStation,
   Nintendo Switch or Steam Deck controller, the help texts, the Controller Map
   and the controller menus show small pixel-art icons of the buttons instead
   of their names, and the Controller Map drawing shows them on its buttons.

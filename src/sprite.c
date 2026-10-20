@@ -20,6 +20,7 @@
 
 #include "file.h"
 #include "logging.h"
+#include "padglyph.h"
 #include "opentyr.h"
 #include "video.h"
 
@@ -888,6 +889,8 @@ void JE_loadMainShapeTables(const char *filename)
 	}
 
 	fileClose(&file);
+
+	padglyphs_install();
 }
 
 void free_main_shape_tables(void)

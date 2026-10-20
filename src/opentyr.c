@@ -570,7 +570,7 @@ void setupMenu(void)
 					joyDisabled |= !joy->analog;
 				}
 				else
-					joystick_assignments_to_string(joystickIndex, buffer, sizeof(buffer), joy->assignment[menuItem->id - MENU_ITEM_JOYSTICK_ACTION]);
+					joystick_assignments_to_icons(joystickIndex, buffer, sizeof(buffer), joy->assignment[menuItem->id - MENU_ITEM_JOYSTICK_ACTION]);
 
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, joyValue, FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (joyDisabled ? -4 : 0), false, 2);
 				break;

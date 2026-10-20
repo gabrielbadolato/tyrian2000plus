@@ -499,7 +499,7 @@ void JE_itemScreen(void)
 				}
 				else if (i < 14) // assignments
 				{
-					joystick_assignments_to_string(joystick_config, value, sizeof(value), joystick[joystick_config].assignment[i - 4]);
+					joystick_assignments_to_icons(joystick_config, value, sizeof(value), joystick[joystick_config].assignment[i - 4]);
 				}
 
 				JE_textShade(VGAScreen, 236, 38 + i * 8, value, temp / 16, temp % 16 - 8, DARKEN);

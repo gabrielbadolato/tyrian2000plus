@@ -162,6 +162,15 @@ controle conectado, as menções a teclas dos textos do `tyrian.hdt` (Enter, ESC
 setas, Alt-X, "[/]") pelos nomes dos botões do controle (conforme o mapeamento
 atual). Texto que não reconhece fica igual.
 
+Ícones dos botões: `src/padglyph.c` desenha em código (pixel art própria, sem
+logos) ícones de botão para as famílias Xbox e PlayStation e os acrescenta às
+três tabelas de fonte (sprites 128+, códigos de caractere 0xB0+, ver
+`padglyph.h`), então qualquer rotina de texto os desenha como letras, na cor
+do texto. `joystick_button_icon()`, `joystick_action_icons()` e
+`joystick_assignments_to_icons()` (`src/joystick.c`) dão o texto com ícones;
+as versões `*_label`/`*_to_string` continuam em texto (testes, logs). Família
+sem ícones (Nintendo por enquanto) cai no nome em texto.
+
 ## Vídeo
 
 Padrão: Scaling Mode "Fit 4:3" (fiel ao monitor 4:3 de 1995). A opção

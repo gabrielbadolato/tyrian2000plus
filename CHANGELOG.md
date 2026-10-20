@@ -8,6 +8,13 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Button icons**: with an Xbox-style controller (also Steam Controller and
+  Steam Deck) or a PlayStation controller, the help texts, the Controller Map
+  and the controller menus show small pixel-art icons of the buttons instead
+  of their names. Other controllers keep the names for now.
+
 ## v1.0.4 (2026-10-19)
 
 - **Fixes** (#19):

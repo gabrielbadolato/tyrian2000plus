@@ -97,12 +97,17 @@ bool load_joystick_assignments(Config* config, int j);
 bool save_joystick_assignments(Config* config, int j);
 
 void joystick_assignments_to_string(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments);
+void joystick_assignments_to_icons(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments);
 
 const char *joystick_display_name(int j);
 int joystick_first_gamepad(void);
 const char *joystick_button_label(int j, SDL_GameControllerButton button);
 const char *joystick_assignment_label(int j, const Joystick_assignment *assignment);
 void joystick_action_label(int j, int action, char *buffer, size_t buffer_len);
+// the same with button icons (padglyph.h) for drawing on screen
+const char *joystick_button_icon(int j, SDL_GameControllerButton button);
+const char *joystick_assignment_icon(int j, const Joystick_assignment *assignment);
+void joystick_action_icons(int j, int action, char *buffer, size_t buffer_len);
 void joystick_rumble(int j, Uint16 low, Uint16 high, Uint32 duration_ms);
 void joysticks_rumble_all(Uint16 low, Uint16 high, Uint32 duration_ms);
 

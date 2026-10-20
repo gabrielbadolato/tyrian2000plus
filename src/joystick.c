@@ -26,6 +26,7 @@
 #include "network.h"
 #include "nortsong.h"
 #include "opentyr.h"
+#include "padglyph.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -48,6 +49,7 @@ static int check_assigned(const Joystick *js, const Joystick_assignment assignme
 
 static const char *assignment_to_code(const Joystick_assignment *assignment);
 static const char *assignment_to_label(int j, const Joystick_assignment *assignment);
+static const char *assignment_to_icon(int j, const Joystick_assignment *assignment);
 static void code_to_assignment(Joystick_assignment *assignment, const char *buffer);
 
 static void open_joysticks(void);
@@ -145,6 +147,47 @@ static const char *const pad_axis_labels[FAMILY_COUNT][COUNTOF(pad_axis_codes)][
 		{ "LS RT", "LS LT" }, { "LS DN", "LS UP" },
 		{ "RS RT", "RS LT" }, { "RS DN", "RS UP" },
 		{ "ZL", "ZL-" }, { "ZR", "ZR-" },
+	},
+};
+
+/* The same names as icons (padglyph.c), for families that have them; 0 keeps
+ * the text label. */
+#define DPAD_ICONS PADGLYPH_DPAD_UP, PADGLYPH_DPAD_DOWN, PADGLYPH_DPAD_LEFT, PADGLYPH_DPAD_RIGHT
+
+static const Uint8 pad_button_icons[FAMILY_COUNT][COUNTOF(pad_button_codes)] =
+{
+	[FAMILY_XBOX] = {
+		PADGLYPH_XBOX_A, PADGLYPH_XBOX_B, PADGLYPH_XBOX_X, PADGLYPH_XBOX_Y,
+		PADGLYPH_XBOX_VIEW, PADGLYPH_XBOX_GUIDE, PADGLYPH_XBOX_MENU,
+		PADGLYPH_XBOX_LS, PADGLYPH_XBOX_RS,
+		PADGLYPH_XBOX_LB, PADGLYPH_XBOX_RB,
+		DPAD_ICONS,
+	},
+	[FAMILY_PLAYSTATION] = {
+		PADGLYPH_PS_CROSS, PADGLYPH_PS_CIRCLE, PADGLYPH_PS_SQUARE, PADGLYPH_PS_TRIANGLE,
+		PADGLYPH_PS_CREATE, PADGLYPH_PS_HOME, PADGLYPH_PS_OPTIONS,
+		PADGLYPH_PS_L3, PADGLYPH_PS_R3,
+		PADGLYPH_PS_L1, PADGLYPH_PS_R1,
+		DPAD_ICONS,
+	},
+};
+
+// sticks are a stick icon and an arrow; [family][axis][negative]
+#define STICK_ICONS \
+	{ { PADGLYPH_STICK_LEFT, PADGLYPH_ARROW_RIGHT }, { PADGLYPH_STICK_LEFT, PADGLYPH_ARROW_LEFT } }, \
+	{ { PADGLYPH_STICK_LEFT, PADGLYPH_ARROW_DOWN }, { PADGLYPH_STICK_LEFT, PADGLYPH_ARROW_UP } }, \
+	{ { PADGLYPH_STICK_RIGHT, PADGLYPH_ARROW_RIGHT }, { PADGLYPH_STICK_RIGHT, PADGLYPH_ARROW_LEFT } }, \
+	{ { PADGLYPH_STICK_RIGHT, PADGLYPH_ARROW_DOWN }, { PADGLYPH_STICK_RIGHT, PADGLYPH_ARROW_UP } }
+
+static const Uint8 pad_axis_icons[FAMILY_COUNT][COUNTOF(pad_axis_codes)][2][2] =
+{
+	[FAMILY_XBOX] = {
+		STICK_ICONS,
+		{ { PADGLYPH_XBOX_LT }, { 0 } }, { { PADGLYPH_XBOX_RT }, { 0 } },
+	},
+	[FAMILY_PLAYSTATION] = {
+		STICK_ICONS,
+		{ { PADGLYPH_PS_L2 }, { 0 } }, { { PADGLYPH_PS_R2 }, { 0 } },
 	},
 };
 
@@ -938,8 +981,7 @@ bool save_joystick_assignments(Config *config, int j)
 	return true;
 }
 
-// fills buffer with comma separated list of assigned joystick functions
-void joystick_assignments_to_string(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments)
+static void assignments_to_string(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments, bool icons)
 {
 	strncpy(buffer, "", buffer_len);
 
@@ -951,7 +993,7 @@ void joystick_assignments_to_string(int j, char *buffer, size_t buffer_len, cons
 
 		size_t len = snprintf(buffer, buffer_len, "%s%s",
 		                      comma ? ", " : "",
-		                      assignment_to_label(j, &assignments[i]));
+		                      icons ? assignment_to_icon(j, &assignments[i]) : assignment_to_label(j, &assignments[i]));
 		if (len >= buffer_len)
 			break;
 		buffer += len;
@@ -959,6 +1001,18 @@ void joystick_assignments_to_string(int j, char *buffer, size_t buffer_len, cons
 
 		comma = true;
 	}
+}
+
+// fills buffer with comma separated list of assigned joystick functions
+void joystick_assignments_to_string(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments)
+{
+	assignments_to_string(j, buffer, buffer_len, assignments, false);
+}
+
+// like joystick_assignments_to_string(), with the button icons
+void joystick_assignments_to_icons(int j, char *buffer, size_t buffer_len, const Joystick_assignment *assignments)
+{
+	assignments_to_string(j, buffer, buffer_len, assignments, true);
 }
 
 // reverse of assignment_to_code()
@@ -1087,6 +1141,40 @@ static const char *assignment_to_label(int j, const Joystick_assignment *assignm
 	return assignment_to_code(assignment);
 }
 
+// like assignment_to_label(), but with the button icons where there are some
+static const char *assignment_to_icon(int j, const Joystick_assignment *assignment)
+{
+	static char icons[8][3];  // a few can be in use at once (ex. in one snprintf)
+	static unsigned int next = 0;
+
+	Pad_family family = j >= 0 ? pad_family(&joystick[j]) : FAMILY_XBOX;
+	const unsigned int num = (unsigned int)assignment->num;
+
+	const Uint8 *glyphs = NULL;
+	Uint8 glyph[2] = { 0, 0 };
+
+	if (assignment->type == PAD_BUTTON && num < COUNTOF(pad_button_codes))
+	{
+		glyph[0] = pad_button_icons[family][num];
+		glyphs = glyph;
+	}
+	else if (assignment->type == PAD_AXIS && num < COUNTOF(pad_axis_codes))
+	{
+		glyphs = pad_axis_icons[family][num][assignment->negative_axis ? 1 : 0];
+	}
+
+	if (glyphs == NULL || glyphs[0] == 0)
+		return assignment_to_label(j, assignment);
+
+	char *out = icons[next];
+	next = (next + 1) % COUNTOF(icons);
+
+	out[0] = (char)glyphs[0];
+	out[1] = (char)glyphs[1];
+	out[2] = '\0';
+	return out;
+}
+
 // index of the first connected gamepad (SDL_GameController), or -1 if none
 int joystick_first_gamepad(void)
 {
@@ -1116,8 +1204,24 @@ const char *joystick_assignment_label(int j, const Joystick_assignment *assignme
 	return assignment_to_label(j, assignment);
 }
 
-// like joystick_assignments_to_string(), but compact: "A/RT"
-void joystick_action_label(int j, int action, char *buffer, size_t buffer_len)
+// the button's icon (see padglyph.h), or its name if it has none
+const char *joystick_button_icon(int j, SDL_GameControllerButton button)
+{
+	assert(j < joysticks);
+
+	Joystick_assignment assignment;
+	set_assignment(&assignment, PAD_BUTTON, button, false);
+	return assignment_to_icon(j, &assignment);
+}
+
+const char *joystick_assignment_icon(int j, const Joystick_assignment *assignment)
+{
+	assert(j < joysticks);
+
+	return assignment_to_icon(j, assignment);
+}
+
+static void action_label(int j, int action, char *buffer, size_t buffer_len, bool icons)
 {
 	assert(j < joysticks);
 	assert(action >= 0 && (size_t)action < COUNTOF(joystick[j].assignment));
@@ -1132,8 +1236,20 @@ void joystick_action_label(int j, int action, char *buffer, size_t buffer_len)
 
 		if (buffer[0] != '\0')
 			SDL_strlcat(buffer, "/", buffer_len);
-		SDL_strlcat(buffer, assignment_to_label(j, assignment), buffer_len);
+		SDL_strlcat(buffer, icons ? assignment_to_icon(j, assignment) : assignment_to_label(j, assignment), buffer_len);
 	}
+}
+
+// like joystick_assignments_to_string(), but compact: "A/RT"
+void joystick_action_label(int j, int action, char *buffer, size_t buffer_len)
+{
+	action_label(j, action, buffer, buffer_len, false);
+}
+
+// like joystick_action_label(), with the button icons
+void joystick_action_icons(int j, int action, char *buffer, size_t buffer_len)
+{
+	action_label(j, action, buffer, buffer_len, true);
 }
 
 // captures gamepad input for configuring assignments (standardized buttons/axes)

@@ -32,6 +32,7 @@
 #include "mouse.h"
 #include "nortsong.h"
 #include "opentyr.h"
+#include "padglyph.h"
 #include "palette.h"
 #include "picload.h"
 #include "sndmast.h"
@@ -387,7 +388,7 @@ static void drawLeader(SDL_Surface *surface, int x1, int y1, int xBend, int yBen
 
 static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Joystick_assignment assignments[10][2], bool pressed)
 {
-	const char *name = control->name != NULL ? control->name : joystick_assignment_label(j, &control->inputs[0]);
+	const char *name = control->name != NULL ? control->name : joystick_assignment_icon(j, &control->inputs[0]);
 
 	char actions[64];
 	actionsToString(controlActions(control, assignments), actions, sizeof(actions));
@@ -435,7 +436,9 @@ static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Jo
 		drawLeader(surface, xLineStart, yLine, xBend, yLine, control->xAnchor, control->yAnchor);
 	}
 
-	drawFontHvShadowAligned(surface, xText, y, name, FONT_SMALL, align, 14, pressed ? 6 : 2, false, 1);
+	// icons are taller than letters: lift them clear of the actions line
+	const int yName = is_padglyph((unsigned char)name[0]) ? y - 2 : y;
+	drawFontHvShadowAligned(surface, xText, yName, name, FONT_SMALL, align, 14, pressed ? 6 : 2, false, 1);
 	drawFontHvShadowAligned(surface, xText, y + 8, actions, FONT_SMALL, align, 15, pressed ? 6 : 3, false, 1);
 }
 
@@ -531,11 +534,11 @@ void controllerMapScreen(int j)
 		drawFontHvShadowAligned(VGAScreen, 160, 160, text, FONT_SMALL, ALIGN_CENTER, 15, 2, false, 1);
 
 		snprintf(text, sizeof(text), "In menus: %s = OK, %s = Back.",
-		         joystick_button_label(j, SDL_CONTROLLER_BUTTON_A), joystick_button_label(j, SDL_CONTROLLER_BUTTON_B));
+		         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		drawFontHvShadowAligned(VGAScreen, 160, 170, text, FONT_SMALL, ALIGN_CENTER, 15, 2, false, 1);
 
 		snprintf(text, sizeof(text), "Press buttons to test. Hold %s or press Esc to exit.",
-		         joystick_button_label(j, SDL_CONTROLLER_BUTTON_B));
+		         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		JE_textShade(VGAScreen, 45, 190, text, 15, 4, PART_SHADE);
 
 		// how long B has been held, as a bar that fills up

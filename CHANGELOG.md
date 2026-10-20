@@ -40,6 +40,10 @@ change is in this repository's git log.
   - The main README is now in English (Portuguese in `README.pt-BR.md`), with
     screenshots, the right release file names and the right place of
     `opentyrian.log`.
+  - The release packages leave out the original DOS programs of the game
+    data (tyrian2k.exe, setup.exe etc.): the game never opens them, they do
+    not run on modern Windows and antivirus tools may flag them. The data
+    files themselves are still the originals, unchanged.
   - Removed leftovers from the parent project that do not apply here
     (`get_data.sh`, which fetched Tyrian 2.1, and the macOS build).
 

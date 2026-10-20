@@ -5,7 +5,9 @@
 # builds stay without data.  The data is downloaded from the official mirror
 # and copied UNCHANGED (only the file names are lowercased, as the Steam Deck
 # updater does), next to a note with the license, the credits and the notice
-# that this is an unofficial fan project.
+# that this is an unofficial fan project.  The original DOS programs in the
+# zip (tyrian2k.exe, setup.exe etc.) are left out: the game never opens them,
+# they do not run on modern Windows, and antivirus tools may flag them.
 #
 # Usage: ./add_game_data.sh dist/Tyrian2000Plus-windows-x64 [crlf]
 #   crlf: write the note with Windows line endings
@@ -38,9 +40,11 @@ probe = [n for n in names if os.path.basename(n).lower() == "tyrian1.lvl"]
 if not probe:
     sys.exit("the zip does not have the expected data")
 folder = os.path.dirname(probe[0])
+# the DOS programs and their helpers; the game reads none of them
+skip = (".exe", ".com", ".bat", ".pif", ".ovl")
 count = 0
 for n in names:
-    if os.path.dirname(n) == folder:
+    if os.path.dirname(n) == folder and not n.lower().endswith(skip):
         with open(os.path.join(sys.argv[2], os.path.basename(n).lower()), "wb") as f:
             f.write(z.read(n))
         count += 1
@@ -60,13 +64,18 @@ Tyrian foi criado pela Eclipse Software e publicado pela Epic MegaGames em
 
     "Feel free to play it all you want and share it with friends."
 
+Ficaram de fora apenas os programas do DOS (tyrian2k.exe, setup.exe etc.),
+que o Tyrian 2000+ nao usa e nao rodam no Windows atual.
+
 Tyrian 2000+ e um projeto de fa, sem fins lucrativos e nao oficial. Ele e
 sempre distribuido de graca. Ver licencas/tyrian-freeware-license.txt.
 
 The files in this folder are the original Tyrian 2000 data, unmodified,
 downloaded from https://www.camanis.net/tyrian/tyrian2000.zip. Tyrian was
 developed by Eclipse Software and published by Epic MegaGames in 1995. In
-2004, Jason Emery released it as freeware under the terms above. Tyrian 2000+
+2004, Jason Emery released it as freeware under the terms above. Only the DOS
+programs (tyrian2k.exe, setup.exe etc.) are left out: Tyrian 2000+ does not
+use them and they do not run on modern Windows. Tyrian 2000+
 is an unofficial, non-commercial fan project and is always free.
 EOF
 }

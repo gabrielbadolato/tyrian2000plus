@@ -3835,6 +3835,19 @@ redo:
 						autoFiring[p] = !autoFiring[p];
 					fireWasHeld[p] = button[0];
 					button[0] = autoFiring[p];
+
+					// The special weapon fires once per press, so a held button fires it
+					// only once. While auto firing, tap it like a quick player would
+					// (about 9 times a second); it still waits for its own recharge.
+					if (p == 0 && autoFiring[0])
+					{
+						static uint specialTapTicks;
+						if (++specialTapTicks >= 4)
+						{
+							specialTapTicks = 0;
+							fireButtonHeld = false;
+						}
+					}
 				}
 				else
 				{

@@ -1,6 +1,6 @@
 /*
- * OpenTyrian: A modern cross-platform port of Tyrian
- * Copyright (C) The OpenTyrian Development Team
+ * Tyrian 2000+: Tyrian 2000 with modern controls, based on OpenTyrian2000
+ * Copyright (C) 2026 Tyrian 2000+ contributors
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

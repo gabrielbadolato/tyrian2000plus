@@ -76,12 +76,14 @@ jobs:
         with:
           name: Tyrian2000Plus-linux-x86_64
           path: dist/Tyrian2000Plus-linux-x86_64.tar.gz
-      # Release only: add the game data, send that to itch.io, then add the
-      # Deck updater (it installs elsewhere, so itch.io doesn't get it) and
-      # hand the package to the "release" job.
-      - name: Add the game data (release)
+      # Release only: add the game data and the Deck updater, send that to
+      # itch.io and hand the package to the "release" job.
+      - name: Add the game data and the updater (release)
         if: github.event_name == 'release'
-        run: ./add_game_data.sh dist/Tyrian2000Plus-linux-x86_64
+        run: |
+          ./add_game_data.sh dist/Tyrian2000Plus-linux-x86_64
+          cp linux/atualizar-tyrian.sh dist/Tyrian2000Plus-linux-x86_64/
+          chmod +x dist/Tyrian2000Plus-linux-x86_64/atualizar-tyrian.sh
       - name: Send to itch.io
         # Skipped (with a note in the log) while the BUTLER_API_KEY secret is
         # not set.
@@ -95,8 +97,6 @@ jobs:
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          cp linux/atualizar-tyrian.sh dist/Tyrian2000Plus-linux-x86_64/
-          chmod +x dist/Tyrian2000Plus-linux-x86_64/atualizar-tyrian.sh
           mkdir -p release
           tar -czf "release/Tyrian2000Plus-$TAG-linux-x86_64.tar.gz" -C dist Tyrian2000Plus-linux-x86_64
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

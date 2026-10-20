@@ -78,9 +78,9 @@ Se a pasta `data` estiver vazia, baixe os dados à parte (são gratuitos):
 4. Volte ao Modo de Jogo e abra o Tyrian2000Plus pela biblioteca.
 
 O arquivo `Tyrian2000Plus.png` pode ser usado como ícone na Steam. O script
-`atualizar-tyrian.sh`, que vem no pacote do GitHub, faz os passos 1 e 2
-sozinho, cria um atalho no menu e depois atualiza o jogo. Quem instalou pelo
-app do itch.io não precisa dele: o app atualiza sozinho.
+`atualizar-tyrian.sh` faz os passos 1 e 2 sozinho, cria um atalho no menu e
+depois atualiza o jogo. Quem instalou pelo app do itch.io não precisa dele: o
+app atualiza sozinho.
 
 **Tela do Deck:** o padrão é "Fit 4:3", fiel aos monitores de 1995. Para tela
 cheia com pixels nítidos, use Setup > Graphics > Scaling Mode > "Integer". O

@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "file.h"
+#include "lang.h"
 #include "logging.h"
 #include "lvllib.h"
 #include "lvlmast.h"
@@ -249,6 +250,20 @@ void JE_loadItemDat(void)
 	}
 
 	fileClose(&file);
+
+	// Tyrian 2000+: item names in the chosen language (see lang.h)
+	for (size_t i = 0; i < PORT_NUM + 1; ++i)
+		lang_translate(weaponPort[i].name, sizeof(weaponPort[i].name));
+	for (size_t i = 0; i < SPECIAL_NUM + 1; ++i)
+		lang_translate(special[i].name, sizeof(special[i].name));
+	for (size_t i = 0; i < POWER_NUM + 1; ++i)
+		lang_translate(powerSys[i].name, sizeof(powerSys[i].name));
+	for (size_t i = 0; i < SHIP_NUM + 1; ++i)
+		lang_translate(ships[i].name, sizeof(ships[i].name));
+	for (size_t i = 0; i < OPTION_NUM + 1; ++i)
+		lang_translate(options[i].name, sizeof(options[i].name));
+	for (size_t i = 0; i < SHIELD_NUM + 1; ++i)
+		lang_translate(shields[i].name, sizeof(shields[i].name));
 }
 
 void JE_initEpisode(JE_byte newEpisode)

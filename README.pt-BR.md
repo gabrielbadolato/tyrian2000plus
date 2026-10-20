@@ -45,6 +45,7 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - Tiro automático (Auto Fire).
 - Nomes dos botões do controle nas telas de ajuda.
 - Mais opções de vídeo, inclusive na pausa, e o filtro Sharp Bilinear.
+- Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
 - Tela About com a história do projeto e os créditos.
 
@@ -162,7 +163,7 @@ F1 mostra a ajuda e F11 muda o brilho.
 - **Tela de título > About:** o que é o jogo, de onde veio, os créditos e os
   links (Enter ou A abre o link no navegador).
 - **Tela de título > Setup:** vídeo (Graphics), som (Sound), controles
-  (Controls), Jukebox, Check Updates e About.
+  (Controls), Jukebox, idioma (Language), Check Updates e About.
 - **Setup > Controls:** teclado, controle, mouse, Auto Fire e o desenho do
   controle (Controller Map).
 - **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup.
@@ -170,6 +171,10 @@ F1 mostra a ajuda e F11 muda o brilho.
   Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
   Sharp Bilinear, VSync e brilho, aplicados na hora).
 - **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
+- **Setup > Language:** menus, ajuda e nomes dos itens em português ou em
+  inglês. "Automatic" (o padrão) segue o idioma do sistema; em português, o
+  Setup aparece como "Configurações" e a opção como "Idioma". As histórias dos
+  datacubes continuam em inglês.
 - **Setup > Check Updates:** ao abrir, o jogo pergunta ao GitHub qual é a
   última versão publicada. Se houver uma mais nova, aparece um aviso no canto
   da tela de título, e o About mostra os links para baixar (itch.io e GitHub). Nenhum dado seu é

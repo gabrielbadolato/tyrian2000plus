@@ -20,6 +20,7 @@
 
 #include "episodes.h"
 #include "file.h"
+#include "lang.h"
 #include "logging.h"
 #include "loudness.h"
 #include "memreader.h"
@@ -280,6 +281,18 @@ static void loadOpenTyrianConfig(void)
 			autoFireToggle = autoFire;
 	}
 
+	section = config_find_section(config, "language", NULL);
+	if (section != NULL)
+	{
+		const char *code;
+		if (config_get_string_option(section, "language", &code))
+		{
+			const int setting = lang_setting_from_code(code);
+			if (setting >= 0)
+				lang_setting = setting;
+		}
+	}
+
 	section = config_find_section(config, "updates", NULL);
 	if (section != NULL)
 	{
@@ -349,6 +362,12 @@ static void saveOpenTyrianConfig(void)
 		exit(EXIT_FAILURE);  // out of memory
 
 	config_set_bool_option(section, "auto_fire", autoFireToggle, OFF_ON);
+
+	section = config_find_or_add_section(config, "language", NULL);
+	if (section == NULL)
+		exit(EXIT_FAILURE);  // out of memory
+
+	config_set_string_option(section, "language", lang_setting_code(lang_setting));
 
 	section = config_find_or_add_section(config, "updates", NULL);
 	if (section == NULL)

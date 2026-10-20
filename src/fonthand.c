@@ -26,7 +26,8 @@
 #include "video.h"
 
 // Mapping from CP437 to font sprite index.  padglyphs_install() adds the
-// controller button icons above 168.
+// controller button icons above 168, and accents_install() the accented
+// letters CP437 lacks (0xF0 and up).
 Sint16 fontMap[256] = /* [33..168] */
 {
 	 -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,

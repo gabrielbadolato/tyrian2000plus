@@ -22,6 +22,7 @@
 #include "config_file.h"
 #include "file.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "logging.h"
 #include "network.h"
 #include "nortsong.h"
@@ -282,7 +283,7 @@ const char *joystick_display_name(int j)
 		name = SDL_JoystickName(joystick[j].handle);
 
 	if (name == NULL)
-		name = joystick[j].instance_id == -1 ? "Disconnected" : "Unknown Controller";
+		name = tr(joystick[j].instance_id == -1 ? "Disconnected" : "Unknown Controller");
 
 	return name;
 }

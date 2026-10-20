@@ -38,7 +38,7 @@
 #define EXTRA_SHAPES      7 /*Used for Ending pics*/
 
 #define SPRITE_TABLES_MAX        8
-#define SPRITES_PER_TABLE_MAX  176  // 128 and up: controller icons (padglyph.c)
+#define SPRITES_PER_TABLE_MAX  192  // 128 and up: controller icons (padglyph.c); 176 and up: accented letters (accents.c)
 
 typedef struct
 {

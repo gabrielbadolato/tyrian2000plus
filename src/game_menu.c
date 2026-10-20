@@ -25,6 +25,7 @@
 #include "fonthand.h"
 #include "joystick.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "logging.h"
 #include "loudness.h"
 #include "mainint.h"
@@ -412,7 +413,7 @@ void JE_itemScreen(void)
 					{
 						char buf[20];
 
-						strcpy(tempStr, saveFiles[x-2].levelName);
+						SDL_strlcpy(tempStr, tr(saveFiles[x-2].levelName), sizeof(tempStr));  // "Completed" or a planet
 
 						snprintf(buf, sizeof buf, "%s%d", miscTextB[1-1], saveFiles[x-2].episode);
 						JE_textShade(VGAScreen, 297, tempY, buf, temp2 / 16, temp2 % 16 - 8, DARKEN);
@@ -454,10 +455,10 @@ void JE_itemScreen(void)
 		{
 			const char *const menu_item[] =
 			{
-				"JOYSTICK",
-				"ANALOG AXES",
-				" SENSITIVITY",
-				" THRESHOLD",
+				tr("JOYSTICK"),
+				tr("ANALOG AXES"),
+				tr(" SENSITIVITY"),
+				tr(" THRESHOLD"),
 				menuInt[6][1],
 				menuInt[6][4],
 				menuInt[6][2],
@@ -466,9 +467,9 @@ void JE_itemScreen(void)
 				menuInt[6][6],
 				menuInt[6][7],
 				menuInt[6][8],
-				"BOTH SIDEKICKS",
-				"MENU",
-				"PAUSE",
+				tr("BOTH SIDEKICKS"),
+				tr("MENU"),
+				tr("PAUSE"),
 				menuInt[6][9],
 				menuInt[6][10]
 			};
@@ -494,7 +495,7 @@ void JE_itemScreen(void)
 				}
 				else if (i == 1) // joystick is analog
 				{
-					sprintf(value, "%s", joystick[joystick_config].analog ? "TRUE" : "FALSE");
+					sprintf(value, "%s", joystick[joystick_config].analog ? tr("TRUE") : tr("FALSE"));
 				}
 				else if (i < 4)  // joystick analog settings
 				{
@@ -597,7 +598,7 @@ void JE_itemScreen(void)
 				{
 					case 1: /* ship */
 						if (temp > 90)
-							snprintf(tempStr, sizeof(tempStr), "Custom Ship %d", temp - 90);
+							snprintf(tempStr, sizeof(tempStr), tr("Custom Ship %d"), temp - 90);
 						else
 							strcpy(tempStr, ships[temp].name);
 						break;
@@ -651,7 +652,7 @@ void JE_itemScreen(void)
 				{
 					char buf[20];
 
-					snprintf(buf, sizeof buf, "Cost: %d", temp_cost);
+					snprintf(buf, sizeof buf, tr("Cost: %d"), temp_cost);
 					JE_textShade(VGAScreen, 187, tempY+10, buf, temp2 / 16, temp2 % 16 - 8 - afford_shade, DARKEN);
 				}
 			}
@@ -1625,7 +1626,7 @@ void JE_itemScreen(void)
 	{
 		JE_barShade(VGAScreen, 3, 3, 316, 196);
 		JE_barShade(VGAScreen, 1, 1, 318, 198);
-		JE_dString(VGAScreen, 10, 160, "Waiting for other player.", SMALL_FONT_SHAPES);
+		JE_dString(VGAScreen, 10, 160, tr("Waiting for other player."), SMALL_FONT_SHAPES);
 
 		JE_showVGA();
 
@@ -2375,7 +2376,7 @@ void JE_drawMainMenuHelpText(void)
 	}
 	else if (curMenu == MENU_OPTIONS && curSel[curMenu] == 9)  // Setup... (Tyrian2000 Plus)
 	{
-		strcpy(tempStr, "Graphics, sound and all control settings.");
+		SDL_strlcpy(tempStr, tr("Graphics, sound and all control settings."), sizeof(tempStr));
 	}
 	else if (curMenu < MENU_PLAY_NEXT_LEVEL || curMenu >= MENU_2_PLAYER_ARCADE)
 	{
@@ -2717,7 +2718,7 @@ void JE_menuFunction(JE_byte select)
 			newNavY = navY;
 			menuChoices[MENU_PLAY_NEXT_LEVEL] = mapPNum + 2;
 			curSel[MENU_PLAY_NEXT_LEVEL] = 2;
-			strcpy(menuInt[4][0], "Next Level");
+			SDL_strlcpy(menuInt[4][0], tr("Next Level"), sizeof(menuInt[4][0]));
 			for (x = 0; x < mapPNum; x++)
 			{
 				temp = mapPlanet[x];

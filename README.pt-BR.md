@@ -72,7 +72,7 @@ O jeito mais fácil é o instalador: baixe o
 `Tyrian2000Plus-vX.Y.Z-windows-x64-setup.exe` e abra. Ele não pede senha de
 administrador, põe o Tyrian 2000+ no menu Iniciar (e, se a caixa ficar
 marcada, na área de trabalho) e pode ser removido em Configurações >
-Aplicativos. Os saves e as configurações ficam em `%APPDATA%\OpenTyrian2000`
+Aplicativos. Os saves e as configurações ficam em `%APPDATA%\Tyrian2000Plus`
 ao atualizar ou desinstalar. Para atualizar, abra o instalador da versão nova.
 
 O Windows pode mostrar "O Windows protegeu o computador", porque o
@@ -178,15 +178,16 @@ F1 mostra a ajuda e F11 muda o brilho.
 ## Problemas
 
 O jogo grava o arquivo `opentyrian.log` na pasta do usuário, junto com os
-saves e a configuração: `%APPDATA%\OpenTyrian2000` no Windows (digite esse
+saves e a configuração: `%APPDATA%\Tyrian2000Plus` no Windows (digite esse
 caminho na barra de endereço do Explorador de Arquivos) e
-`~/.config/opentyrian2000` no Linux e no Steam Deck. Envie esse arquivo ao
+`~/.config/tyrian2000plus` no Linux e no Steam Deck. Envie esse arquivo ao
 relatar um problema.
 
 Se a pasta do jogo tiver um arquivo `opentyrian.cfg`, tudo isso fica na
-própria pasta do jogo (modo portátil). A pasta do usuário é a mesma do
-OpenTyrian2000 original, de propósito: quem já jogava nele continua com os
-mesmos saves.
+própria pasta do jogo (modo portátil). Até a v1.0.4, a pasta do usuário era
+a do OpenTyrian2000 original (`%APPDATA%\OpenTyrian2000`,
+`~/.config/opentyrian2000`): na primeira vez que abre, o jogo copia os saves
+e a configuração de lá e deixa aquela pasta como estava.
 
 ## Licença
 

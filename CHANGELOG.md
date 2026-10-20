@@ -19,6 +19,11 @@ change is in this repository's git log.
     installs the game and puts it in the Steam library as a non-Steam game
     (asking first, since Steam has to close for a few seconds). Existing
     installs get the Steam shortcut on their next update.
+- **Own folder for saves and settings** (#24): `%APPDATA%\Tyrian2000Plus` on
+  Windows and `~/.config/tyrian2000plus` on Linux, instead of
+  OpenTyrian2000's folder, so the two games no longer share settings. The
+  first start copies the saves and settings from the old folder and leaves
+  it as it was. The portable mode is unchanged.
 
 ## v1.0.4 (2026-10-19)
 

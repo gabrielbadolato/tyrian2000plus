@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 	if (mkdtemp(user_dir) == NULL)
 		return 1;
 	setenv("XDG_CONFIG_HOME", user_dir, 1);
-	snprintf(save_path, sizeof save_path, "%s/opentyrian2000/tyrian.sav", user_dir);
+	snprintf(save_path, sizeof save_path, "%s/tyrian2000plus/tyrian.sav", user_dir);
 
 	SDL_SetHint(SDL_HINT_VIDEODRIVER, "dummy");
 	SDL_Init(0);

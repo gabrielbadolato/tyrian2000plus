@@ -12,7 +12,7 @@
 ; per user (no administrator prompt): it installs into
 ; %LOCALAPPDATA%\Programs\Tyrian2000Plus, adds a Start menu shortcut (and,
 ; if left checked, one on the desktop) and an entry in Settings > Apps.
-; Saves and settings live in %APPDATA%\OpenTyrian2000, which the uninstaller
+; Saves and settings live in %APPDATA%\Tyrian2000Plus, which the uninstaller
 ; never touches, and it removes only the files this installer put there.
 
 Unicode true

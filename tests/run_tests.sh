@@ -36,11 +36,11 @@ SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$OUT/test_gamepad"
 if [ "$#" -ge 1 ]; then
     echo "== test_saves"
     tmp=$(mktemp -d)
-    mkdir -p "$tmp/opentyrian2000"
-    cp "$1/tyrian.sav" "$1/tyrian.cfg" "$tmp/opentyrian2000/"
+    mkdir -p "$tmp/tyrian2000plus"
+    cp "$1/tyrian.sav" "$1/tyrian.cfg" "$tmp/tyrian2000plus/"
     # the game looks for data/ next to the executable
     ln -sfn "$(cd "$1" && pwd)/data" "$OUT/data"
-    XDG_CONFIG_HOME="$tmp" "$OUT/test_saves" "$tmp/opentyrian2000"
+    XDG_CONFIG_HOME="$tmp" "$OUT/test_saves" "$tmp/tyrian2000plus"
     rm -f "$OUT/data"
     rm -rf "$tmp"
 fi

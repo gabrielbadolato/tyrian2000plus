@@ -72,7 +72,7 @@ The easiest way is the installer: download
 `Tyrian2000Plus-vX.Y.Z-windows-x64-setup.exe` and run it. It needs no
 administrator rights, adds Tyrian 2000+ to the Start menu (and, if you leave
 the box checked, to the desktop) and can be removed in Settings > Apps. Your
-saves and settings stay in `%APPDATA%\OpenTyrian2000` when you update or
+saves and settings stay in `%APPDATA%\Tyrian2000Plus` when you update or
 uninstall. To update, run the installer of the new version.
 
 Windows may show "Windows protected your PC" because the installer is not
@@ -177,13 +177,15 @@ screen, F1 shows help and F11 changes the brightness.
 ## Problems
 
 The game writes `opentyrian.log` in the user folder, next to the saves and
-the settings: `%APPDATA%\OpenTyrian2000` on Windows (type that path in File
-Explorer's address bar) and `~/.config/opentyrian2000` on Linux and the Steam
+the settings: `%APPDATA%\Tyrian2000Plus` on Windows (type that path in File
+Explorer's address bar) and `~/.config/tyrian2000plus` on Linux and the Steam
 Deck. Please send that file when reporting a problem.
 
 If the game folder has an `opentyrian.cfg` file, all of this stays in the game
-folder itself (portable mode). The user folder is the same as the original
-OpenTyrian2000's, on purpose: players coming from it keep their saves.
+folder itself (portable mode). Up to v1.0.4 the user folder was the original
+OpenTyrian2000's (`%APPDATA%\OpenTyrian2000`, `~/.config/opentyrian2000`):
+the first time the game starts, it copies the saves and settings from there
+and leaves that folder as it was.
 
 ## License
 

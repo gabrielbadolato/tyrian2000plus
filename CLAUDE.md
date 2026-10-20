@@ -87,7 +87,11 @@ pequenas e podem seguir as regras acima normalmente.
   data/, tyrian.sav e tyrian.cfg reais, `tests/test_saves.c` (carrega e
   regrava os saves; devem sair idênticos).
 - Pastas do usuário: portátil (ao lado do exe) se existir `opentyrian.cfg` lá;
-  senão `%APPDATA%/OpenTyrian2000` ou `~/.config/opentyrian2000`.
+  senão `%APPDATA%/Tyrian2000Plus` ou `~/.config/tyrian2000plus` (desde o PR
+  #24; antes era a pasta do OpenTyrian2000). `migrateUserDir()` em
+  `src/file.c` COPIA os saves da pasta antiga na primeira vez (só se a nova
+  não tiver tyrian.sav/tyrian.cfg/opentyrian.cfg) e não mexe na antiga. No
+  Linux a pasta nova é a mesma do github-token do updater.
 
 ## Controles
 

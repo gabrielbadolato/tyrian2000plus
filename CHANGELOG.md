@@ -31,6 +31,12 @@ change is in this repository's git log.
   OpenTyrian2000's folder, so the two games no longer share settings. The
   first start copies the saves and settings from the old folder and leaves
   it as it was. The portable mode is unchanged.
+- **Both sidekicks on one button** (#26): a new controller action, "Both Sidekicks",
+  fires the left and right sidekicks together, like the mouse option of the
+  same name. By default it is on B (Circle on PlayStation, A on Switch), which
+  had no use during a level; it can be changed in Setup > Controls >
+  Controller... > Buttons... and in the ship's Joystick menu. Older
+  `opentyrian.cfg` files get it too, unless B is already used there.
 
 ## v1.0.4 (2026-10-19)
 

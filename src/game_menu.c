@@ -79,6 +79,10 @@ struct cube_struct
 /*** Globals ***/
 static int joystick_config = 0; // which joystick is being configured in menu
 
+// joystick config menu rows (after the 4 settings) -> assignment; "both
+// sidekicks" (Tyrian2000 Plus) is listed next to the other sidekicks
+static const uint joystick_menu_assignment[JOYSTICK_ASSIGNMENTS] = { 0, 1, 2, 3, 4, 5, 6, 7, 10, 8, 9 };
+
 static JE_word yLoc;
 static JE_shortint yChg;
 static int newPal, curPal, oldPal;
@@ -462,6 +466,7 @@ void JE_itemScreen(void)
 				menuInt[6][6],
 				menuInt[6][7],
 				menuInt[6][8],
+				"BOTH SIDEKICKS",
 				"MENU",
 				"PAUSE",
 				menuInt[6][9],
@@ -479,7 +484,7 @@ void JE_itemScreen(void)
 				char value[30] = "";
 				if (joystick_config >= joysticks) // a controller was disconnected
 					joystick_config = 0;
-				if (joysticks == 0 && i < 14) // no joysticks, everything disabled
+				if (joysticks == 0 && i < 4 + JOYSTICK_ASSIGNMENTS) // no joysticks, everything disabled
 				{
 					sprintf(value, "-");
 				}
@@ -497,9 +502,9 @@ void JE_itemScreen(void)
 						temp -= 3;
 					sprintf(value, "%d", i == 2 ? joystick[joystick_config].sensitivity : joystick[joystick_config].threshold);
 				}
-				else if (i < 14) // assignments
+				else if (i < 4 + JOYSTICK_ASSIGNMENTS) // assignments
 				{
-					joystick_assignments_to_icons(joystick_config, value, sizeof(value), joystick[joystick_config].assignment[i - 4]);
+					joystick_assignments_to_icons(joystick_config, value, sizeof(value), joystick[joystick_config].assignment[joystick_menu_assignment[i - 4]]);
 				}
 
 				JE_textShade(VGAScreen, 236, 38 + i * 8, value, temp / 16, temp % 16 - 8, DARKEN);
@@ -2365,7 +2370,7 @@ void JE_drawMainMenuHelpText(void)
 	temp = curSel[curMenu] - 2;
 	if (curMenu == MENU_JOYSTICK_CONFIG) // joystick settings menu help
 	{
-		const int help[16] = { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 24, 11 };
+		const int help[17] = { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 24, 11 };
 		memcpy(tempStr, mainMenuHelp[help[curSel[curMenu] - 2]], sizeof(tempStr));
 	}
 	else if (curMenu == MENU_OPTIONS && curSel[curMenu] == 9)  // Setup... (Tyrian2000 Plus)
@@ -3019,7 +3024,7 @@ void JE_menuFunction(JE_byte select)
 	case MENU_JOYSTICK_CONFIG:
 		if (joystick_config >= joysticks) // a controller was disconnected
 			joystick_config = 0;
-		if (joysticks == 0 && select != 17)
+		if (joysticks == 0 && select != 18)
 			break;
 
 		switch (select)
@@ -3045,10 +3050,10 @@ void JE_menuFunction(JE_byte select)
 				joystick[joystick_config].threshold %= 11;
 			}
 			break;
-		case 16:
+		case 17:
 			reset_joystick_assignments(joystick_config);
 			break;
-		case 17:
+		case 18:
 			curMenu = isNetworkGame
 				? MENU_LIMITED_OPTIONS
 				: MENU_OPTIONS;
@@ -3062,7 +3067,7 @@ void JE_menuFunction(JE_byte select)
 
 			JE_rectangle(VGAScreen, 235, 21 + select * 8, 310, 30 + select * 8, 248);
 
-			if (assign_joystick_action(joystick_config, select - 6))
+			if (assign_joystick_action(joystick_config, joystick_menu_assignment[select - 6]))
 				curSelect++;
 		}
 		break;

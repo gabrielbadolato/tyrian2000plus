@@ -247,8 +247,8 @@ void setupMenu(void)
 		MENU_ITEM_JOYSTICK_THRESHOLD,
 		MENU_ITEM_JOYSTICK_BUTTONS,
 		MENU_ITEM_JOYSTICK_RESET,
-		MENU_ITEM_JOYSTICK_ACTION,                          // + action (0-9)
-		MENU_ITEM_JOYSTICK_ACTION_LAST = MENU_ITEM_JOYSTICK_ACTION + 9,
+		MENU_ITEM_JOYSTICK_ACTION,                          // + action (0-10)
+		MENU_ITEM_JOYSTICK_ACTION_LAST = MENU_ITEM_JOYSTICK_ACTION + JOYSTICK_ASSIGNMENTS - 1,
 		MENU_ITEM_MOUSE_BUTTON,                             // + button (0-2)
 		MENU_ITEM_MOUSE_BUTTON_LAST = MENU_ITEM_MOUSE_BUTTON + 2,
 		MENU_ITEM_MOUSE_RESET,
@@ -290,7 +290,7 @@ void setupMenu(void)
 		const char *header;
 		bool compact;  // tighter rows, for long lists
 		int wItemName; // 0 = default
-		const MenuItem items[12];
+		const MenuItem items[13];
 	} Menu;
 
 	static const Menu menus[] = {
@@ -376,7 +376,7 @@ void setupMenu(void)
 		[MENU_JOYSTICK_BUTTONS] = {
 			.header = "Buttons",
 			.compact = true,
-			.wItemName = 105,
+			.wItemName = 112,
 			.items = {
 				{ MENU_ITEM_JOYSTICK_ACTION + 0, "Up", "Press Enter, then a button to add or remove." },
 				{ MENU_ITEM_JOYSTICK_ACTION + 2, "Down", "Press Enter, then a button to add or remove." },
@@ -386,6 +386,7 @@ void setupMenu(void)
 				{ MENU_ITEM_JOYSTICK_ACTION + 5, "Change Fire", "Press Enter, then a button to add or remove." },
 				{ MENU_ITEM_JOYSTICK_ACTION + 6, "Left Sidekick", "Press Enter, then a button to add or remove." },
 				{ MENU_ITEM_JOYSTICK_ACTION + 7, "Right Sidekick", "Press Enter, then a button to add or remove." },
+				{ MENU_ITEM_JOYSTICK_ACTION + 10, "Both Sidekicks", "Press Enter, then a button to add or remove." },
 				{ MENU_ITEM_JOYSTICK_ACTION + 8, "Menu", "Press Enter, then a button to add or remove." },
 				{ MENU_ITEM_JOYSTICK_ACTION + 9, "Pause", "Press Enter, then a button to add or remove." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },

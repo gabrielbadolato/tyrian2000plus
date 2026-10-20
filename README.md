@@ -131,6 +131,7 @@ Steam's frame limit.
 | Y                     | Change the rear weapon mode         |
 | LB or LT              | Left sidekick                       |
 | RB or X               | Right sidekick                      |
+| B                     | Both sidekicks at once              |
 | Start (Menu)          | Game menu                           |
 | Back (View)           | Pause                               |
 

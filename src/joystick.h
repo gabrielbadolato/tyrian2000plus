@@ -47,6 +47,11 @@ typedef struct
 }
 Joystick_assignment;
 
+// directions (up, right, down, left) followed by the actions
+#define JOYSTICK_DIRECTIONS 4
+#define JOYSTICK_ACTIONS 7
+#define JOYSTICK_ASSIGNMENTS (JOYSTICK_DIRECTIONS + JOYSTICK_ACTIONS)
+
 typedef struct
 {
 	SDL_Joystick *handle;
@@ -54,17 +59,17 @@ typedef struct
 	SDL_JoystickID instance_id;
 	bool rumble_failed; // already logged a rumble error for this controller
 	
-	Joystick_assignment assignment[10][2]; // 0-3: directions, 4-9: actions
+	Joystick_assignment assignment[JOYSTICK_ASSIGNMENTS][2]; // 0-3: directions, 4-10: actions
 	
 	bool analog;
 	int sensitivity, threshold;
 	
 	signed int x, y;
-	int analog_direction[4];
-	bool direction[4], direction_pressed[4]; // up, right, down, left  (_pressed, for emulating key presses)
+	int analog_direction[JOYSTICK_DIRECTIONS];
+	bool direction[JOYSTICK_DIRECTIONS], direction_pressed[JOYSTICK_DIRECTIONS]; // up, right, down, left  (_pressed, for emulating key presses)
 	
 	bool confirm, cancel;
-	bool action[6], action_pressed[6]; // fire, mode swap, left fire, right fire, menu, pause
+	bool action[JOYSTICK_ACTIONS], action_pressed[JOYSTICK_ACTIONS]; // fire, mode swap, left fire, right fire, menu, pause, both sidekicks
 	
 	Uint32 joystick_delay;
 	bool input_pressed;
@@ -102,7 +107,7 @@ void push_joysticks_as_keyboard(void);
 void init_joysticks(void);
 void deinit_joysticks(void);
 
-void joystick_default_gamepad_assignments(Joystick_assignment as[10][2]);
+void joystick_default_gamepad_assignments(Joystick_assignment as[JOYSTICK_ASSIGNMENTS][2]);
 void reset_joystick_assignments(int j);
 bool load_joystick_assignments(Config* config, int j);
 bool save_joystick_assignments(Config* config, int j);

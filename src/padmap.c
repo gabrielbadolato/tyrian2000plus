@@ -161,6 +161,7 @@ static const char *const actionNames[] =
 {
 	"Up", "Right", "Down", "Left",
 	"Fire", "Change Fire", "Left Sidekick", "Right Sidekick", "Menu", "Pause",
+	"Both Sidekicks",
 };
 
 static bool sameInput(const Joystick_assignment *a, const Joystick_assignment *b)
@@ -170,12 +171,12 @@ static bool sameInput(const Joystick_assignment *a, const Joystick_assignment *b
 }
 
 // bit per action (see actionNames) assigned to any input of the control
-static unsigned int controlActions(const PadControl *control, Joystick_assignment assignments[10][2])
+static unsigned int controlActions(const PadControl *control, Joystick_assignment assignments[JOYSTICK_ASSIGNMENTS][2])
 {
 	unsigned int actions = 0;
 
 	for (size_t i = 0; i < COUNTOF(control->inputs) && control->inputs[i].type != NONE; ++i)
-		for (unsigned int a = 0; a < 10; ++a)
+		for (unsigned int a = 0; a < JOYSTICK_ASSIGNMENTS; ++a)
 			for (unsigned int k = 0; k < 2; ++k)
 				if (sameInput(&control->inputs[i], &assignments[a][k]))
 					actions |= 1u << a;
@@ -465,7 +466,7 @@ static void drawLeader(SDL_Surface *surface, int x1, int y1, int xBend, int yBen
 	JE_pix(surface, x2, y2, C(15, 15));
 }
 
-static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Joystick_assignment assignments[10][2], bool pressed)
+static void drawLabel(SDL_Surface *surface, const PadControl *control, int j, Joystick_assignment assignments[JOYSTICK_ASSIGNMENTS][2], bool pressed)
 {
 	const char *name = control->name != NULL ? control->name : joystick_assignment_icon(j, &control->inputs[0]);
 
@@ -542,7 +543,7 @@ static bool inTouchpad(int x, int y)
 
 void drawControllerMap(SDL_Surface *surface, int j)
 {
-	Joystick_assignment defaults[10][2];
+	Joystick_assignment defaults[JOYSTICK_ASSIGNMENTS][2];
 	Joystick_assignment (*assignments)[2] = defaults;
 
 	if (j >= 0 && joystick[j].controller != NULL)

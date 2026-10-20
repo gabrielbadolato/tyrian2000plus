@@ -147,7 +147,15 @@ touchpad, Steam Deck e sem controle no genérico; decisão do Gabriel em
 (inclui "Auto Fire"). Os botões acendem quando apertados; sai segurando B por 1 s (assim B e View também podem ser testados), com Esc ou com clique. Sem controle,
 mostra o layout padrão (`joystick_default_gamepad_assignments()`). Com controle Xbox ou PlayStation, os botões redondos, Back/Start e os gatilhos do desenho levam o ícone do botão (`controlGlyph()`); os bumpers não, porque quase não aparecem acima do corpo.
 
-Menu da nave: Options tem "Setup..." (antes do Done), que abre o mesmo
+Menu da nave: os itens Joystick, Keyboard e Mouse de Options (e Joystick e
+Keyboard do menu de arcade) abrem as telas do Setup com
+`setupMenuPage(SETUP_PAGE_*)` (`src/opentyr.c`), saindo direto de volta à
+nave; as telas antigas (MENU_JOYSTICK_CONFIG etc. em `src/game_menu.c`)
+ficaram no código, sem acesso, para não atrapalhar merges do upstream.
+Setup > Controls > Shortcuts lista Alt+Enter, Esc, P, F1 e F11 (a fonte grande
+não tem "+", por isso a tela mostra "Alt-Enter"). Setup tem "Game Speed" e
+Graphics tem "Detail Level" (mesmos `gameSpeed`/`processorType` da pausa).
+Options tem "Setup..." (antes do Done), que abre o mesmo
 `setupMenu()` da tela de título e volta com `returnToItemScreen()`
 (`src/game_menu.c`). O texto do item é inserido em `menuInt[3]` ao carregar
 o `tyrian.hdt` (`src/helptext.c`); o menu de arcade (MENU_LIMITED_OPTIONS)

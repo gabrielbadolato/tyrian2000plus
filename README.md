@@ -153,18 +153,28 @@ controllers, the buttons in the same positions do the same thing. Buttons can
 be changed in Setup > Controls > Controller... > Buttons.
 
 Keyboard: arrows move, Space fires, Enter changes the rear weapon, Ctrl and
-Alt fire the sidekicks, Esc opens the menu, P pauses, Alt+Enter toggles full
-screen, F1 shows help and F11 changes the brightness.
+Alt fire the sidekicks. Keys that work anywhere (also listed in Setup >
+Controls > Shortcuts):
+
+| Key       | What it does                                    |
+|-----------|-------------------------------------------------|
+| Alt+Enter | Switch between full screen and a window         |
+| Esc       | Open the menu during a level; go back in menus  |
+| P         | Pause the game during a level                   |
+| F1        | Help, in a level or in the ship menu            |
+| F11       | Brightness, during a level                      |
 
 ## Where each option is
 
 - **Title screen > About:** what the game is, where it came from, the credits
   and the links (Enter or A opens a link in your browser).
-- **Title screen > Setup:** Graphics, Sound, Controls, Jukebox, Language,
-  Check Updates and About.
-- **Setup > Controls:** keyboard, controller, mouse, Auto Fire and the
-  Controller Map.
-- **Ship menu (between levels) > Options > Setup...:** the same Setup.
+- **Title screen > Setup:** Graphics (with the detail level), Sound,
+  Controls, game speed, Jukebox, Language, Check Updates and About.
+- **Setup > Controls:** keyboard, controller, mouse, Auto Fire, the
+  Controller Map and the list of keyboard shortcuts.
+- **Ship menu (between levels) > Options > Setup...:** the same Setup. The
+  Joystick, Keyboard and Mouse items there open the same screens as Setup >
+  Controls.
 - **During a level, Start or Esc:** volume, detail level, game speed, Auto
   Fire, Controls... (the same Setup > Controls) and Graphics... (full screen,
   scaling, Sharp Bilinear, VSync and brightness, applied right away).

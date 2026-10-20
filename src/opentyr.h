@@ -58,6 +58,17 @@ typedef float  JE_real;
 extern const char *opentyrian_str;
 extern const char *opentyrian_version;
 
+typedef enum
+{
+	SETUP_PAGE_MAIN,
+	SETUP_PAGE_CONTROLS,
+	SETUP_PAGE_KEYBOARD,
+	SETUP_PAGE_CONTROLLER,
+	SETUP_PAGE_MOUSE,
+} SetupPage;
+
+// Setup opened on one of its pages; backing out of that page leaves it
+void setupMenuPage(SetupPage page);
 void setupMenu(void);
 void controlsMenu(void);  // Setup > Controls only
 

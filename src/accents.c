@@ -284,10 +284,11 @@ static Uint8 letterShade(const Canvas *c, int y)
 	return best != 0 ? best : 15;
 }
 
-// draws rows of "#" with their middle over column xCenter2 / 2, cut to the canvas
-static void drawPattern(Canvas *c, const char *const *rows, int y, int xCenter2, Uint8 shade)
+// draws up to count rows of "#" (a NULL row ends them early) with their
+// middle over column xCenter2 / 2, cut to the canvas
+static void drawPattern(Canvas *c, const char *const *rows, int count, int y, int xCenter2, Uint8 shade)
 {
-	for (int r = 0; r < 3 && rows[r] != NULL; ++r, ++y)
+	for (int r = 0; r < count && rows[r] != NULL; ++r, ++y)
 	{
 		const int w = (int)strlen(rows[r]);
 		const int x0 = (xCenter2 - w) / 2;
@@ -324,7 +325,7 @@ static bool buildLetter(unsigned int table, size_t f, char base, Mark mark, Canv
 	{
 		if (c->h + ph > CANVAS_H)
 			return true;
-		drawPattern(c, rows, c->h, c->w, letterShade(c, 0));
+		drawPattern(c, rows, 3, c->h, c->w, letterShade(c, 0));
 		c->h += ph;
 		return true;
 	}
@@ -341,9 +342,8 @@ static bool buildLetter(unsigned int table, size_t f, char base, Mark mark, Canv
 			memset(c->px, 0, sizeof(c->px));
 			c->w = (int)strlen(smallCapitals[i][1]);
 			c->h = 6;
-			drawPattern(c, rows, 0, c->w, shade);
-			drawPattern(c, &smallCapitals[i][1], 2, c->w, shade);
-			drawPattern(c, &smallCapitals[i][4], 5, c->w, shade);
+			drawPattern(c, rows, 3, 0, c->w, shade);
+			drawPattern(c, &smallCapitals[i][1], 4, 2, c->w, shade);
 			return true;
 		}
 	}
@@ -373,7 +373,7 @@ static bool buildLetter(unsigned int table, size_t f, char base, Mark mark, Canv
 		return true;
 
 	const int y = top > ph ? top - ph - 1 : 0;
-	drawPattern(c, rows, y, c->w, letterShade(c, top));
+	drawPattern(c, rows, 3, y, c->w, letterShade(c, top));
 	return true;
 }
 

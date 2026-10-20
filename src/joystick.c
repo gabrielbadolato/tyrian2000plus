@@ -54,6 +54,7 @@ static const char *assignment_to_icon(int j, const Joystick_assignment *assignme
 static void code_to_assignment(Joystick_assignment *assignment, const char *buffer);
 
 static void open_joysticks(void);
+static const char *power_level_name(int level);
 static void close_joysticks(bool save);
 
 int joystick_repeat_delay = 300; // milliseconds, repeat delay for buttons
@@ -609,12 +610,14 @@ static void open_joystick(int j, int device)
 		return;  // the slot stays taken, so it is not retried until reconnected
 	}
 
-	logInfo("Controller %d: vendor %04x, product %04x, type %d, rumble %s",
+	joystick[j].power_level = SDL_JoystickCurrentPowerLevel(joystick[j].handle);
+	logInfo("Controller %d: vendor %04x, product %04x, type %d, rumble %s, battery %s",
 		j,
 		SDL_JoystickGetVendor(joystick[j].handle),
 		SDL_JoystickGetProduct(joystick[j].handle),
 		(int)SDL_JoystickGetType(joystick[j].handle),
-		SDL_JoystickHasRumble(joystick[j].handle) ? "yes" : "no");
+		SDL_JoystickHasRumble(joystick[j].handle) ? "yes" : "no",
+		power_level_name(joystick[j].power_level));
 
 	if (joystick[j].controller != NULL)
 	{
@@ -687,6 +690,20 @@ bool joystick_take_lost(void)
 	return lost;
 }
 
+// for the log
+static const char *power_level_name(int level)
+{
+	switch (level)
+	{
+	case SDL_JOYSTICK_POWER_EMPTY:  return "empty";
+	case SDL_JOYSTICK_POWER_LOW:    return "low";
+	case SDL_JOYSTICK_POWER_MEDIUM: return "medium";
+	case SDL_JOYSTICK_POWER_FULL:   return "full";
+	case SDL_JOYSTICK_POWER_WIRED:  return "wired";
+	default:                        return "unknown";
+	}
+}
+
 // set by check_joystick_hotplug() when a controller's battery gets low
 static int joystick_low_battery = -1;
 
@@ -723,6 +740,11 @@ static void check_joystick_batteries(void)
 			continue;
 
 		const SDL_JoystickPowerLevel level = SDL_JoystickCurrentPowerLevel(joystick[j].handle);
+		if ((int)level != joystick[j].power_level)
+		{
+			logInfo("Controller %d: battery %s", j, power_level_name(level));
+			joystick[j].power_level = level;
+		}
 		if (level == SDL_JOYSTICK_POWER_LOW || level == SDL_JOYSTICK_POWER_EMPTY)
 		{
 			if (!joystick[j].battery_warned)

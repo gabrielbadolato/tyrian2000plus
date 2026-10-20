@@ -59,6 +59,7 @@ typedef struct
 	SDL_JoystickID instance_id;
 	bool rumble_failed; // already logged a rumble error for this controller
 	bool battery_warned; // already warned that the battery is low (until it charges)
+	int power_level;     // last SDL_JoystickPowerLevel logged
 	
 	Joystick_assignment assignment[JOYSTICK_ASSIGNMENTS][2]; // 0-3: directions, 4-10: actions
 	

@@ -46,7 +46,10 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - Nomes dos botões do controle nas telas de ajuda.
 - Teclado na tela para digitar com o controle o nome do jogo salvo e dos
   recordes, e aviso quando a bateria do controle está fraca.
-- "Continue" (Continuar) na tela de título: volta ao último jogo com um toque.
+- "Continue" (Continuar) na tela de título: volta ao último jogo com um toque,
+  e ao ponto exato da fase se o jogo fechou no meio dela.
+- "Replay" (Rever fase) na tela de título: assista de novo à última fase que
+  você jogou.
 - No menu de melhorias da nave, cada item mostra o dano (ou casco, escudo ou
   energia) em verde quando é melhor do que o da sua nave e em vermelho quando
   é pior.
@@ -185,7 +188,15 @@ Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
   idioma (Language), Check Updates, estatísticas (Statistics) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
   carregado (o jogo também salva "LAST LEVEL" ao chegar na nave depois de
-  cada fase e ao começar cada fase). Só aparece quando existe um.
+  cada fase e ao começar cada fase). Só aparece quando existe um. Se o jogo
+  fechou no meio de uma fase (janela fechada, Steam Deck desligado, travou),
+  o Continue volta àquele ponto da fase e pausa ali; leva alguns segundos,
+  porque o jogo repete a fase escondido até aquele ponto. Sair da fase pelo
+  menu dela continua sendo desistir da fase, como sempre.
+- **Tela de título > Replay (Rever fase):** mostra de novo a última fase que
+  você jogou (ela é gravada enquanto você joga, no lastlevel.rec da sua pasta
+  de usuário). Qualquer tecla ou botão para. Só aparece quando há uma fase
+  gravada.
 - **Setup > Sound > Music Sound (Som da música):** "Accurate" (Fiel, o
   padrão, Nuked OPL3) ou "Classic" (Clássico, o emulador que o OpenTyrian
   sempre usou).

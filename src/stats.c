@@ -35,6 +35,7 @@
 #include "joystick.h"
 #include "keyboard.h"
 #include "lang.h"
+#include "levelrec.h"
 #include "logging.h"
 #include "menus.h"
 #include "mouse.h"
@@ -238,7 +239,7 @@ static void saveStats(void)
 void stats_level_start(void)
 {
 	// demos and cheats do not count
-	levelCounting = !playDemo && !constantPlay && !constantDie;
+	levelCounting = !playDemo && !levelrec_watching() && !constantPlay && !constantDie;
 	levelTicks = 0;
 	levelStartCash = totalCash();
 	levelEpisode = episodeNum;

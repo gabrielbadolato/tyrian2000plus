@@ -99,6 +99,17 @@ pequenas e podem seguir as regras acima normalmente.
   (cópia dos saves da pasta do OpenTyrian2000, inclusive quando falha) e, se receber uma pasta com
   data/, tyrian.sav e tyrian.cfg reais, `tests/test_saves.c` (carrega e
   regrava os saves; devem sair idênticos).
+- Robustez: `tests/run_autoplay.sh <pasta-data>` (uns 90 min; só local, os
+  dados não vão ao CI) compila com AddressSanitizer/UBSan e roda
+  `tests/test_autoplay.c` (o modo "constant play" do jogo, -c, joga cada
+  episódio sozinho, invencível, nas dificuldades do menu e por dois caminhos
+  do mapa; relógio virtual, então uma fase leva segundos; um piloto mira no
+  inimigo mais baixo e, se a fase parar 1 min, tira da tela os que sobraram
+  como se tivessem fugido, com o pulo 254 e as flags que a fase espera) e
+  `tests/test_monkey.c` (teclas aleatórias desde a tela de título por 30 min
+  de jogo; Quit volta ao título). Rodar depois de mudanças grandes ou antes de
+  release grande. A primeira rodada (2026-10-20) achou a leitura além de
+  `mainMenuHelp` em `JE_drawMainMenuHelpText` (herdada do upstream).
 - Pastas do usuário: portátil (ao lado do exe) se existir `opentyrian.cfg` lá;
   senão `%APPDATA%/Tyrian2000Plus` ou `~/.config/tyrian2000plus` (desde o PR
   #24; antes era a pasta do OpenTyrian2000). `migrateUserDir()` em

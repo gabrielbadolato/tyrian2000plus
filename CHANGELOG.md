@@ -15,7 +15,7 @@ change is in this repository's git log.
   and random keys were pressed through all the menus. It found one error,
   now fixed: the help line at the bottom of the ship menu read past the end
   of its text table (inherited from OpenTyrian2000). The tests are in
-  `tests/run_autoplay.sh` for future versions.
+  `tests/run_autoplay.sh` for future versions (#38).
 
 ## v1.1 (2026-10-20)
 

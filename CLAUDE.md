@@ -120,7 +120,7 @@ Controller Map: Setup > Controls > "Controller Map..." mostra um controle
 genérico desenhado pixel a pixel (`src/padmap.c`, sem gráficos do jogo nem
 formato de marca), com a função de cada botão segundo o mapeamento atual
 (inclui "Auto Fire"). Os botões acendem quando apertados; sai segurando B por 1 s (assim B e View também podem ser testados), com Esc ou com clique. Sem controle,
-mostra o layout padrão (`joystick_default_gamepad_assignments()`).
+mostra o layout padrão (`joystick_default_gamepad_assignments()`). Com controle Xbox ou PlayStation, os botões redondos, Back/Start e os gatilhos do desenho levam o ícone do botão (`controlGlyph()`); os bumpers não, porque quase não aparecem acima do corpo.
 
 Menu da nave: Options tem "Setup..." (antes do Done), que abre o mesmo
 `setupMenu()` da tela de título e volta com `returnToItemScreen()`

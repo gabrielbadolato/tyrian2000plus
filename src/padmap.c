@@ -36,6 +36,7 @@
 #include "palette.h"
 #include "picload.h"
 #include "sndmast.h"
+#include "sprite.h"
 #include "vga256d.h"
 #include "video.h"
 
@@ -297,17 +298,41 @@ static void buttonColors(bool assigned, bool pressed, int hue, Uint8 *fill, Uint
 	}
 }
 
-static void drawControl(SDL_Surface *surface, const PadControl *control, bool assigned, bool pressed)
+// the button's icon (padglyph.h) for this controller, 0 if it has none
+static unsigned char controlGlyph(const PadControl *control, int j)
+{
+	if (control->shape == SHAPE_DPAD || control->shape == SHAPE_STICK)
+		return 0;
+
+	const unsigned char glyph = (unsigned char)joystick_assignment_icon(j, &control->inputs[0])[0];
+	return is_padglyph(glyph) && sprite_exists(TINY_FONT, fontMap[glyph]) ? glyph : 0;
+}
+
+// draws an icon of the small font centered on (x, y)
+static void drawGlyph(SDL_Surface *surface, int x, int y, unsigned char glyph, Uint8 hue, Sint8 value)
+{
+	const Sprite *icon = sprite(TINY_FONT, fontMap[glyph]);
+	blit_sprite_hv(surface, x - icon->width / 2, y - icon->height / 2, TINY_FONT, fontMap[glyph], hue, value);
+}
+
+static void drawControl(SDL_Surface *surface, const PadControl *control, bool assigned, bool pressed, unsigned char glyph)
 {
 	Uint8 fill, light, dark;
 	buttonColors(assigned, pressed, 13, &fill, &light, &dark);
 
 	const int x = control->x, y = control->y;
 
+	// same colors as the drawn buttons (the icon shades are 4, 7 and 9)
+	const Uint8 glyphHue = pressed ? 14 : assigned ? (control->shape == SHAPE_FACE ? 13 : 5) : 3;
+	const Sint8 glyphValue = pressed ? 5 : assigned ? 2 : -2;
+
 	switch (control->shape)
 	{
 	case SHAPE_FACE:
-		drawDisc(surface, x, y, 4, fill, light, dark);
+		if (glyph != 0)
+			drawGlyph(surface, x, y, glyph, glyphHue, glyphValue);
+		else
+			drawDisc(surface, x, y, 4, fill, light, dark);
 		break;
 
 	case SHAPE_STICK:
@@ -331,6 +356,11 @@ static void drawControl(SDL_Surface *surface, const PadControl *control, bool as
 		break;
 
 	case SHAPE_PILL:
+		if (glyph != 0)
+		{
+			drawGlyph(surface, x, y, glyph, glyphHue, glyphValue);
+			break;
+		}
 		buttonColors(assigned, pressed, 5, &fill, &light, &dark);
 		fill_rectangle_xy(surface, x - 4, y - 1, x + 4, y + 2, COLOR_OUTLINE);
 		fill_rectangle_xy(surface, x - 3, y - 2, x + 3, y + 3, COLOR_OUTLINE);
@@ -349,6 +379,11 @@ static void drawControl(SDL_Surface *surface, const PadControl *control, bool as
 		const int bottom = pressed ? 10 : assigned ? 2 : 4;
 
 		drawShaded(surface, inside, MAX(x1, x < 160 ? 100 : 160), y1, MIN(x2, x < 160 ? 160 : 220), y2, hue, top, bottom);
+
+		// the name printed on the trigger, in the part above the shoulder
+		// (too little of the shoulder shows above the body for one)
+		if (glyph != 0 && !shoulder)
+			drawGlyph(surface, x, y1 + 4, glyph, hue, pressed ? 1 : assigned ? 5 : 1);
 		break;
 	}
 	}
@@ -457,13 +492,13 @@ void drawControllerMap(SDL_Surface *surface, int j)
 	{
 		const PadControl *control = &controls[i];
 		if (control->shape == SHAPE_TRIGGER)
-			drawControl(surface, control, controlActions(control, assignments) != 0, controlPressed(control, j));
+			drawControl(surface, control, controlActions(control, assignments) != 0, controlPressed(control, j), controlGlyph(control, j));
 	}
 	for (size_t i = 0; i < COUNTOF(controls); ++i)
 	{
 		const PadControl *control = &controls[i];
 		if (control->shape == SHAPE_SHOULDER)
-			drawControl(surface, control, controlActions(control, assignments) != 0, controlPressed(control, j));
+			drawControl(surface, control, controlActions(control, assignments) != 0, controlPressed(control, j), controlGlyph(control, j));
 	}
 
 	drawShaded(surface, inBody, 98, 68, 222, 148, 3, 11, 5);
@@ -474,7 +509,7 @@ void drawControllerMap(SDL_Surface *surface, int j)
 		const bool pressed = controlPressed(control, j);
 
 		if (control->shape != SHAPE_TRIGGER && control->shape != SHAPE_SHOULDER)
-			drawControl(surface, control, controlActions(control, assignments) != 0, pressed);
+			drawControl(surface, control, controlActions(control, assignments) != 0, pressed, controlGlyph(control, j));
 	}
 
 	for (size_t i = 0; i < COUNTOF(controls); ++i)

@@ -415,7 +415,7 @@ def main():
     if args[0].startswith('--fix='):
         # what a look at every entry found (tests/gallery_catalog_fix.txt):
         # "hide 1:66" (not shown), "split 1:66" (each group of pieces that
-        # touch is an enemy of its own), "rows", "into", "stack" (see below),
+        # touch is an enemy of its own), "rows", "into", "join", "stack" (see below),
         # by the enemyDat index of a piece
         with open(args.pop(0)[6:]) as f:
             for line in f:
@@ -550,6 +550,19 @@ def main():
             e['types'] |= b['types']
             if b['order'] < e['order']:
                 e['order'], e['episode'] = b['order'], b['episode']
+        elif what == 'join':
+            # "join 1:66 1:70 12 15": the enemy with 1:70 is a part of the one
+            # with 1:66, drawn 12 pixels right and 15 down of its corner
+            b = next((r for r in entries.values() if keys[1] in r['types']), None)
+            if b is None or b is e or len(keys) != 4:
+                print('fix: cannot join %d:%d to %d:%d' % (keys[1] + keys[0]))
+                continue
+            dx, dy = keys[2][0], keys[3][0]
+            del entries[e['look']], entries[b['look']]
+            parts = e['parts'] + [p[:4] + (p[4] + dx, p[5] + dy) + p[6:] for p in b['parts']]
+            lk = look(clean([p[1:] for p in parts]))
+            entries[lk] = dict(e, look=lk, parts=parts, types=e['types'] | b['types'],
+                               order=min(e['order'], b['order']))
         elif what == 'hide':
             e['hidden'] = True
         elif what == 'once':

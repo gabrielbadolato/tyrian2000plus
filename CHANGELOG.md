@@ -14,17 +14,17 @@ change is in this repository's git log.
   shields, generators, special weapons and enemies you have come across,
   drawn with the game's own pictures, with their numbers (damage, armor,
   price) and, for the enemies, how many you destroyed and where you met them
-  first. The enemies are a fixed list of the game's own (about 350, each one
+  first. The enemies are a fixed list of the game's own (about 200, each one
   once, the pieces of a boss or of a building together, without names: the
-  game has none), and what you have
+  game has none; shots and scenery such as rocks are left out), and what you have
   not seen yet is a dark shape. It fills up as you play, in gallery.cfg next
   to the saves (tyrian.sav does not change); keyboard, controller (LB/RB
   change the page), mouse and touch. The statistics moved into it, as its
   last page (Setup no longer has "Statistics...").
+  The enemies move in their pictures as they do in the levels.
   Enter (A on a controller, or a click on the picture) shows the chosen
-  ship, weapon, sidekick or enemy in motion: a weapon fired by a ship, at any power from 1 to 11 (and in
-  both modes for rear weapons), a sidekick firing, a ship flying, an enemy
-  animated as in the levels. The enemies page can show one episode at a
+  ship, weapon or sidekick in motion: a weapon fired by a ship, at any power from 1 to 11 (and in
+  both modes for rear weapons), a sidekick firing, a ship flying. The enemies page can show one episode at a
   time (E, or Y on a controller).
 
 ## v1.5 (2026-10-21)

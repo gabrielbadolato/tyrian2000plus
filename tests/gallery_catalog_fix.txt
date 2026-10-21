@@ -6,7 +6,8 @@
 #   rows  a        each row of pieces is one (things in a line, one over the other)
 #   banks a        each group of pieces from one sprite bank is one
 #   once  a        each picture once (the same enemy twice, side by side)
-#   into  a b      the enemy with b is a part of the one with a
+#   into  a b      the enemy with b is a part of the one with a (or the same enemy)
+#   join  a b x y  b is a part of a, drawn x right and y down of a's corner
 #   stack a b ...  rows that come one at a time, top to bottom: one enemy
 
 stack 1:366 1:369 1:372 1:377 1:383  # a boss that comes row by row (episode 2)
@@ -26,3 +27,157 @@ split 5:1024  # two buildings apart
 hide 5:1245   # dots too small to show
 hide 5:1261
 hide 5:1262
+
+# the same enemy twice (same pictures, or its animation started elsewhere)
+into 1:10 1:12
+into 1:5 1:11
+into 1:15 1:194
+into 1:266 1:286
+into 1:462 1:135
+into 1:543 1:592
+into 1:543 4:41
+into 1:826 4:826
+into 1:722 5:732
+into 4:255 4:724
+into 4:536 4:725
+into 4:640 4:722
+into 1:317 1:323
+into 1:317 5:1011
+into 1:35 1:32
+# the same enemy facing the other way: once
+into 1:24 1:25
+into 1:20 1:18
+into 1:232 1:228
+into 1:753 1:756
+into 1:670 1:662
+into 1:735 1:736
+into 4:203 4:207
+into 4:223 4:224
+into 4:260 4:265
+into 4:44 4:43
+into 4:66 4:68
+into 4:49 4:55
+into 4:345 4:347
+into 4:351 4:354
+into 4:527 4:526
+into 5:1205 5:1221
+into 5:1259 5:1260
+into 1:73 1:66
+into 1:792 1:793
+into 1:568 1:564   # the same balls around a core, one without it
+# a ship whose body comes under its wings on the ground
+join 1:26 1:31 12 15
+# not enemies (Gabriel, 2026-10-21): shots other enemies launch, fire and lightning
+hide 1:2
+hide 1:199
+hide 1:454
+hide 1:455
+hide 1:458
+hide 1:460
+hide 1:463
+hide 1:479
+hide 1:501
+hide 1:511
+hide 1:515
+hide 1:532
+hide 1:543
+hide 1:556
+hide 1:592
+hide 1:596
+hide 1:709
+hide 1:710
+hide 1:752
+hide 4:41
+hide 4:182
+hide 4:257
+hide 4:337
+hide 4:640
+hide 5:799
+hide 1:678
+hide 1:713
+hide 4:713
+hide 5:1263
+# not enemies: scenery that only stands there (rocks, floor plates, walls, buildings that do not shoot)
+hide 1:121
+hide 1:125
+hide 1:516
+hide 1:32
+hide 1:35
+hide 1:42
+hide 1:73
+hide 1:66
+hide 1:313
+hide 1:272
+hide 1:573
+hide 1:269
+hide 1:275
+hide 1:287
+hide 1:309
+hide 1:338
+hide 1:343
+hide 1:326
+hide 1:145
+hide 1:332
+hide 1:768
+hide 1:745
+hide 1:750
+hide 1:764
+hide 1:422
+hide 1:276
+hide 1:780
+hide 1:586
+hide 1:434
+hide 1:106
+hide 1:109
+hide 1:289
+hide 1:293
+hide 1:631
+hide 1:87
+hide 1:80
+hide 4:215
+hide 4:221
+hide 4:251
+hide 4:33
+hide 4:37
+hide 4:39
+hide 4:319
+hide 4:289
+hide 4:784
+hide 1:440
+hide 1:138
+hide 1:444
+hide 5:1189
+hide 5:1187
+hide 5:1191
+hide 5:1160
+hide 5:1197
+hide 5:1201
+hide 5:1213
+hide 5:1199
+hide 5:1258
+hide 5:1256
+hide 1:317
+hide 1:321
+hide 1:323
+hide 5:1011
+hide 1:260
+hide 1:266
+hide 1:263
+hide 1:135
+hide 1:286
+hide 1:660
+hide 1:661
+# more of them, seen in the list: small missiles and fireballs, a wall of
+# fire, a column of water, plates and a piece of a wall
+hide 4:43
+hide 4:255
+hide 4:516
+hide 4:536
+hide 5:1172
+hide 5:1220
+hide 4:366
+hide 5:1218
+hide 1:142
+hide 1:737
+hide 4:225
+hide 4:249

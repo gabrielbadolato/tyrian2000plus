@@ -38,7 +38,9 @@
  * "frames=<file.tsv>" right after the data folder writes the animation of
  * every enemy of the data of episodes 1-3, 4 and 5 (for
  * tests/make_gallery_catalog.py --frames=): dataset, enemyDat index, ani,
- * animate, then the pictures (egraphic).
+ * animate, then the pictures (egraphic), and after them armor, the three
+ * guns, xmove, ymove, xaccel, yaccel, xcaccel, ycaccel, elaunchfreq,
+ * elaunchtype and value.
  *
  *   XDG_CONFIG_HOME=<dir> test_gallery <data-dir> wait wait shot=a.bmp Tab shot=b.bmp
  */
@@ -219,6 +221,10 @@ static int showScreen(int argc, char **argv)
 				fprintf(f, "%d\t%d\t%u\t%u", datasets[d], i, enemyDat[i].ani, enemyDat[i].animate);
 				for (int k = 0; k < 20; ++k)
 					fprintf(f, "\t%u", enemyDat[i].egraphic[k]);
+				fprintf(f, "\t%u\t%u\t%u\t%u\t%d\t%d\t%d\t%d\t%d\t%d\t%u\t%u\t%d",
+				        enemyDat[i].armor, enemyDat[i].tur[0], enemyDat[i].tur[1], enemyDat[i].tur[2],
+				        enemyDat[i].xmove, enemyDat[i].ymove, enemyDat[i].xaccel, enemyDat[i].yaccel,
+				        enemyDat[i].xcaccel, enemyDat[i].ycaccel, enemyDat[i].elaunchfreq, enemyDat[i].elaunchtype, enemyDat[i].value);
 				fputc('\n', f);
 			}
 		}
@@ -440,7 +446,7 @@ static int recordTest(void)
 	for (size_t k = 0; k < COUNTOF(catalogTypes) && other < 0; ++k)
 	{
 		const CatalogType *t = &catalogTypes[k];
-		if (t->dataset != 1 || catalogEnemies[t->enemy].parts != 1)
+		if (t->dataset != 1 || t->enemy == CATALOG_HIDDEN || catalogEnemies[t->enemy].parts != 1)
 			continue;
 		if (one < 0)
 			one = (int)k;

@@ -306,7 +306,8 @@ e `simulate_player_shots`, como `JE_weaponViewFrame`, numa tela própria
 trocando `VGAScreen`; `demoStart/demoEnd` guardam e devolvem `player[0]`,
 `power`, `shotRepeat`), potência 1-11 em cima/baixo, modo da arma de trás
 em Espaço/Y; sidekick atirando dos dois lados; nave voando com inclinação;
-inimigo animado; lados passam ao próximo. Inimigos animados também no
+lados passam ao próximo. Inimigos e a aba Other não abrem o palco
+(Gabriel, galeria-8/9: a figura do painel já é animada). Inimigos animados no
 painel (`partPicture()`, quadros de `catalogAnims`/`catalogFrames`, tirados
 do enemyDat por `test_gallery <data> frames=<arq>`). Filtro por episódio na
 aba Enemies (E / Y / clique na contagem, `enemyEpisode`). Abas Ships/Weapons/Sidekicks/Other (escudos,
@@ -329,7 +330,7 @@ peça do mapa que ainda está lá também entra (construção que vem fileira po
 fileira; inimigos ligados que chegam um a um são formação, não entram). A
 coisa só é gravada quando todas as peças somem (destruída se a última foi
 destruída) ou no fim da fase. Lista fixa (pedido do Gabriel, 2026-10-21):
-`src/gallery_catalog.h` tem os ~350 inimigos do jogo (aparência + índices do
+`src/gallery_catalog.h` tem os ~200 inimigos do jogo (aparência + índices do
 enemyDat das peças, por "dataset": 1 = episódios 1-3, 4, 5), gerado por
 `tests/make_gallery_catalog.py` a partir de `GALLERY_DUMP=<arq.tsv>` do
 `test_autoplay` (todos os episódios × dificuldades 1,2,3,4,6,8 × 2 caminhos;
@@ -343,8 +344,15 @@ estão todas noutra entrada, pedaços do mapa que sempre se encontram no
 mesmo lugar do mapa (`join_map`), tira repetidos e figuras vazias com
 `--drop=`). O que a revisão olho a olho achou fica em
 `tests/gallery_catalog_fix.txt` (`--fix=`: hide, split, rows, banks, once,
-into, stack; "stack" monta chefe que chega fileira por fileira no céu, como
-o da GYGES), pela peça (dataset:índice), então vale para a próxima coleta.
+into, join, stack; "stack" monta chefe que chega fileira por fileira no céu, como
+o da GYGES; "into" também junta o mesmo inimigo repetido ou virado para o
+outro lado; "join a b x y" põe b como parte de a), pela peça (dataset:índice), então vale para a próxima coleta.
+Fora da lista (escolha do Gabriel, 2026-10-21): tiros que outro inimigo lança,
+fogo/raios e cenário que só fica parado (pedras, placas, paredes, prédios
+que não atiram), com "hide". Variações de cor ficam: são inimigos com
+blindagem e armas diferentes. Para achar repetidos, comparar as figuras
+pixel a pixel (também espelhadas) e conferir olho a olho; `test_gallery
+<data> frames=` também escreve blindagem, armas, movimento e o que lança.
 Peça escondida vai na lista com `CATALOG_HIDDEN`: a Galeria não a mostra
 nem cria entrada para ela. Comando completo: `make_gallery_catalog.py
 --frames=<frames.tsv> --fix=tests/gallery_catalog_fix.txt

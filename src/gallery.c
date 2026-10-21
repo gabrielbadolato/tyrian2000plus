@@ -1886,13 +1886,6 @@ static void demoFrame(const Entry *entry, unsigned int tick, unsigned int level,
 		((Uint8 *)VGAScreen->pixels)[(STAGE_Y1 + y) * VGAScreen->pitch + STAGE_X1 + demoStar[i][0]] = demoStar[i][2] == 3 ? 0x0e : demoStar[i][2] == 2 ? 0x0a : 0x07;
 	}
 
-	if (entry->kind == KIND_ENEMY)
-	{
-		drawEntryPicture(entry, tick);
-		showCanvas(VGAScreen, STAGE_X1 + 4, STAGE_Y1 + 4, w - 8, h - 8, 4, false, false);
-		return;
-	}
-
 	// a ship that sways, the others are shown by the USP Talon
 	const unsigned int ship = entry->kind == KIND_SHIP ? entry->id : 1;
 	const int sway = entry->kind == KIND_SHIP ? 40 : 0;
@@ -2117,10 +2110,9 @@ void galleryScreen(void)
 				snprintf(help, sizeof(help), tr("Left/Right: the next. %s: back."), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		}
 		else if (j >= 0 && tab == GALLERY_ENEMIES)
-			snprintf(help, sizeof(help), tr("%s%s: page. %s: see it. %s: episode. %s: back."),
+			snprintf(help, sizeof(help), tr("%s%s: page. %s: episode. %s: back."),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
-			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_Y),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
 		else if (j >= 0 && tab != GALLERY_STATS && tab != GALLERY_OTHER)
@@ -2139,7 +2131,7 @@ void galleryScreen(void)
 		else if (view)
 			snprintf(help, sizeof(help), "%s", tr("Left/Right: the next. Esc: back."));
 		else if (tab == GALLERY_ENEMIES)
-			snprintf(help, sizeof(help), "%s", tr("Tab: page. Enter: see it. E: episode. Esc: back."));
+			snprintf(help, sizeof(help), "%s", tr("Tab: page. Arrows: choose. E: episode. Esc: back."));
 		else if (tab == GALLERY_STATS)
 			snprintf(help, sizeof(help), "%s", tr("Tab: page. Up/Down: scroll. Esc: back."));
 		else if (tab == GALLERY_OTHER)
@@ -2415,7 +2407,7 @@ void galleryScreen(void)
 				demoReset();
 			}
 		}
-		else if (openView && !view && entryCount > 0 && entries[cursor].seen && tab != GALLERY_OTHER && demoStart())
+		else if (openView && !view && entryCount > 0 && entries[cursor].seen && tab != GALLERY_OTHER && tab != GALLERY_ENEMIES && demoStart())
 		{
 			view = true;
 			viewTick = 0;

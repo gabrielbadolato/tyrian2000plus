@@ -247,6 +247,14 @@ static int window_get_display_index(void)
 	return SDL_GetWindowDisplayIndex(main_window);
 }
 
+// The scaler's output size, but never under 640x400: "None" (the default) is only 320x200
+// and the scaling mode enlarges it anyway.
+static void window_set_scaler_size(void)
+{
+	SDL_SetWindowSize(main_window, MAX((int)scalers[scaler].width, 2 * vga_width),
+	                               MAX((int)scalers[scaler].height, 2 * vga_height));
+}
+
 static void window_center_in_display(int display_index)
 {
 	int win_w, win_h;
@@ -342,7 +350,7 @@ void reinit_fullscreen(int new_display)
 	}
 
 	SDL_SetWindowFullscreen(main_window, SDL_FALSE);
-	SDL_SetWindowSize(main_window, scalers[scaler].width, scalers[scaler].height);
+	window_set_scaler_size();
 
 	if (fullscreen_display == -1)
 	{
@@ -420,7 +428,8 @@ bool init_scaler(unsigned int new_scaler)
 		(void)w; (void)h;
 		window_fit_page();
 #else
-		SDL_SetWindowSize(main_window, w, h);
+		(void)w; (void)h;
+		window_set_scaler_size();
 		window_center_in_display(window_get_display_index());
 #endif
 	}

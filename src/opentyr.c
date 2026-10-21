@@ -1468,6 +1468,7 @@ void setupMenuPage(SetupPage page)
 				{
 					if (pickerSelectedIndex != scaler)
 					{
+						scaler_chosen = true;
 						const int oldScaler = scaler;
 						if (!init_scaler(pickerSelectedIndex) &&  // try new scaler
 						    !init_scaler(oldScaler))              // revert on fail

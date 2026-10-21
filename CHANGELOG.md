@@ -8,6 +8,12 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Auto Fire starts firing**: with Auto Fire on, each level (and a new or
+  loaded game) now starts firing, without a first press of fire. A press
+  still stops and restarts it.
+
 ## v1.2 (2026-10-20)
 
 - **Statistics**: Setup > "Statistics..." shows the totals of all your games

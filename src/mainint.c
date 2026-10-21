@@ -81,10 +81,10 @@ bool pause_pressed = false, ingamemenu_pressed = false;
 static bool autoFireWaitRelease = false;  // Auto Fire: ignore a fire press still held from the pause menu
 static bool autoFiring[2], fireWasHeld[2];  // Auto Fire: per player
 
-// stops Auto Fire, so a level does not start firing on its own
+// with Auto Fire on, a level starts firing (a press of fire stops it)
 void resetAutoFire(void)
 {
-	autoFiring[0] = autoFiring[1] = false;
+	autoFiring[0] = autoFiring[1] = autoFireToggle;
 	autoFireWaitRelease = true;
 }
 

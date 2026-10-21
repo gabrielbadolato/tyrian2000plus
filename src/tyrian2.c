@@ -729,7 +729,7 @@ start_level_first:
 	fade_palette(colors, 50, 0, 255);
 
 	joystick_take_lost();  // only controllers lost during the level pause it
-	resetAutoFire();  // a new level (or game) starts without firing
+	resetAutoFire();  // a new level (or game) starts firing if Auto Fire is on
 
 	if (explosionSpriteSheet.data == NULL)
 		JE_loadCompShapes(&explosionSpriteSheet, '6');

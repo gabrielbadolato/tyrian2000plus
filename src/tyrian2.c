@@ -26,6 +26,7 @@
 #include "file.h"
 #include "font.h"
 #include "fonthand.h"
+#include "gallery.h"
 #include "game_menu.h"
 #include "joystick.h"
 #include "keyboard.h"
@@ -686,6 +687,7 @@ start_level:
 	mouseSetRelative(false);
 
 	stats_level_end();  // before galagaMode changes twoPlayerMode
+	gallery_level_end();
 
 	levelrec_level_end();
 	smooth_level_end();
@@ -1084,11 +1086,13 @@ start_level_first:
 	BKwrap3 = BKwrap3to = &megaData3.mainmap[1][0];
 
 	stats_level_start();
+	gallery_level_start();
 	smooth_level_begin();
 
 level_loop:
 
 	stats_level_frame();
+	gallery_level_frame();
 	levelrec_frame();
 
 	//tempScreenSeg = game_screen; /* side-effect of game_screen */
@@ -1614,6 +1618,7 @@ level_loop:
 											{
 												enemyAvail[temp3] = 1;
 												enemyKilled++;
+												gallery_enemy_killed(temp3);
 											}
 
 											enemy[temp3].aniwhenfire = 0;
@@ -1720,6 +1725,7 @@ level_loop:
 										{
 											enemyAvail[temp2] = 1;
 											enemyKilled++;
+											gallery_enemy_killed(temp2);
 										}
 
 										if (enemyDat[enemy[temp2].enemytype].esize == 1)
@@ -2678,6 +2684,7 @@ new_game:
 								itemAvail[i][j++] = temp;
 							itemAvailMax[i] = j;
 						}
+						gallery_shop_items();
 
 						// Tyrian 2000+: also save "Last Level" on arriving at the ship, so that
 						// Continue comes back here instead of to the start of the level just
@@ -4142,6 +4149,7 @@ Sint16 JE_newEnemy(int enemyOffset, Uint16 eDatI, Sint16 uniqueShapeTableI)
 		if (enemyAvail[i] == 1)
 		{
 			enemyAvail[i] = JE_makeEnemy(&enemy[i], eDatI, uniqueShapeTableI);
+			gallery_enemy_made(i);
 			return i + 1;
 		}
 	}
@@ -4465,6 +4473,7 @@ void JE_createNewEventEnemy(JE_byte enemyTypeOfs, JE_word enemyOffset, Sint16 un
 	tempW = eventRec[eventLoc-1].eventdat + enemyTypeOfs;
 
 	enemyAvail[b-1] = JE_makeEnemy(&enemy[b-1], tempW, uniqueShapeTableI);
+	gallery_enemy_made(b-1);
 
 	// When T2000 gives an X position of -200, what it actually wants is a random X position...
 	if (eventRec[eventLoc-1].eventdat2 == -200)

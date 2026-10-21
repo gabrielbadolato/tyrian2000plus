@@ -28,6 +28,7 @@
 #include "editship.h"
 #include "episodes.h"
 #include "file.h"
+#include "gallery.h"
 #include "helptext.h"
 #include "joystick.h"
 #include "keyboard.h"
@@ -279,6 +280,10 @@ int main(int argc, char *argv[])
 
 	// record and redraw every frame, and draw a picture halfway between frames
 	smooth_test_enable(true, 32768);
+
+	// the gallery records what the levels make (constant play normally does not)
+	gallery_test_record = true;
+	gallery_load();
 
 	if (init_audio())
 		loadSndFile(false);

@@ -10,6 +10,14 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Gallery**: Setup > "Gallery..." shows the ships, weapons, sidekicks,
+  shields, generators, special weapons and enemies you have come across,
+  drawn with the game's own pictures, with their numbers (damage, armor,
+  price) and, for the enemies, how many you destroyed and where you met them
+  first. What you have not seen yet is a dark shape; the pieces of a boss
+  show together. It fills up as you play, in gallery.cfg next to the saves
+  (tyrian.sav does not change); keyboard, controller (LB/RB change the page),
+  mouse and touch.
 - **Browser: the mouse stays in the game**: during a level, once the mouse is
   used (a click, or a key after moving it), the page holds the pointer, so the
   ship keeps following the mouse instead of stopping when the pointer reaches

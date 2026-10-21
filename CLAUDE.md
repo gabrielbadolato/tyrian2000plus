@@ -292,6 +292,31 @@ bate um recorde que já existia, a tela de fim de fase original
 (`JE_endLevelAni`) ganha a linha "New level record!". A tela de resultado
 nova (B3) foi descartada: o jogo já mostra % destruídos e datacubes ali.
 
+Galeria: Setup > "Gallery..." (`galleryScreen()` em `src/gallery.c`, ideia
+aprovada pelo Gabriel em 2026-10-21; versão enxuta primeiro, a maior depois
+se ele gostar: animação, demonstração da arma, nomes nossos para chefes,
+filtro por episódio). Abas Ships/Weapons/Sidekicks/Other (escudos,
+geradores, especiais)/Enemies, com as imagens do jogo (sprites desenhados
+num `Canvas` próprio, decodificador igual ao `blit_sprite2`). Itens: os que
+os menus da nave oferecem (a Galeria lê de novo as listas "]I" de
+levelsN.dat para saber quais existem; o que falta aparece como sombra "???")
+e os que os jogadores tiveram; o que nenhum menu oferece (naves secretas,
+especiais) só aparece depois de visto. Registro: `gallery_shop_items()` ao
+carregar o itemAvail (evento 'I' em `JE_loadMap`), itens dos jogadores no
+começo e fim da fase, `gallery_enemy_made(slot)` nos dois `JE_makeEnemy` e
+`gallery_enemy_killed(slot)` junto dos `enemyKilled++`. Inimigo = aparência
+(banco, sprite, tamanho), porque os dados dos episódios 4 e 5 são outros;
+no quadro seguinte (`gallery_level_frame`) junta as peças feitas no mesmo
+quadro que se tocam, com o mesmo linknum ou ambas no chão (slots 25-49 e
+75-99): chefe e construções viram uma entrada; armadura 0 (cenário, não é
+alvo) e peça invisível ficam de fora. Construção feita em várias linhas, em
+quadros diferentes, ainda vira várias entradas. Fica em `gallery.cfg` na
+pasta do usuário (tyrian.sav não muda); só lê o jogo, não muda nada nem a
+gravação da fase. Demos, Replay e `-c` não gravam (os testes ligam
+`gallery_test_record`). Teste: `tests/test_gallery.c` (sem dados; com dados
+mostra a tela e tira prints: `test_gallery <data> wait shot=a.bmp Tab ...`,
+ou `setup` primeiro para abrir o Setup).
+
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).
 

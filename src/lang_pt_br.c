@@ -777,6 +777,34 @@ const LangEntry lang_pt_br[] =
 	{ "Destroyed", "Destruídos" },
 	{ "New level record!", "Novo recorde da fase!" },
 
+	// ---- Gallery (Setup > Gallery...); the title is in the big font ----
+	{ "Gallery...", "Galeria..." },
+	{ "The ships, weapons and enemies you have found.", "As naves, armas e inimigos que você já encontrou." },
+	{ "Gallery", "Galeria" },
+	{ "Ships", "Naves" },
+	{ "Weapons", "Armas" },
+	{ "Other", "Outros" },
+	{ "Enemies", "Inimigos" },
+	{ "Enemy", "Inimigo" },
+	{ "Large enemy", "Inimigo grande" },
+	{ "Not found yet.", "Ainda não encontrado." },
+	{ "Price %u", "Preço %u" },
+	{ "Front weapon", "Arma frontal" },
+	{ "Rear weapon", "Arma traseira" },
+	{ "Front or rear weapon", "Arma frontal ou traseira" },
+	{ "Damage %u at power 1", "Dano %u na potência 1" },
+	{ "Damage %u at power 11", "Dano %u na potência 11" },
+	{ "Special weapon", "Arma especial" },
+	{ "Indestructible", "Indestrutível" },
+	{ "Armor: %u", "Blindagem: %u" },
+	{ "Destroyed: %u", "Destruídos: %u" },
+	{ "Met in %s", "Visto em %s" },
+	{ "Found: %u", "Achados: %u" },
+	{ "Found: %u of %u", "Achados: %u de %u" },
+	{ "Meet them in the levels.", "Encontre-os nas fases." },
+	{ "%s%s: page. %s: back.", "%s%s: página. %s: voltar." },
+	{ "Tab: page. Arrows: choose. Esc: back.", "Tab: página. Setas: escolher. Esc: voltar." },
+
 	// ---- Controller help: phrases of the help texts that padHelpText()
 	// swaps for the controller's buttons (first the phrase in the help
 	// texts above, then what it becomes) ----

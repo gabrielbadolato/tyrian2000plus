@@ -571,7 +571,7 @@ const LangEntry lang_pt_br[] =
 	{ "Language:", "Idioma:" },
 	{ "Choose the language of the menus and help.", "Escolhe o idioma dos menus e da ajuda." },
 	{ "Automatic", "Automático" },
-	{ "Check Updates:", "Ver atualizações:" },
+	{ "Check Updates:", "Aviso de versão:" },
 	{ "Look for a new version when the game starts.", "Procura uma versão nova ao abrir o jogo." },
 	{ "About...", "Sobre..." },
 	{ "What this is, where it came from, and credits.", "O que é, de onde veio, e os créditos." },

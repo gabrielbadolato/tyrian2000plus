@@ -209,7 +209,7 @@ os controles de toque sumirem de novo.
 
 - **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
   (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
-  idioma (Language), Check Updates, jogos salvos (Saved Games), rever a
+  idioma (Language), aviso de versão (Check Updates), jogos salvos (Saved Games), rever a
   última fase (Replay Last Level), estatísticas (Statistics), novidades
   (What's New) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
@@ -265,7 +265,7 @@ os controles de toque sumirem de novo.
   inglês. "Automatic" (o padrão) segue o idioma do sistema; em português, o
   Setup aparece como "Configurações" e a opção como "Idioma". As histórias dos
   datacubes continuam em inglês.
-- **Setup > Check Updates:** ao abrir, o jogo pergunta ao GitHub qual é a
+- **Setup > Check Updates (Aviso de versão):** ao abrir, o jogo pergunta ao GitHub qual é a
   última versão publicada. Se houver uma mais nova, aparece um aviso no canto
   da tela de título, e o About mostra os links para baixar (itch.io e GitHub). A mesma
   resposta traz as notas de cada versão para a tela de novidades, guardadas

@@ -419,7 +419,7 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_SOUND, "Sound...", "Change the sound settings." },
 				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
 				{ MENU_ITEM_GAME_SPEED, "Game Speed:", "Change how fast the levels run.", getGameSpeedPickerItemsCount, getGameSpeedPickerItem },
-				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
+				{ MENU_ITEM_JUKEBOX, "Jukebox...", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
 				{ MENU_ITEM_LANGUAGE, "Language:", "Choose the language of the menus and help.", getLanguagePickerItemsCount, getLanguagePickerItem },
 #ifndef __EMSCRIPTEN__  // the browser version is always the newest one

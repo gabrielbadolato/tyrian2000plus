@@ -10,6 +10,13 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Smooth Motion is on by default.** If you turn it off in Setup > Graphics,
+  it stays off. (Version 1.4 saved "off" for everyone, so that saved setting
+  no longer counts unless it was picked in the menu.)
+- **Title screen with room to breathe**: the menu is back to the original
+  game's items (plus Continue) and spacing, so the lines no longer touch.
+  "Replay" is now "Replay Last Level" in Setup, and About is only in Setup
+  (it was in both places); the update notes in the corner say "See Setup."
 - **Bigger window the first time**: the game used to open in a small 640x400
   window; now, the first time (or if the window was never resized), it opens
   as big as fits well on the screen (1067x800 on a 1080p monitor).

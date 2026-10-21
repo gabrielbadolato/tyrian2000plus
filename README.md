@@ -55,7 +55,7 @@ the open-source port of Tyrian. What this version adds:
   controller, and a warning when the controller's battery is low.
 - "Continue" on the title screen: back to the last game in one press, and
   back to the very point of a level if the game closed in the middle of it.
-- "Replay" on the title screen: watch the last level you played again.
+- "Replay Last Level" in Setup: watch the last level you played again.
 - In the ship's upgrade menu, each item shows its damage (or armor, shield or
   power) in green when it beats what your ship has and in red when it is
   weaker.
@@ -64,7 +64,7 @@ the open-source port of Tyrian. What this version adds:
   default).
 - More graphics options, including in the pause menu, and a Sharp Bilinear
   filter.
-- Smooth Motion (Setup > Graphics, off by default): the game still runs at
+- Smooth Motion (Setup > Graphics, on by default): the game still runs at
   35 frames per second, exactly as before, but the screen shows the movement
   in between at your monitor's refresh rate (60, 120, 144, 240 Hz...), in the
   levels, the fades between screens and the weapon preview of the ship menu.
@@ -159,7 +159,7 @@ through the itch.io app you don't need the script: the app updates itself.
 
 **Deck screen:** the default is "Fit 4:3", true to 1995 monitors. For full
 screen with sharp pixels, use Setup > Graphics > Scaling Mode > "Integer". The
-game runs at 35 frames per second; Smooth Motion (on by default on the Deck)
+game runs at 35 frames per second; Smooth Motion (on by default)
 shows the movement at the screen's refresh rate, so any rate works. If you
 turn it off, set the Deck OLED to 70 Hz (per-game profile) and leave the Deck
 LCD at 60 Hz. Don't turn on Steam's frame limit.
@@ -206,11 +206,9 @@ controls again.
 
 ## Where each option is
 
-- **Title screen > About:** what the game is, where it came from, the credits
-  and the links (Enter or A opens a link in your browser).
 - **Title screen > Setup:** Graphics, Sound,
-  Controls, game speed, Jukebox, Language, Check Updates, Saved Games,
-  Statistics, What's New and About.
+  Controls, game speed, Language, Check Updates, Saved Games, Jukebox,
+  Replay Last Level, Statistics, What's New and About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
   game also saves "LAST LEVEL" when you arrive at the ship after a level and
   when a level starts). Shown when there is one. If the game closed in the
@@ -218,9 +216,10 @@ controls again.
   Continue goes back to that point of the level and pauses there; it takes a
   few seconds, as the game replays the level unseen up to that point.
   Quitting a level from its menu gives the level up, as always.
-- **Title screen > Replay:** shows the last level you played again (it is
-  recorded as you play, in lastlevel.rec in your user folder). Any key or
-  button stops it. Shown when there is a recorded level.
+- **Setup > Replay Last Level:** shows the last level you played again (it
+  is recorded as you play, in lastlevel.rec in your user folder). Any key or
+  button stops it. Shown when there is a recorded level, in the Setup of the
+  title screen.
 - **Setup > Sound > Music Sound:** "Classic" (the default, the
   emulator OpenTyrian always used) or "Accurate" (Nuked OPL3).
 - **Setup > Controls:** keyboard, controller, mouse, Auto Fire, Vibration,
@@ -238,7 +237,7 @@ controls again.
 - **Ship menu (between levels) > Options > Setup...:** the same Setup. The
   Joystick, Keyboard and Mouse items there open the same screens as Setup >
   Controls.
-- **During a level, Start or Esc:** volume, detail level, game speed, Auto
+- **During a level, Start or Esc:** volume, game speed, Auto
   Fire, Controls... (the same Setup > Controls) and Graphics... (full screen,
   scaling, Sharp Bilinear, VSync, Smooth Motion and brightness, applied right
   away).
@@ -250,12 +249,12 @@ controls again.
   tyrian.sav (your saved games) and shows its path on the status line (on a
   Steam Deck in Game Mode there is no file manager, so the path is what you
   get); in the browser, downloads or loads it. See below.
-- **Setup > About:** the same About screen, to see it in the middle of a
-  saved game.
+- **Setup > About:** what the game is, where it came from, the credits and
+  the links (Enter or A opens a link in your browser).
 - **Setup > What's New** (also at the top of About): what changed in each
   version, newest first, in English or Portuguese. If a newer version is out,
   its notes are at the top, so you can see what it brings before updating.
-  After an update, the title screen says "New in vX! See About." until you
+  After an update, the title screen says "New in vX! See Setup." until you
   open it.
 - **Setup > Language:** English or Portuguese (Brazilian) menus, help and
   item names. "Automatic" (the default) follows the system's language. The

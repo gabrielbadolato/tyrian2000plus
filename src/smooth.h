@@ -46,8 +46,10 @@
 // The setting (Setup > Graphics > "Smooth Motion"; "smooth_motion" in the
 // "video" section).
 extern bool smooth_motion;
+// Picked in a menu (v1.4 saved its default, off, as any other setting).
+extern bool smooth_motion_chosen;
 
-// Finer pictures in between (Setup > Graphics > "Fine Motion"; "smooth_fine"
+// Finer pictures in between (with Smooth Motion, no menu item; "smooth_fine"
 // in the "video" section): drawn up to SMOOTH_FINE_MAX times bigger than the
 // game's screen, as the window allows, so things also move by fractions of a
 // pixel of the game.  Only with the "None" scaler.

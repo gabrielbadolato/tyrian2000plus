@@ -279,8 +279,9 @@ Janela: posição, tamanho e maximizado ficam em `window_*` na seção "video"
 abrir e ao sair da tela cheia; se o lugar não está em nenhuma tela, centraliza.
 Fechar a janela (SDL_QUIT) chama `JE_tyrianHalt(0)`, que salva as configurações.
 
-Estatísticas: Setup > "Statistics..." (`statisticsScreen()` em
-`src/stats.c`) mostra os totais de todos os jogos (tempo nas fases, fases
+Estatísticas: última aba da Galeria (Setup > "Gallery...", a pedido do
+Gabriel em 2026-10-21; antes era Setup > "Statistics...";
+`stats_build_lines()`/`stats_draw_lines()` em `src/stats.c`) mostra os totais de todos os jogos (tempo nas fases, fases
 concluídas, inimigos, mortes, fases secretas, datacubes, maior pontuação) e
 os recordes de cada fase (episódio + nome: pontos ganhos na fase, menor tempo,
 maior % destruída). Ficam em `statistics.cfg` na pasta do usuário (formato do
@@ -296,26 +297,34 @@ Galeria: Setup > "Gallery..." (`galleryScreen()` em `src/gallery.c`, ideia
 aprovada pelo Gabriel em 2026-10-21; versão enxuta primeiro, a maior depois
 se ele gostar: animação, demonstração da arma, nomes nossos para chefes,
 filtro por episódio). Abas Ships/Weapons/Sidekicks/Other (escudos,
-geradores, especiais)/Enemies, com as imagens do jogo (sprites desenhados
+geradores, especiais)/Enemies/Statistics, com as imagens do jogo (sprites desenhados
 num `Canvas` próprio, decodificador igual ao `blit_sprite2`). Itens: os que
 os menus da nave oferecem (a Galeria lê de novo as listas "]I" de
 levelsN.dat para saber quais existem; o que falta aparece como sombra "???")
 e os que os jogadores tiveram; o que nenhum menu oferece (naves secretas,
-especiais) só aparece depois de visto. Registro: `gallery_shop_items()` ao
+especiais) só aparece depois de visto. Aberta da tela de título (sem
+episódio carregado) chama `JE_loadItemDat()`, senão os itens vêm vazios.
+Registro: `gallery_shop_items()` ao
 carregar o itemAvail (evento 'I' em `JE_loadMap`), itens dos jogadores no
 começo e fim da fase, `gallery_enemy_made(slot)` nos dois `JE_makeEnemy` e
 `gallery_enemy_killed(slot)` junto dos `enemyKilled++`. Inimigo = aparência
 (banco, sprite, tamanho), porque os dados dos episódios 4 e 5 são outros;
-no quadro seguinte (`gallery_level_frame`) junta as peças feitas no mesmo
-quadro que se tocam, com o mesmo linknum ou ambas no chão (slots 25-49 e
-75-99): chefe e construções viram uma entrada; armadura 0 (cenário, não é
-alvo) e peça invisível ficam de fora. Construção feita em várias linhas, em
-quadros diferentes, ainda vira várias entradas. Fica em `gallery.cfg` na
+no quadro seguinte (`gallery_level_frame`) as peças feitas juntas que se
+tocam, com o mesmo linknum ou ambas no mapa (slots 25-99: chão e "top"),
+viram uma "coisa" (`Thing`); peça do mapa que chega depois encostada numa
+peça do mapa que ainda está lá também entra (construção que vem fileira por
+fileira; inimigos ligados que chegam um a um são formação, não entram). A
+coisa só é gravada quando todas as peças somem (destruída se a última foi
+destruída) ou no fim da fase; se for pedaço de uma entrada maior já gravada
+(`pieceOf`), conta nela, e a aba Enemies esconde as entradas que são pedaço
+de outra (gallery.cfg antigo também). Armadura 0 (cenário, não é alvo) e
+peça invisível ficam de fora. Fica em `gallery.cfg` na
 pasta do usuário (tyrian.sav não muda); só lê o jogo, não muda nada nem a
 gravação da fase. Demos, Replay e `-c` não gravam (os testes ligam
 `gallery_test_record`). Teste: `tests/test_gallery.c` (sem dados; com dados
 mostra a tela e tira prints: `test_gallery <data> wait shot=a.bmp Tab ...`,
-ou `setup` primeiro para abrir o Setup).
+sem episódio carregado, como na tela de título; `ep=N` primeiro carrega um,
+como no menu da nave; `setup` para abrir o Setup).
 
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).

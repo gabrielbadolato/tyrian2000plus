@@ -328,7 +328,6 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_DESTRUCT,
 		MENU_ITEM_ABOUT,
 		MENU_ITEM_WHATS_NEW,
-		MENU_ITEM_STATISTICS,
 		MENU_ITEM_GALLERY,
 		MENU_ITEM_SAVES,
 		MENU_ITEM_DISPLAY,
@@ -405,7 +404,7 @@ void setupMenuPage(SetupPage page)
 		const char *header;
 		bool compact;  // tighter rows, for long lists
 		int wItemName; // 0 = default
-		const MenuItem items[14];
+		const MenuItem items[13];
 	} Menu;
 
 	static const Menu menus[] = {
@@ -427,8 +426,7 @@ void setupMenuPage(SetupPage page)
 #else
 				{ MENU_ITEM_SAVES, "Saved Games...", "Open the folder with tyrian.sav, your saved games." },
 #endif
-				{ MENU_ITEM_GALLERY, "Gallery...", "The ships, weapons and enemies you have found." },
-				{ MENU_ITEM_STATISTICS, "Statistics...", "Totals of all your games and the records of each level." },
+				{ MENU_ITEM_GALLERY, "Gallery...", "Ships, weapons and enemies found, and your statistics." },
 				{ MENU_ITEM_WHATS_NEW, "What's New...", "What changed in each version of the game." },
 				{ MENU_ITEM_ABOUT, "About...", "What this is, where it came from, and credits." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous screen." },
@@ -1218,19 +1216,6 @@ void setupMenuPage(SetupPage page)
 					fade_black(10);
 
 					galleryScreen();
-
-					fade_black(10);
-
-					restart = true;
-					break;
-				}
-				case MENU_ITEM_STATISTICS:
-				{
-					JE_playSampleNum(S_SELECT);
-
-					fade_black(10);
-
-					statisticsScreen();
 
 					fade_black(10);
 

@@ -213,8 +213,8 @@ os controles de toque sumirem de novo.
   links (Enter ou A abre o link no navegador).
 - **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
   (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
-  idioma (Language), Check Updates, jogos salvos (Saved Games), estatísticas
-  (Statistics), galeria (Gallery), novidades (What's New) e About.
+  idioma (Language), Check Updates, jogos salvos (Saved Games), galeria
+  (Gallery, com as estatísticas), novidades (What's New) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
   carregado (o jogo também salva "LAST LEVEL" ao chegar na nave depois de
   cada fase e ao começar cada fase). Só aparece quando existe um. Se o jogo
@@ -247,21 +247,21 @@ os controles de toque sumirem de novo.
 - **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire,
   Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
   Sharp Bilinear, VSync, movimento suave e brilho, aplicados na hora).
-- **Setup > Statistics (Estatísticas):** os totais de todos os seus jogos
-  (tempo nas fases, fases concluídas, inimigos destruídos, mortes, fases
-  secretas, datacubes, maior pontuação) e os recordes de cada fase: maior
-  pontuação, menor tempo e mais inimigos destruídos. Ficam no arquivo
-  statistics.cfg, junto dos saves.
 - **Setup > Gallery (Galeria):** as naves, armas, sidekicks, escudos,
   geradores, armas especiais e inimigos que você já encontrou, com as imagens
   do próprio jogo. O que você ainda não viu aparece como uma sombra escura
   (com o nome "???"); o que os menus da nave nunca oferecem, como as naves
   secretas, só aparece depois de achado. Cada item mostra os números dele
   (dano, casco, preço); cada inimigo, a blindagem, quantos você destruiu e
-  onde o viu pela primeira vez, e as peças de um chefe aparecem juntas. Tab,
-  ou LB e RB no controle, trocam a página; as setas escolhem. Fica no arquivo
-  gallery.cfg, junto dos saves, e vai se enchendo enquanto você joga daqui
-  para a frente.
+  onde o viu pela primeira vez, e as peças de um chefe ou de uma construção
+  aparecem juntas. Tab, ou LB e RB no controle, trocam a página; as setas
+  escolhem. Fica no arquivo gallery.cfg, junto dos saves, e vai se enchendo
+  enquanto você joga daqui para a frente.
+- **Setup > Gallery > Statistics (Estatísticas):** os totais de todos os
+  seus jogos (tempo nas fases, fases concluídas, inimigos destruídos, mortes,
+  fases secretas, datacubes, maior pontuação) e os recordes de cada fase:
+  maior pontuação, menor tempo e mais inimigos destruídos. Ficam no arquivo
+  statistics.cfg, junto dos saves.
 - **Setup > Saved Games (Jogos salvos):** no Windows e no Linux, abre a
   pasta do tyrian.sav (seus jogos salvos) e mostra o caminho dela na linha
   de baixo (no Steam Deck em Modo de Jogo não há gerenciador de arquivos, e

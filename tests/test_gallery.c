@@ -30,8 +30,10 @@
  * is done when the screen is shown: a key (an SDL scancode name, such as
  * Right or Tab), "click=<x>,<y>" (on the game's 320x200 screen), "wait" (a
  * frame), or "shot=<file.bmp>".  Built with
- * --wrap=JE_showVGA (see run_tests.sh).  With "setup" right after the data
- * folder it starts at the Setup menu instead (Gallery... is there).
+ * --wrap=JE_showVGA (see run_tests.sh).  No episode is loaded, as on the
+ * title screen; "ep=<n>" right after the data folder loads one, as in the
+ * ship's menu.  With "setup" (after it) it starts at the Setup menu instead
+ * (Gallery... is there).
  *
  *   XDG_CONFIG_HOME=<dir> test_gallery <data-dir> wait wait shot=a.bmp Tab shot=b.bmp
  */
@@ -46,6 +48,7 @@
 #include "palette.h"
 #include "player.h"
 #include "sprite.h"
+#include "stats.h"
 #include "tyrian2.h"
 #include "varz.h"
 #include "video.h"
@@ -158,6 +161,13 @@ static int showScreen(int argc, char **argv)
 	customDataDirPath = argv[1];
 	script = argv + 2;
 	scriptLeft = argc - 2;
+	// "ep=N": an episode loaded, as from the ship's menu (else as from the title screen)
+	int episode = 0;
+	if (scriptLeft > 0 && sscanf(*script, "ep=%d", &episode) == 1)
+	{
+		++script;
+		--scriptLeft;
+	}
 	const bool setup = scriptLeft > 0 && strcmp(*script, "setup") == 0;
 	if (setup)
 	{
@@ -180,7 +190,8 @@ static int showScreen(int argc, char **argv)
 
 	JE_loadHelpText();
 	JE_scanForEpisodes();
-	JE_initEpisode(1);
+	if (episode > 0)
+		JE_initEpisode((JE_byte)episode);
 
 	init_video();
 	init_keyboard();
@@ -189,6 +200,7 @@ static int showScreen(int argc, char **argv)
 	JE_loadCompShapes(&shopSpriteSheet, '1');
 
 	gallery_load();
+	stats_load();
 	if (setup)
 		setupMenu();
 	else
@@ -275,9 +287,12 @@ static int recordTest(void)
 	check(gallery_seen_count(GALLERY_WEAPONS) == 2, "the menu's weapons are seen");
 	check(gallery_seen_count(GALLERY_OTHER) == 2, "the menu's shield is seen");
 
-	// two enemies that look the same
+	// two enemies that look the same; recorded when they are gone
 	makeEnemy(0, 1, 0, 10, 10, 0, 10);
 	makeEnemy(1, 1, 0, 200, 50, 0, 10);
+	gallery_level_frame();
+	check(gallery_seen_count(GALLERY_ENEMIES) == 0, "not recorded while it is there");
+	enemyAvail[1] = 1;  // left the screen
 	gallery_level_frame();
 	check(gallery_seen_count(GALLERY_ENEMIES) == 1, "two enemies that look the same are one");
 
@@ -291,22 +306,53 @@ static int recordTest(void)
 	makeEnemy(7, 11, 0, 10, 100, 7, 5);
 	makeEnemy(8, 11, 0, 60, 100, 7, 5);
 	gallery_level_frame();
+	for (int i = 2; i <= 8; ++i)
+		enemyAvail[i] = 1;
+	gallery_level_frame();
 	check(gallery_seen_count(GALLERY_ENEMIES) == 3, "the boss is one, the formation another");
 
 	// the same boss again, elsewhere
-	for (int i = 2; i <= 6; ++i)
-		enemyAvail[i] = 1;
 	makeEnemy(10, 3, 1, 40, 60, 3, 50);
 	makeEnemy(11, 5, 1, 64, 60, 3, 50);
 	makeEnemy(12, 7, 1, 40, 88, 3, 50);
 	makeEnemy(13, 9, 1, 64, 88, 3, 255);
 	gallery_level_frame();
-	check(gallery_seen_count(GALLERY_ENEMIES) == 3, "the same boss elsewhere is the same");
 
 	// a lone invisible enemy is not an enemy to show
 	makeEnemy(14, 2, 0, 0, -100, 0, 254);
 	gallery_level_frame();
+	enemyAvail[14] = 1;
+	gallery_level_frame();
 	check(gallery_seen_count(GALLERY_ENEMIES) == 3, "an invisible enemy is left out");
+
+	// a building on the ground that scrolls in row by row: one thing
+	makeEnemy(25, 15, 0, 150, 0, 0, 20);
+	makeEnemy(26, 17, 0, 162, 0, 0, 20);
+	gallery_level_frame();
+	enemy[25].ey += 14;
+	enemy[26].ey += 14;
+	makeEnemy(27, 19, 0, 150, 0, 0, 20);
+	makeEnemy(28, 21, 0, 162, 0, 0, 20);
+	gallery_level_frame();
+	kill(26);
+	enemy[25].ey += 14;
+	enemy[27].ey += 14;
+	enemy[28].ey += 14;
+	gallery_level_frame();
+	check(gallery_seen_count(GALLERY_ENEMIES) == 3, "the building is not recorded while a piece is there");
+	enemyAvail[25] = 1;
+	enemyAvail[27] = 1;
+	enemyAvail[28] = 1;
+	gallery_level_frame();
+	check(gallery_seen_count(GALLERY_ENEMIES) == 4, "the rows of a building are one enemy");
+
+	// launched by the boss, on top of it: an enemy of its own
+	makeEnemy(29, 23, 0, 44, 64, 0, 2);
+	gallery_enemy_launched(29);
+	gallery_level_frame();
+	enemyAvail[29] = 1;
+	gallery_level_frame();
+	check(gallery_seen_count(GALLERY_ENEMIES) == 5, "an enemy launched by another is not a piece of it");
 
 	kill(0);
 	kill(10);
@@ -318,7 +364,7 @@ static int recordTest(void)
 	gallery_level_end();
 
 	gallery_load();
-	check(gallery_seen_count(GALLERY_ENEMIES) == 4, "gallery.cfg reads back the enemies");
+	check(gallery_seen_count(GALLERY_ENEMIES) == 6, "gallery.cfg reads back the enemies");
 	check(gallery_seen_count(GALLERY_SHIPS) == 2 && gallery_seen_count(GALLERY_WEAPONS) == 2 &&
 	      gallery_seen_count(GALLERY_OTHER) == 2, "gallery.cfg reads back the items");
 
@@ -335,6 +381,7 @@ static int recordTest(void)
 		text[n] = '\0';
 		fclose(f);
 		check(strstr(text, "5:3:1:0:0 5:5:1:24:0 5:7:1:0:28 5:9:1:24:28") != NULL, "the boss's pieces, from its top left");
+		check(strstr(text, "5:19:0:0:0 5:21:0:12:0 5:15:0:0:14 5:17:0:12:14") != NULL, "the building's rows, from its top left");
 		check(strstr(text, "'killed' '1'") != NULL, "an enemy and the boss counted destroyed once");
 		check(strstr(text, "'indestructible' 'yes'") != NULL, "the piece that cannot be destroyed");
 		check(strstr(text, "'level' 'TYRIAN'\n") != NULL, "the level where it was met");

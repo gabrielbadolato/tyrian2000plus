@@ -4149,7 +4149,7 @@ Sint16 JE_newEnemy(int enemyOffset, Uint16 eDatI, Sint16 uniqueShapeTableI)
 		if (enemyAvail[i] == 1)
 		{
 			enemyAvail[i] = JE_makeEnemy(&enemy[i], eDatI, uniqueShapeTableI);
-			gallery_enemy_made(i);
+			gallery_enemy_launched(i);
 			return i + 1;
 		}
 	}

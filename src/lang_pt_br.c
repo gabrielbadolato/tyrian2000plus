@@ -757,9 +757,7 @@ const LangEntry lang_pt_br[] =
 	{ "Tyrian 2000 freeware game data:", "Dados freeware do Tyrian 2000:" },
 	{ "Gabriel Badolato, with help from Claude (Anthropic)", "Gabriel Badolato, com a ajuda do Claude (Anthropic)" },
 
-	// ---- Statistics (Setup > Statistics... and the end of a level) ----
-	{ "Statistics...", "Estatísticas..." },
-	{ "Totals of all your games and the records of each level.", "Totais de todos os seus jogos e os recordes de cada fase." },
+	// ---- Statistics (the Gallery's Statistics page and the end of a level) ----
 	{ "Statistics", "Estatísticas" },
 	{ "All Games", "Todos os jogos" },
 	{ "Time in Levels", "Tempo nas fases" },
@@ -779,7 +777,7 @@ const LangEntry lang_pt_br[] =
 
 	// ---- Gallery (Setup > Gallery...); the title is in the big font ----
 	{ "Gallery...", "Galeria..." },
-	{ "The ships, weapons and enemies you have found.", "As naves, armas e inimigos que você já encontrou." },
+	{ "Ships, weapons and enemies found, and your statistics.", "Naves, armas e inimigos encontrados, e suas estatísticas." },
 	{ "Gallery", "Galeria" },
 	{ "Ships", "Naves" },
 	{ "Weapons", "Armas" },
@@ -804,6 +802,7 @@ const LangEntry lang_pt_br[] =
 	{ "Meet them in the levels.", "Encontre-os nas fases." },
 	{ "%s%s: page. %s: back.", "%s%s: página. %s: voltar." },
 	{ "Tab: page. Arrows: choose. Esc: back.", "Tab: página. Setas: escolher. Esc: voltar." },
+	{ "Tab: page. Up/Down: scroll. Esc: back.", "Tab: página. Cima/baixo: rolar. Esc: voltar." },
 
 	// ---- Controller help: phrases of the help texts that padHelpText()
 	// swaps for the controller's buttons (first the phrase in the help

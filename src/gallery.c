@@ -36,7 +36,6 @@
 #include "episodes.h"
 #include "file.h"
 #include "font.h"
-#include "tyrian2.h"
 #include "fonthand.h"
 #include "helptext.h"
 #include "joystick.h"
@@ -56,6 +55,8 @@
 #include "shopstats.h"
 #include "sndmast.h"
 #include "sprite.h"
+#include "stats.h"
+#include "tyrian2.h"
 #include "varz.h"
 #include "vga256d.h"
 #include "video.h"
@@ -82,7 +83,7 @@ static bool seenGenerator[POWER_NUM + 1];
 static bool seenSpecial[SPECIAL_NUM + 1];
 
 #define MAX_PARTS 32
-#define MAX_ENEMIES 800
+#define MAX_ENEMIES 2000
 
 typedef struct
 {
@@ -112,9 +113,21 @@ static bool dirty;
 static bool recording;
 static Uint8 pending[100];  // enemies made since the last look, by slot
 static unsigned int pendingCount;
-static int slotEntry[100];  // the entry of the enemy in each slot, or -1
-static unsigned int slotGroup[100];  // the pieces of one boss share it
-static unsigned int nextGroup;
+
+// A thing being met: an enemy, or the pieces of a boss or of a building,
+// which can come over several frames (a building scrolls in row by row).
+// It is recorded when all of its pieces are gone.
+typedef struct
+{
+	bool used;
+	bool killed;     // its last piece was destroyed
+	SeenEnemy look;  // parts where they are in the thing
+} Thing;
+
+static Thing things[100];
+static Uint8 slotThing[100];  // the thing of the enemy in each slot + 1, or 0
+static bool slotAlone[100];  // made by another enemy: a thing of its own
+static int slotX[100], slotY[100];  // where the enemy is in its thing
 
 static void markItem(bool *seen, size_t count, unsigned int id)
 {
@@ -150,6 +163,51 @@ static bool partsEqual(const SeenEnemy *a, const SeenEnemy *b)
 			return false;
 	}
 	return true;
+}
+
+// Whether all of a's parts are in b, which has more: a piece of b, such as
+// the first rows of a building or one turret on it.
+static bool pieceOf(const SeenEnemy *a, const SeenEnemy *b)
+{
+	if (a->parts == 0 || a->parts >= b->parts)
+		return false;
+
+	const Part *first = &a->part[0];
+	for (unsigned int j = 0; j < b->parts; ++j)
+	{
+		const Part *q = &b->part[j];
+		if (q->bank != first->bank || q->gr != first->gr || q->size != first->size)
+			continue;
+
+		const int dx = q->x - first->x, dy = q->y - first->y;
+		bool all = true;
+		for (unsigned int i = 1; i < a->parts && all; ++i)
+		{
+			const Part *p = &a->part[i];
+			all = false;
+			for (unsigned int k = 0; k < b->parts; ++k)
+			{
+				const Part *r = &b->part[k];
+				if (r->bank == p->bank && r->gr == p->gr && r->size == p->size && r->x == p->x + dx && r->y == p->y + dy)
+				{
+					all = true;
+					break;
+				}
+			}
+		}
+		if (all)
+			return true;
+	}
+	return false;
+}
+
+// The entry that `look` is a piece of, or -1.
+static int findWhole(const SeenEnemy *look)
+{
+	for (unsigned int i = 0; i < enemyCount; ++i)
+		if (pieceOf(look, &enemies[i]))
+			return (int)i;
+	return -1;
 }
 
 static int findEnemy(const SeenEnemy *look)
@@ -266,8 +324,9 @@ void gallery_level_start(void)
 {
 	recording = recordingAllowed();
 	pendingCount = 0;
-	for (unsigned int i = 0; i < COUNTOF(slotEntry); ++i)
-		slotEntry[i] = -1;
+	memset(things, 0, sizeof(things));
+	memset(slotThing, 0, sizeof(slotThing));
+	memset(slotAlone, 0, sizeof(slotAlone));
 
 	if (!recording)
 		return;
@@ -282,11 +341,19 @@ void gallery_enemy_made(unsigned int slot)
 	if (!recording || slot >= COUNTOF(pending))
 		return;
 
-	slotEntry[slot] = -1;  // what was there before is gone
+	slotThing[slot] = 0;  // what was there before is gone
+	slotAlone[slot] = false;
 	for (unsigned int i = 0; i < pendingCount; ++i)
 		if (pending[i] == slot)
 			return;
 	pending[pendingCount++] = (Uint8)slot;
+}
+
+void gallery_enemy_launched(unsigned int slot)
+{
+	gallery_enemy_made(slot);
+	if (slot < COUNTOF(slotAlone))
+		slotAlone[slot] = true;
 }
 
 // The bank of the sprite sheet an enemy draws from (0: not one of the
@@ -343,21 +410,22 @@ static bool piecesTouch(unsigned int a, unsigned int b)
 	return ax1 < bx2 + gap && bx1 < ax2 + gap && ay1 < by2 + gap && by1 < ay2 + gap;
 }
 
-// Ground enemies scroll with the map (JE_drawEnemy(50) and (100)).
-static bool groundSlot(unsigned int slot)
+// Enemies on the map: ground (JE_drawEnemy(50) and (100)) and top
+// (JE_drawEnemy(75)), such as the pieces of a building.
+static bool mapSlot(unsigned int slot)
 {
-	return (slot >= 25 && slot < 50) || slot >= 75;
+	return slot >= 25;
 }
 
 // Whether two enemies made in the same frame are pieces of one thing: a boss
-// (linked) or a building on the ground, made of enemies side by side.
+// (linked) or a building on the map, made of enemies side by side.
 static bool samePiece(unsigned int a, unsigned int b)
 {
-	if (!piecesTouch(a, b))
+	if (slotAlone[a] || slotAlone[b] || !piecesTouch(a, b))
 		return false;
 	if (enemy[a].linknum != 0 && enemy[a].linknum == enemy[b].linknum)
 		return true;
-	return groundSlot(a) && groundSlot(b);
+	return mapSlot(a) && mapSlot(b);
 }
 
 static int comparePart(const void *a, const void *b)
@@ -374,15 +442,148 @@ static int comparePart(const void *a, const void *b)
 	return p->size - q->size;
 }
 
-// Records the enemies made since the last look: each alone, or the pieces
-// of a boss together.
-static void lookAtPending(void)
+// Whether the enemy in `slot` belongs to a thing and is still there.
+static bool slotInThing(unsigned int slot)
 {
-	if (pendingCount == 0)
+	return slotThing[slot] != 0 && enemyAvail[slot] != 1;
+}
+
+// Records a thing whose pieces are all gone.
+static void finishThing(unsigned int t)
+{
+	Thing *thing = &things[t];
+	if (!thing->used)
+		return;
+	thing->used = false;
+
+	for (unsigned int i = 0; i < COUNTOF(slotThing); ++i)
+		if (slotThing[i] == t + 1)
+			slotThing[i] = 0;
+
+	SeenEnemy look = thing->look;
+	if (look.parts == 0)
+		return;  // nothing that shows, or not a target
+
+	// the same however it is placed: from the top left piece, in order
+	int minX = look.part[0].x, minY = look.part[0].y;
+	for (unsigned int i = 1; i < look.parts; ++i)
+	{
+		minX = MIN(minX, look.part[i].x);
+		minY = MIN(minY, look.part[i].y);
+	}
+	for (unsigned int i = 0; i < look.parts; ++i)
+	{
+		look.part[i].x -= (Sint16)minX;
+		look.part[i].y -= (Sint16)minY;
+	}
+	qsort(look.part, look.parts, sizeof(Part), comparePart);
+
+	int entry = findEnemy(&look);
+	if (entry < 0)
+		entry = findWhole(&look);  // seen whole before: that one
+	if (entry < 0)
+	{
+		if (enemyCount >= MAX_ENEMIES)
+			return;
+		entry = (int)enemyCount++;
+		look.episode = episodeNum;
+		snprintf(look.level, sizeof(look.level), "%s", levelName);
+		for (size_t n = strlen(look.level); n > 0 && look.level[n - 1] == ' '; --n)
+			look.level[n - 1] = '\0';
+		look.killed = 0;
+		enemies[entry] = look;
+		dirty = true;
+	}
+
+	if (thing->killed)
+	{
+		++enemies[entry].killed;
+		dirty = true;
+	}
+}
+
+// Records the things none of whose pieces are left.
+static void finishGoneThings(void)
+{
+	bool left[COUNTOF(things)] = { false };
+	for (unsigned int i = 0; i < COUNTOF(slotThing); ++i)
+		if (slotInThing(i))
+			left[slotThing[i] - 1] = true;
+
+	for (unsigned int t = 0; t < COUNTOF(things); ++t)
+		if (things[t].used && !left[t])
+			finishThing(t);
+}
+
+// Adds the enemy in `slot` to thing t, at x, y.
+static void addToThing(unsigned int t, unsigned int slot, int x, int y)
+{
+	slotThing[slot] = (Uint8)(t + 1);
+	slotX[slot] = x;
+	slotY[slot] = y;
+
+	SeenEnemy *look = &things[t].look;
+	if (look->parts >= MAX_PARTS)
 		return;
 
+	const Uint8 bank = enemyBank(slot);
+	const unsigned int gr = enemyGraphic(slot);
+	const unsigned int armor = enemyDat[enemy[slot].enemytype].armor;
+	if (armor == 0)
+		return;  // not a target: scenery
+	if (!pieceVisible(slot, bank, gr))
+		return;  // such as the invisible enemy that holds a boss's map
+
+	Part *part = &look->part[look->parts++];
+	part->bank = bank;
+	part->size = enemy[slot].size;
+	part->gr = (Uint16)gr;
+	part->x = (Sint16)x;
+	part->y = (Sint16)y;
+
+	if (armor == 255)
+		look->indestructible = true;
+	else
+		look->armor += armor;
+}
+
+// Moves the pieces of thing `from` into thing `to`; `fromSlot` and `toSlot`
+// are pieces of each, still there, which give where one is from the other.
+static void mergeThings(unsigned int to, unsigned int toSlot, unsigned int from, unsigned int fromSlot)
+{
+	const int dx = (slotX[toSlot] - enemy[toSlot].ex) - (slotX[fromSlot] - enemy[fromSlot].ex);
+	const int dy = (slotY[toSlot] - enemy[toSlot].ey) - (slotY[fromSlot] - enemy[fromSlot].ey);
+
+	SeenEnemy *look = &things[to].look;
+	const SeenEnemy *other = &things[from].look;
+	for (unsigned int i = 0; i < other->parts && look->parts < MAX_PARTS; ++i)
+	{
+		Part part = other->part[i];
+		part.x = (Sint16)(part.x + dx);
+		part.y = (Sint16)(part.y + dy);
+		look->part[look->parts++] = part;
+	}
+	look->armor += other->armor;
+	look->indestructible |= other->indestructible;
+
+	for (unsigned int i = 0; i < COUNTOF(slotThing); ++i)
+	{
+		if (slotThing[i] == from + 1)
+		{
+			slotThing[i] = (Uint8)(to + 1);
+			slotX[i] += dx;
+			slotY[i] += dy;
+		}
+	}
+	memset(&things[from], 0, sizeof(things[from]));
+}
+
+// Looks at the enemies made since the last look: the pieces made together
+// that touch are one thing, and pieces that touch a thing already there
+// (the next rows of a building) join it.
+static void lookAtPending(void)
+{
 	bool done[100] = { false };
-	SeenEnemy look;
 
 	for (unsigned int p = 0; p < pendingCount; ++p)
 	{
@@ -407,71 +608,53 @@ static void lookAtPending(void)
 			}
 		}
 
-		memset(&look, 0, sizeof(look));
-		int originX = 0, originY = 0;
-		for (unsigned int g = 0; g < groupCount && look.parts < MAX_PARTS; ++g)
-		{
-			const unsigned int slot = group[g];
-			const Uint8 bank = enemyBank(slot);
-			const unsigned int gr = enemyGraphic(slot);
-			if (enemyDat[enemy[slot].enemytype].armor == 0)
-				continue;  // not a target: scenery
-			if (!pieceVisible(slot, bank, gr))
-				continue;  // such as the invisible enemy that holds a boss's map
-
-			if (look.parts == 0)
-			{
-				originX = enemy[slot].ex;
-				originY = enemy[slot].ey;
-			}
-			Part *part = &look.part[look.parts++];
-			part->bank = bank;
-			part->size = enemy[slot].size;
-			part->gr = (Uint16)gr;
-			part->x = (Sint16)(enemy[slot].ex - originX);
-			part->y = (Sint16)(enemy[slot].ey - originY);
-
-			const unsigned int armor = enemyDat[enemy[slot].enemytype].armor;
-			if (armor == 255)
-				look.indestructible = true;
-			else
-				look.armor += armor;
-		}
-		if (look.parts == 0)
-			continue;
-
-		// the same however it is placed: from the top left piece, in order
-		int minX = look.part[0].x, minY = look.part[0].y;
-		for (unsigned int i = 1; i < look.parts; ++i)
-		{
-			minX = MIN(minX, look.part[i].x);
-			minY = MIN(minY, look.part[i].y);
-		}
-		for (unsigned int i = 0; i < look.parts; ++i)
-		{
-			look.part[i].x -= (Sint16)minX;
-			look.part[i].y -= (Sint16)minY;
-		}
-		qsort(look.part, look.parts, sizeof(Part), comparePart);
-
-		int entry = findEnemy(&look);
-		if (entry < 0 && enemyCount < MAX_ENEMIES)
-		{
-			entry = (int)enemyCount++;
-			look.episode = episodeNum;
-			snprintf(look.level, sizeof(look.level), "%s", levelName);
-			for (size_t n = strlen(look.level); n > 0 && look.level[n - 1] == ' '; --n)
-				look.level[n - 1] = '\0';
-			enemies[entry] = look;
-			dirty = true;
-		}
-
-		const unsigned int groupId = ++nextGroup;
+		// the things already there that it touches
+		int thing = -1;
+		unsigned int anchor = 0;
 		for (unsigned int g = 0; g < groupCount; ++g)
 		{
-			slotEntry[group[g]] = entry;
-			slotGroup[group[g]] = groupId;
+			for (unsigned int i = 0; i < COUNTOF(slotThing); ++i)
+			{
+				// only on the map: linked enemies that come one by one are a formation
+				if (!slotInThing(i) || slotThing[i] == thing + 1 || slotAlone[group[g]] || slotAlone[i] ||
+				    !mapSlot(group[g]) || !mapSlot(i) || !piecesTouch(group[g], i))
+					continue;
+				if (thing < 0)
+				{
+					thing = slotThing[i] - 1;
+					anchor = i;
+				}
+				else
+				{
+					mergeThings((unsigned int)thing, anchor, slotThing[i] - 1u, i);
+				}
+			}
 		}
+
+		int dx = 0, dy = 0;
+		if (thing >= 0)
+		{
+			dx = slotX[anchor] - enemy[anchor].ex;
+			dy = slotY[anchor] - enemy[anchor].ey;
+		}
+		else
+		{
+			for (unsigned int t = 0; t < COUNTOF(things); ++t)
+			{
+				if (!things[t].used)
+				{
+					thing = (int)t;
+					break;
+				}
+			}
+			if (thing < 0)
+				continue;  // cannot happen: a thing has a piece in a slot
+			memset(&things[thing], 0, sizeof(things[thing]));
+			things[thing].used = true;
+		}
+
+		for (unsigned int g = 0; g < groupCount; ++g)
+			addToThing((unsigned int)thing, group[g], enemy[group[g]].ex + dx, enemy[group[g]].ey + dy);
 	}
 
 	pendingCount = 0;
@@ -480,28 +663,31 @@ static void lookAtPending(void)
 void gallery_level_frame(void)
 {
 	if (recording)
+	{
 		lookAtPending();
+		finishGoneThings();
+	}
 }
 
 void gallery_enemy_killed(unsigned int slot)
 {
-	if (!recording || slot >= COUNTOF(slotEntry))
+	if (!recording || slot >= COUNTOF(slotThing))
 		return;
 
 	lookAtPending();  // made in this frame
 
-	const int entry = slotEntry[slot];
-	if (entry < 0)
+	if (slotThing[slot] == 0)
 		return;
-	slotEntry[slot] = -1;
+	const unsigned int t = slotThing[slot] - 1u;
+	slotThing[slot] = 0;
 
-	// a boss counts when its last piece goes
-	for (unsigned int i = 0; i < COUNTOF(slotEntry); ++i)
-		if (slotEntry[i] >= 0 && slotGroup[i] == slotGroup[slot] && enemyAvail[i] != 1)
+	// a boss or a building counts when its last piece goes
+	for (unsigned int i = 0; i < COUNTOF(slotThing); ++i)
+		if (slotThing[i] == t + 1 && slotInThing(i))
 			return;
 
-	++enemies[entry].killed;
-	dirty = true;
+	things[t].killed = true;
+	finishThing(t);
 }
 
 void gallery_shop_items(void)
@@ -724,6 +910,8 @@ void gallery_level_end(void)
 	if (recording)
 	{
 		lookAtPending();
+		for (unsigned int t = 0; t < COUNTOF(things); ++t)
+			finishThing(t);
 
 		// what was picked up in the level
 		markPlayerItems(&player[0].items);
@@ -870,12 +1058,23 @@ static void buildEntries(GalleryTab tab)
 		addItems(KIND_SPECIAL, NULL, NULL, seenSpecial, COUNTOF(seenSpecial));
 		break;
 	case GALLERY_ENEMIES:
+	{
+		// a piece of another one (seen before the rest of it came) is left out
+		static bool piece[MAX_ENEMIES];
+		for (unsigned int i = 0; i < enemyCount; ++i)
+		{
+			piece[i] = false;
+			for (unsigned int k = 0; k < enemyCount && !piece[i]; ++k)
+				piece[i] = pieceOf(&enemies[i], &enemies[k]);
+		}
+
 		// by episode, in the order they were met
 		for (unsigned int ep = 0; ep <= 99; ++ep)
 			for (unsigned int i = 0; i < enemyCount; ++i)
-				if (enemies[i].episode == ep || (ep == 99 && enemies[i].episode > 99))
+				if (!piece[i] && (enemies[i].episode == ep || (ep == 99 && enemies[i].episode > 99)))
 					addEntry(KIND_ENEMY, i, true);
 		break;
+	}
 	default:
 		break;
 	}
@@ -887,7 +1086,7 @@ unsigned int gallery_seen_count(GalleryTab tab)
 	return foundCount;
 }
 
-static const char *const tabNames[GALLERY_TABS] = { "Ships", "Weapons", "Sidekicks", "Other", "Enemies" };
+static const char *const tabNames[GALLERY_TABS] = { "Ships", "Weapons", "Sidekicks", "Other", "Enemies", "Statistics" };
 
 // sprite sheets of the enemy banks, loaded when shown
 static Sprite2_array bankSheets[COUNTOF(shapeFile) + 1];
@@ -1058,11 +1257,22 @@ enum
 	PANEL_W = 128,
 	COUNT_Y = GRID_Y + GRID_ROWS * CELL_H + 4,
 	HELP_Y = 190,
+	STATS_Y = GRID_Y + 3,  // the lines of the statistics page
+	STATS_LINES = 13,
 };
 
+// The tabs, spread over the width of the grid and the panel.
 static int tabX(int tab)
 {
-	return 8 + tab * 61;
+	int width = 0;
+	for (int t = 0; t < GALLERY_TABS; ++t)
+		width += JE_textWidth(tr(tabNames[t]), FONT_SMALL);
+	const int gap = (PANEL_X + PANEL_W - GRID_X - width) / (GALLERY_TABS - 1);
+
+	int x = GRID_X;
+	for (int t = 0; t < tab; ++t)
+		x += JE_textWidth(tr(tabNames[t]), FONT_SMALL) + gap;
+	return x;
 }
 
 // A line of the panel, cut with "..." if it does not fit.
@@ -1249,6 +1459,10 @@ void galleryScreen(void)
 
 	readShopLists();
 
+	// from the title screen no episode is loaded yet, nor the items
+	if (episodeNum == 0)
+		JE_loadItemDat();
+
 	JE_loadPic(VGAScreen2, 1, false);  // the ship menu's picture: the items' colors
 	JE_barShade(VGAScreen2, 0, 0, 319, 199);
 	JE_barShade(VGAScreen2, 0, 0, 319, 199);
@@ -1257,6 +1471,7 @@ void galleryScreen(void)
 	int cursor = 0, top = 0;
 	bool fadeIn = true;
 	bool held[2] = { false, false };
+	int statsTop = 0, statsCount = 0;
 
 	buildEntries(tab);
 
@@ -1275,20 +1490,27 @@ void galleryScreen(void)
 			fill_rectangle_xy(VGAScreen, x, TAB_Y + 8, x + w - 1, TAB_Y + 8, 0x10 * 15 + 12);
 		}
 
-		drawGrid(top, cursor);
-
-		char line[96];
-		if (tab == GALLERY_ENEMIES || tab == GALLERY_OTHER)
-			snprintf(line, sizeof(line), tr("Found: %u"), foundCount);
+		if (tab == GALLERY_STATS)
+		{
+			stats_draw_lines(statsTop, STATS_Y, STATS_LINES);
+		}
 		else
-			snprintf(line, sizeof(line), tr("Found: %u of %u"), foundCount, entryCount);
-		drawFontHvShadow(VGAScreen, GRID_X, COUNT_Y, line, FONT_SMALL, 15, 2, false, 1);
+		{
+			drawGrid(top, cursor);
 
-		JE_barShade(VGAScreen, PANEL_X, GRID_Y - 2, PANEL_X + PANEL_W, COUNT_Y + 8);
-		if (entryCount > 0)
-			drawDetails(&entries[cursor]);
-		else
-			drawFontHvShadow(VGAScreen, PANEL_X + 4, GRID_Y + 2, tr("Meet them in the levels."), FONT_SMALL, 15, 2, false, 1);
+			char line[96];
+			if (tab == GALLERY_ENEMIES || tab == GALLERY_OTHER)
+				snprintf(line, sizeof(line), tr("Found: %u"), foundCount);
+			else
+				snprintf(line, sizeof(line), tr("Found: %u of %u"), foundCount, entryCount);
+			drawFontHvShadow(VGAScreen, GRID_X, COUNT_Y, line, FONT_SMALL, 15, 2, false, 1);
+
+			JE_barShade(VGAScreen, PANEL_X, GRID_Y - 2, PANEL_X + PANEL_W, COUNT_Y + 8);
+			if (entryCount > 0)
+				drawDetails(&entries[cursor]);
+			else
+				drawFontHvShadow(VGAScreen, PANEL_X + 4, GRID_Y + 2, tr("Meet them in the levels."), FONT_SMALL, 15, 2, false, 1);
+		}
 
 		const int j = joystick_first_gamepad();
 		char help[128];
@@ -1297,6 +1519,8 @@ void galleryScreen(void)
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
+		else if (tab == GALLERY_STATS)
+			snprintf(help, sizeof(help), "%s", tr("Tab: page. Up/Down: scroll. Esc: back."));
 		else
 			snprintf(help, sizeof(help), "%s", tr("Tab: page. Arrows: choose. Esc: back."));
 		JE_textShade(VGAScreen, GRID_X, HELP_Y, help, 15, 4, PART_SHADE);
@@ -1313,7 +1537,7 @@ void galleryScreen(void)
 
 		waitUntilElapsed();
 
-		const int oldCursor = cursor;
+		const int oldCursor = cursor, oldStatsTop = statsTop;
 		const GalleryTab oldTab = tab;
 		int newTab = tab;
 		bool done = false;
@@ -1321,6 +1545,36 @@ void galleryScreen(void)
 		KeyboardInput keyboardInput;
 		while (keyboardGetInput(&keyboardInput))
 		{
+			if (tab == GALLERY_STATS)
+			{
+				// the statistics scroll
+				switch (keyboardInput.scancode)
+				{
+				case SDL_SCANCODE_UP:
+					statsTop -= 1;
+					continue;
+				case SDL_SCANCODE_DOWN:
+					statsTop += 1;
+					continue;
+				case SDL_SCANCODE_LEFT:
+				case SDL_SCANCODE_PAGEUP:
+					statsTop -= STATS_LINES - 1;
+					continue;
+				case SDL_SCANCODE_RIGHT:
+				case SDL_SCANCODE_PAGEDOWN:
+					statsTop += STATS_LINES - 1;
+					continue;
+				case SDL_SCANCODE_HOME:
+					statsTop = 0;
+					continue;
+				case SDL_SCANCODE_END:
+					statsTop = statsCount;
+					continue;
+				default:
+					break;
+				}
+			}
+
 			switch (keyboardInput.scancode)
 			{
 			case SDL_SCANCODE_LEFT:
@@ -1390,8 +1644,16 @@ void galleryScreen(void)
 				if (my >= TAB_Y - 2 && my < TAB_Y + 10)
 				{
 					for (int t = 0; t < GALLERY_TABS; ++t)
-						if (mx >= tabX(t) - 2 && mx < tabX(t) + 59)
+						if (mx >= tabX(t) - 3)
 							newTab = t;
+				}
+				else if (tab == GALLERY_STATS)
+				{
+					// the upper half of the list a page up, the lower half a page down
+					if (my < STATS_Y + STATS_LINES * 11 / 2)
+						statsTop -= STATS_LINES - 1;
+					else
+						statsTop += STATS_LINES - 1;
 				}
 				else if (mx >= GRID_X && mx < GRID_X + GRID_COLS * CELL_W && my >= GRID_Y && my < GRID_Y + GRID_ROWS * CELL_H)
 				{
@@ -1417,11 +1679,16 @@ void galleryScreen(void)
 			buildEntries(tab);
 			cursor = 0;
 			top = 0;
+			if (tab == GALLERY_STATS)
+				statsCount = stats_build_lines();
+			statsTop = 0;
 			JE_playSampleNum(S_CLICK);
 		}
-		else if (cursor != oldCursor)
+		else
 		{
-			JE_playSampleNum(S_CURSOR);
+			statsTop = MAX(0, MIN(statsTop, statsCount - STATS_LINES));
+			if (cursor != oldCursor || statsTop != oldStatsTop)
+				JE_playSampleNum(S_CURSOR);
 		}
 
 		cursor = MAX(0, MIN(cursor, (int)entryCount - 1));

@@ -25,18 +25,21 @@
 
 // The Gallery (Setup > "Gallery..."): the ships, weapons, sidekicks and other
 // items the player has come across, and the enemies met in the levels, drawn
-// with the game's own pictures.  What has been seen is kept in gallery.cfg in
+// with the game's own pictures, and a page with the statistics.  What has been seen is kept in gallery.cfg in
 // the user folder, apart from tyrian.sav; recording it only reads the game.
 
 // Reads gallery.cfg (at start).
 void gallery_load(void);
 
 // The level loop (src/tyrian2.c): the start and end of a level and each of
-// its frames, an enemy made in slot i (0..99) and an enemy destroyed.
+// its frames, an enemy of the level made in slot i (0..99), one made by
+// another enemy or at random (JE_newEnemy: never a piece of something
+// bigger) and an enemy destroyed.
 void gallery_level_start(void);
 void gallery_level_frame(void);
 void gallery_level_end(void);
 void gallery_enemy_made(unsigned int slot);
+void gallery_enemy_launched(unsigned int slot);
 void gallery_enemy_killed(unsigned int slot);
 
 // The items of the ship's upgrade menu (itemAvail) were loaded.
@@ -45,7 +48,8 @@ void gallery_shop_items(void);
 // Tests: record also with constant play (-c), which levels normally do not.
 extern bool gallery_test_record;
 
-// How many entries the gallery has seen, of each kind (tests).
+// How many entries the gallery has seen, of each kind (tests).  The last
+// page is the statistics (src/stats.c), which has no entries.
 typedef enum
 {
 	GALLERY_SHIPS,
@@ -53,6 +57,7 @@ typedef enum
 	GALLERY_SIDEKICKS,
 	GALLERY_OTHER,
 	GALLERY_ENEMIES,
+	GALLERY_STATS,
 	GALLERY_TABS
 } GalleryTab;
 unsigned int gallery_seen_count(GalleryTab tab);

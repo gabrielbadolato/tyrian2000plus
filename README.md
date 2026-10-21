@@ -208,7 +208,7 @@ controls again.
   and the links (Enter or A opens a link in your browser).
 - **Title screen > Setup:** Graphics (with the detail level), Sound,
   Controls, game speed, Jukebox, Language, Check Updates, Saved Games,
-  Gallery, Statistics, What's New and About.
+  Gallery (with the statistics), What's New and About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
   game also saves "LAST LEVEL" when you arrive at the ship after a level and
   when a level starts). Shown when there is one. If the game closed in the
@@ -240,19 +240,20 @@ controls again.
   Fire, Controls... (the same Setup > Controls) and Graphics... (full screen,
   scaling, Sharp Bilinear, VSync, Smooth Motion and brightness, applied right
   away).
-- **Setup > Statistics:** the totals of all your games (time in levels,
-  levels completed, enemies destroyed, deaths, secret levels, datacubes,
-  highest score) and the records of each level: best score, fastest time and
-  most enemies destroyed. Kept in statistics.cfg, next to the saves.
 - **Setup > Gallery:** the ships, weapons, sidekicks, shields, generators,
   special weapons and enemies you have come across, with the game's own
   pictures. An item you have not seen yet shows as a dark shape (its name is
   "???"); the ones the ship menus never offer, such as the secret ships,
   appear only once you find them. Each item shows its numbers (damage, armor,
   price); each enemy its armor, how many you destroyed and where you first
-  met it, and the pieces of a boss show together. Tab, or LB and RB on the
-  controller, change the page; arrows choose. It is kept in gallery.cfg,
-  next to the saves, and fills up as you play from now on.
+  met it, and the pieces of a boss or of a building show together. Tab, or
+  LB and RB on the controller, change the page; arrows choose. It is kept in
+  gallery.cfg, next to the saves, and fills up as you play from now on.
+- **Setup > Gallery > Statistics:** the totals of all your games (time in
+  levels, levels completed, enemies destroyed, deaths, secret levels,
+  datacubes, highest score) and the records of each level: best score,
+  fastest time and most enemies destroyed. Kept in statistics.cfg, next to
+  the saves.
 - **Setup > Saved Games:** on Windows and Linux, opens the folder with
   tyrian.sav (your saved games) and shows its path on the status line (on a
   Steam Deck in Game Mode there is no file manager, so the path is what you

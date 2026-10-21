@@ -692,6 +692,9 @@ const LangEntry lang_pt_br[] =
 	{ "Battery: Medium", "Bateria: média" },
 	{ "Battery: Full", "Bateria: cheia" },
 
+	// ---- touch screen buttons ("FIRE" is above; short, they fit a button) ----
+	{ "MODE", "MODO" },
+
 	// ---- keyboard on the screen (keys at most 9 characters) ----
 	{ "Space", "Espaço" },
 	{ "Delete", "Apagar" },

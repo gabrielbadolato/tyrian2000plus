@@ -24,6 +24,7 @@
 #include "network.h"
 #include "nortsong.h"
 #include "opentyr.h"
+#include "touch.h"
 #include "varz.h"
 #include "video.h"
 
@@ -87,6 +88,8 @@ void init_keyboard(void)
 	SDL_StopTextInput();
 
 	SDL_ShowCursor(SDL_DISABLE);
+
+	touch_init();
 
 #if SDL_VERSION_ATLEAST(2, 26, 0)
 	SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE, "1");
@@ -247,6 +250,9 @@ void handleSdlEvents(void)
 					break;
 				}
 
+				if (ev.key.keysym.sym != 0)
+					touch_hide();  // a real key, not one pushed for a controller or the touch screen
+
 				if (!ev.key.repeat)
 				{
 					keysactive[ev.key.keysym.scancode] = true;
@@ -385,7 +391,7 @@ void handleSdlEvents(void)
 				{
 					mouseHasMotionInput = true;
 
-					mouseInactive = false;
+					mouseInactive = ev.motion.which == SDL_TOUCH_MOUSEID;  // no pointer for a finger
 				}
 				break;
 
@@ -405,7 +411,7 @@ void handleSdlEvents(void)
 
 				mouseButtonsDown |= SDL_BUTTON(ev.button.button);
 
-				mouseInactive = false;
+				mouseInactive = ev.button.which == SDL_TOUCH_MOUSEID;
 				break;
 
 			case SDL_MOUSEBUTTONUP:
@@ -414,11 +420,22 @@ void handleSdlEvents(void)
 				mouseButtonsDown &= ~SDL_BUTTON(ev.button.button);
 				break;
 
+			case SDL_FINGERDOWN:
+			case SDL_FINGERUP:
+			case SDL_FINGERMOTION:
+				touch_handle_event(&ev);
+				break;
+
 			case SDL_QUIT:
 				JE_tyrianHalt(0);  // closing the window keeps the settings and the window's place, like Quit
 				break;
 		}
 	}
+
+	// a touch control pressed or let go: show it, even on screens that
+	// draw only when something changes
+	if (touch_take_redraw())
+		video_refresh();
 }
 
 bool hasInput(InputFlags flags)

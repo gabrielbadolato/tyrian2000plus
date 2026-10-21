@@ -124,8 +124,8 @@ bool gameplaySelect(void)
 				const int xMenuItem = xCenter - wMenuItem[i] / 2;
 				if (mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i])
 				{
-					const int yMenuItem = yMenuItems + dyMenuItems * i;
-					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
+					const int yMenuItem = yMenuItems + dyMenuItems * i - (dyMenuItems - hMenuItem) / 2;  // the whole row, easier to tap
+					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + dyMenuItems)
 					{
 						if (selectedIndex != i)
 						{
@@ -136,7 +136,7 @@ bool gameplaySelect(void)
 
 						if (mouseInput.button == SDL_BUTTON_LEFT &&
 						    mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i] &&
-						    mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
+						    mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + dyMenuItems)
 						{
 							action = true;
 						}
@@ -308,8 +308,8 @@ bool episodeSelect(void)
 			{
 				if (mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i])
 				{
-					const int yMenuItem = yMenuItems + dyMenuItems * i;
-					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
+					const int yMenuItem = yMenuItems + dyMenuItems * i - (dyMenuItems - hMenuItem) / 2;  // the whole row, easier to tap
+					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + dyMenuItems)
 					{
 						if (selectedIndex != i)
 						{
@@ -320,7 +320,7 @@ bool episodeSelect(void)
 
 						if (mouseInput.button == SDL_BUTTON_LEFT &&
 						    mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i] &&
-						    mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
+						    mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + dyMenuItems)
 						{
 							action = true;
 						}
@@ -484,8 +484,8 @@ bool difficultySelect(void)
 				const int xMenuItem = xCenter - wMenuItem[i] / 2;
 				if (mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i])
 				{
-					const int yMenuItem = yMenuItems + dyMenuItems * i;
-					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
+					const int yMenuItem = yMenuItems + dyMenuItems * i - (dyMenuItems - hMenuItem) / 2;  // the whole row, easier to tap
+					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + dyMenuItems)
 					{
 						if (selectedIndex != i)
 						{
@@ -496,7 +496,7 @@ bool difficultySelect(void)
 
 						if (mouseInput.button == SDL_BUTTON_LEFT &&
 						    mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i] &&
-						    mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
+						    mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + dyMenuItems)
 						{
 							action = true;
 						}
@@ -725,8 +725,8 @@ bool timedBattleSelect(void)
 				const int xMenuItem = xCenter - wMenuItem[i] / 2;
 				if (mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i])
 				{
-					const int yMenuItem = yMenuItems + dyMenuItems * i;
-					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
+					const int yMenuItem = yMenuItems + dyMenuItems * i - (dyMenuItems - hMenuItem) / 2;  // the whole row, easier to tap
+					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + dyMenuItems)
 					{
 						if (selectedIndex != i)
 						{

@@ -462,6 +462,11 @@ software) faz as próximas começarem cedo o bastante para não atrasar o
 quadro; vai pela metade a cada quadro sem imagem. O teste confere que em
 alpha=65536 toda fase é o próprio quadro. `SMOOTH_DUMP_FINE=<s>` com
 SMOOTH_DUMP salva também as imagens finas. Menus/fades seguem em 1x.
+Camada que anda 1 pixel a cada N quadros (map1YDelayMax/map2YDelayMax, ex.:
+trecho das pedras da fase Tyrian, N=3 e 2) pararia e pularia: `draw_background_1/2`
+chamam `smooth_layer_lead()`, que guarda quanto a camada está entre um passo e
+outro (centrado), e as imagens do meio somam isso ao fundo e aos inimigos do
+chão (slots 25-49 e 75-99, que dão o passo um quadro antes do fundo).
 Fora das fases: `smooth_show_until_due(frames, show, data)` faz o mesmo
 ritmo (uma imagem por atualização até o quadro vencer) chamando `show(alpha)`;
 usado nos fades (`fade_steps()` em `src/palette.c`, paleta no meio do caminho

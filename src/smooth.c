@@ -58,6 +58,7 @@ typedef struct
 	Entry entries[MAX_ENTRIES];
 	unsigned int count;
 	bool incomplete;  // something was drawn that the list cannot redraw
+	Sint32 lead[4];   // how far each background layer (0: the ground enemies) is between its steps
 } List;
 
 static List lists[2];
@@ -249,10 +250,51 @@ static int floorDiv(int a, int b)
 
 // Where to draw, in the phase being drawn, a thing `alpha` of the way from
 // `from` to `to`.
+static int phasedLead(int from, int to, Sint32 leadFrom, Sint32 leadTo, Uint32 alpha, int phase)
+{
+	// in 1/65536 of a fine pixel
+	const Sint64 fineFrom = ((Sint64)from << 16) * fineScale + (Sint64)leadFrom * fineScale;
+	const Sint64 fineTo = ((Sint64)to << 16) * fineScale + (Sint64)leadTo * fineScale;
+	const Sint64 at = fineFrom + (((fineTo - fineFrom) * alpha) >> 16);
+	const int fine = (int)((at + 32768) >> 16);
+	return floorDiv(fine - phase + fineScale - 1, fineScale);
+}
+
 static int phased(int from, int to, Uint32 alpha, int phase)
 {
-	const int fine = from * fineScale + (int)(((Sint64)(to - from) * fineScale * alpha + 32768) >> 16);
-	return floorDiv(fine - phase + fineScale - 1, fineScale);
+	return phasedLead(from, to, 0, 0, alpha, phase);
+}
+
+// A layer that steps a pixel every few frames (map1YDelayMax, map2YDelayMax)
+// would stand still and then jump; drawn `lead` pixels (/65536) from where it
+// is, it moves the same amount each frame.  Its ground enemies step with it.
+static Sint32 leadOf(const List *list, const Entry *e)
+{
+	if (e->tag == SMOOTH_BACKGROUND && e->id < 4)
+		return list->lead[e->id];
+	if (e->tag == SMOOTH_ENEMY && ((e->id >= 25 && e->id < 50) || (e->id >= 75 && e->id < 100)))
+		return list->lead[0];  // the ground enemies (JE_drawEnemy(50) and (100))
+	return 0;
+}
+
+void smooth_layer_lead(unsigned int layer, int delay, int delayMax, int move)
+{
+	if (!smooth_recording || layer >= 4)
+		return;
+	if (delayMax <= 1)
+	{
+		cur->lead[layer] = 0;
+		if (layer == 1)
+			cur->lead[0] = 0;
+		return;
+	}
+	// `steps` frames since the layer last moved, centered on where it is drawn
+	const int steps = delayMax - delay;
+	const int pixels = move >= 2 ? move : 1;
+	cur->lead[layer] = (Sint32)((Sint64)(2 * steps - (delayMax - 1)) * pixels * 65536 / (2 * delayMax));
+	// the ground enemies step a frame before the layer (when delay is 1)
+	if (layer == 1)
+		cur->lead[0] = (Sint32)((Sint64)(2 * ((steps + 1) % delayMax) - (delayMax - 1)) * pixels * 65536 / (2 * delayMax));
 }
 
 static void drawEntry(const Entry *e, int x, int y, intptr_t b, intptr_t c)
@@ -383,7 +425,7 @@ static void drawBackgroundBetween(const Entry *e, const Entry *p, Uint32 alpha)
 
 		if (abs(dy) <= 2 * 28 && abs(dx) <= 2 * 24)
 		{
-			y = phased(y - dy, y, alpha, phaseY);
+			y = phasedLead(y - dy, y, leadOf(prev, p), leadOf(cur, e), alpha, phaseY);
 			x = phased(x - dx, x, alpha, phaseX);
 
 			// back into a tile, between the two frames' tiles
@@ -447,7 +489,7 @@ static void redrawPhase(Uint32 alpha, int scale, int x, int y)
 		}
 		else
 		{
-			drawEntry(e, phased(p->x, e->x, alpha, phaseX), phased(p->y, e->y, alpha, phaseY), e->b, e->c);
+			drawEntry(e, phased(p->x, e->x, alpha, phaseX), phasedLead(p->y, e->y, leadOf(prev, p), leadOf(cur, e), alpha, phaseY), e->b, e->c);
 		}
 	}
 
@@ -504,6 +546,7 @@ void smooth_level_begin(void)
 
 	cur->count = 0;
 	cur->incomplete = false;
+	memset(cur->lead, 0, sizeof(cur->lead));
 	prev->count = 0;
 	prevUsable = false;
 	haveSnapshot = false;
@@ -908,6 +951,7 @@ void smooth_frame_shown(void)
 	cur = t;
 	cur->count = 0;
 	cur->incomplete = false;
+	memset(cur->lead, 0, sizeof(cur->lead));
 	prevUsable = prev->count > 0;
 	if (prevUsable)
 		indexPrev();
@@ -986,6 +1030,7 @@ void smooth_sim_begin(void)
 	cur = t;
 	cur->count = 0;
 	cur->incomplete = false;
+	memset(cur->lead, 0, sizeof(cur->lead));
 	prevUsable = goingOn && simRedraws && prev->count > 0;
 	if (prevUsable)
 		indexPrev();

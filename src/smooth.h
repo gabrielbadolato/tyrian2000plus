@@ -111,6 +111,9 @@ typedef enum
 void smooth_tag(SmoothTag tag, unsigned int id, unsigned int part);
 void smooth_untag(void);
 
+// A background layer steps every delayMax frames (delay: frames until it moves).
+void smooth_layer_lead(unsigned int layer, int delay, int delayMax, int move);
+
 // The hook: what a primitive drew (dst, and src for the filters that read
 // another surface), where, and with what.
 void smooth_record(SmoothOp op, SDL_Surface *dst, SDL_Surface *src, int x, int y,

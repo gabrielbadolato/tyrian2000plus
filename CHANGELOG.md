@@ -17,6 +17,10 @@ change is in this repository's git log.
   from frame to frame even with Smooth Motion on; now it moves in quarter
   pixels. It turns on and off with Smooth Motion and needs the "None" scaler
   (the default); if a computer is too slow for it, the game uses 3x or 2x.
+- **Smooth Motion, slow scrolling**: where a level scrolls slowly (a layer
+  moves one pixel every few frames, as in the rocky part of level 1), the
+  background and the enemies on the ground now glide at an even speed instead
+  of stopping and jumping.
 
 ## v1.4 (2026-10-21)
 

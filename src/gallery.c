@@ -131,7 +131,10 @@ typedef struct
 	bool used;
 	bool killed;     // its last piece was destroyed
 	SeenEnemy look;  // parts where they are in the thing
+	unsigned int made;  // the frame it came (for gallery_dump)
 } Thing;
+
+static unsigned int frameCount;
 
 static Thing things[100];
 static Uint8 slotThing[100];  // the thing of the enemy in each slot + 1, or 0
@@ -522,7 +525,9 @@ static void finishThing(unsigned int t)
 			const Part *p = &look.part[i];
 			fprintf(gallery_dump, "\t%u:%u:%u:%d:%d:%u:%u", p->bank, p->gr, p->size, p->x, p->y, p->type, p->slot);
 		}
-		fprintf(gallery_dump, "\n");
+		// when it came and where (the things that come together, such as a
+		// boss and its arms when they are not linked)
+		fprintf(gallery_dump, "\t@%u:%d:%d\n", thing->made, minX, minY);
 	}
 
 	char level[11];
@@ -722,6 +727,7 @@ static void lookAtPending(void)
 				continue;  // cannot happen: a thing has a piece in a slot
 			memset(&things[thing], 0, sizeof(things[thing]));
 			things[thing].used = true;
+			things[thing].made = frameCount;
 		}
 
 		for (unsigned int g = 0; g < groupCount; ++g)
@@ -738,6 +744,7 @@ void gallery_level_frame(void)
 		lookAtPending();
 		finishGoneThings();
 	}
+	++frameCount;
 }
 
 void gallery_enemy_killed(unsigned int slot)
@@ -1463,6 +1470,8 @@ static void trimmedName(char *dst, size_t size, const char *src)
 
 static const char *entryName(const Entry *entry, char *buffer, size_t size)
 {
+	if (entry->kind == KIND_ENEMY)
+		return "";  // the game has no names for them (and ours could be wrong)
 	if (!entry->seen)
 		return "???";
 
@@ -1475,10 +1484,6 @@ static const char *entryName(const Entry *entry, char *buffer, size_t size)
 	case KIND_GENERATOR: trimmedName(buffer, size, powerSys[entry->id].name); break;
 	case KIND_SPECIAL:   trimmedName(buffer, size, special[entry->id].name); break;
 	case KIND_ENEMY:
-		if (enemies[entry->id].parts > 1)
-			snprintf(buffer, size, "%s", tr("Large enemy"));
-		else
-			snprintf(buffer, size, "%s", tr("Enemy"));
 		break;
 	}
 	return buffer;
@@ -1538,7 +1543,7 @@ static void drawDetails(const Entry *entry)
 	int y = GRID_Y + 2;
 	const int maxW = PANEL_W - 8;
 	const Font fonts[2] = { FONT_NORMAL, FONT_SMALL };
-	for (int f = 0; f < 2; ++f)
+	for (int f = 0; f < 2 && name[0] != '\0'; ++f)
 	{
 		// each line: up to the last space (or after the last hyphen) that fits
 		char lines[3][64];

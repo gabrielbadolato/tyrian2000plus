@@ -14,8 +14,9 @@ change is in this repository's git log.
   shields, generators, special weapons and enemies you have come across,
   drawn with the game's own pictures, with their numbers (damage, armor,
   price) and, for the enemies, how many you destroyed and where you met them
-  first. The enemies are a fixed list of the game's own (about 390, each one
-  once, the pieces of a boss or of a building together), and what you have
+  first. The enemies are a fixed list of the game's own (about 350, each one
+  once, the pieces of a boss or of a building together, without names: the
+  game has none), and what you have
   not seen yet is a dark shape. It fills up as you play, in gallery.cfg next
   to the saves (tyrian.sav does not change); keyboard, controller (LB/RB
   change the page), mouse and touch. The statistics moved into it, as its

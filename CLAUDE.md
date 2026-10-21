@@ -316,13 +316,17 @@ peça do mapa que ainda está lá também entra (construção que vem fileira po
 fileira; inimigos ligados que chegam um a um são formação, não entram). A
 coisa só é gravada quando todas as peças somem (destruída se a última foi
 destruída) ou no fim da fase. Lista fixa (pedido do Gabriel, 2026-10-21):
-`src/gallery_catalog.h` tem os ~390 inimigos do jogo (aparência + índices do
+`src/gallery_catalog.h` tem os ~350 inimigos do jogo (aparência + índices do
 enemyDat das peças, por "dataset": 1 = episódios 1-3, 4, 5), gerado por
 `tests/make_gallery_catalog.py` a partir de `GALLERY_DUMP=<arq.tsv>` do
 `test_autoplay` (todos os episódios × dificuldades 1,2,3,4,6,8 × 2 caminhos;
-o script separa coisas que só se encostaram, junta tipos que vêm juntos em
-pelo menos metade das vezes e se tocam, tira repetidos e figuras vazias com
-`--drop=`). `catalogMatch()` marca cada entrada da lista que a coisa contém
+cada linha termina com `@quadro:x:y`, quando e onde a coisa veio; o script
+separa coisas que só se encostaram, junta tipos que vêm juntos em pelo menos
+metade das vezes e se tocam, coisas no céu do mesmo quadro sempre no mesmo
+lugar (braço de chefe sem linknum), metades lado a lado do mesmo quadro
+(braços, tentáculos; se passam de 260 px, fica uma só), peça cujas figuras
+estão todas noutra entrada, tira repetidos e figuras vazias com `--drop=`).
+Inimigos não têm nome na ficha (pedido do Gabriel 2026-10-21). `catalogMatch()` marca cada entrada da lista que a coisa contém
 (duas construções lado a lado = duas); o que a lista não tem vira entrada
 pela aparência (`pieceOf` esconde pedaços). Inimigo novo/fase nova: rodar a
 coleta e gerar de novo. Inimigo lançado por outro (`gallery_enemy_launched`,

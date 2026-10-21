@@ -784,8 +784,6 @@ const LangEntry lang_pt_br[] =
 	{ "Weapons", "Armas" },
 	{ "Other", "Outros" },
 	{ "Enemies", "Inimigos" },
-	{ "Enemy", "Inimigo" },
-	{ "Large enemy", "Inimigo grande" },
 	{ "Not found yet.", "Ainda não encontrado." },
 	{ "Price %u", "Preço %u" },
 	{ "Front weapon", "Arma frontal" },

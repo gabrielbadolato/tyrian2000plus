@@ -335,7 +335,9 @@ JE_integer player_shot_create(JE_word portNum, uint bay_i, JE_word PX, JE_word P
 		if (shot_id == MAX_PWEAPON)
 			return MAX_PWEAPON;
 
-		if (shotMultiPos[bay_i] == weapon->max || shotMultiPos[bay_i] > 8)
+		// Tyrian 2000+: >= 8, not > 8, so a position left by another weapon of
+		// the same bay (a special weapon's flare) cannot go past the 8 entries
+		if (shotMultiPos[bay_i] == weapon->max || shotMultiPos[bay_i] >= 8)
 			shotMultiPos[bay_i] = 1;
 		else
 			shotMultiPos[bay_i]++;

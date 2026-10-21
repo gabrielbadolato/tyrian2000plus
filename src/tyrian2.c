@@ -31,6 +31,7 @@
 #include "keyboard.h"
 #include "lang.h"
 #include "lds_play.h"
+#include "levelrec.h"
 #include "logging.h"
 #include "loudness.h"
 #include "lvllib.h"
@@ -82,26 +83,34 @@ void JE_starShowVGA(void)
 {
 	if (!playerEndLevel && !skipStarShowVGA)
 	{
-		if (smoothScroll != 0 /*&& thisPlayerNum != 2*/)
+		// resuming a level: as fast as it goes, showing a frame now and then
+		const bool fast = levelrec_fast();
+
+		if (smoothScroll != 0 /*&& thisPlayerNum != 2*/ && !fast)
 		{
 			delayUntilElapsed();
 
 			setFrameCount(frameCountMax);
 		}
 
-		if (starShowVGASpecialCode == 1)
+		if (!fast || levelrec_fast_frame_due())
 		{
-			showFlipped(VGAScreenSeg, game_screen);
+			if (starShowVGASpecialCode == 1)
+			{
+				showFlipped(VGAScreenSeg, game_screen);
+			}
+			else if (starShowVGASpecialCode == 2 && processorType >= 2)
+			{
+				showHeadlight(VGAScreenSeg, game_screen, player[0].x, player[0].y);
+			}
+			else
+			{
+				showNormal(VGAScreenSeg, game_screen);
+			}
+			if (fast)
+				levelrec_draw_progress(VGAScreenSeg);
+			JE_showVGA();
 		}
-		else if (starShowVGASpecialCode == 2 && processorType >= 2)
-		{
-			showHeadlight(VGAScreenSeg, game_screen, player[0].x, player[0].y);
-		}
-		else
-		{
-			showNormal(VGAScreenSeg, game_screen);
-		}
-		JE_showVGA();
 	}
 
 	handleSdlEvents();
@@ -577,6 +586,8 @@ void JE_main(void)
 
 	int lastEnemyOnScreen;
 
+	bool watchedReplay;  // the level was a Replay (see levelrec.c)
+
 	/* NOTE: BEGIN MAIN PROGRAM HERE AFTER LOADING A GAME OR STARTING A NEW ONE */
 
 	/* ----------- GAME ROUTINES ------------------------------------- */
@@ -600,6 +611,9 @@ start_level:
 
 	stats_level_end();  // before galagaMode changes twoPlayerMode
 
+	levelrec_level_end();
+	watchedReplay = levelrec_end_watch();
+
 	if (galagaMode)
 		twoPlayerMode = false;
 
@@ -616,9 +630,12 @@ start_level:
 		setFrameSpeed(speed);
 	}
 
-	if (playDemo)
+	if (playDemo || watchedReplay)
 	{
-		endPlayDemo();
+		if (playDemo)
+			endPlayDemo();
+		else
+			stoppedDemo = true;  // straight back to the title screen
 
 		moveTyrianLogoUp = true;
 		stop_song();
@@ -631,7 +648,7 @@ start_level:
 
 	difficultyLevel = oldDifficultyLevel;   /*Return difficulty to normal*/
 
-	if (!playDemo)
+	if (!playDemo && !watchedReplay)
 	{
 		if ((!all_players_dead() || normalBonusLevelCurrent || bonusLevelCurrent) && !playerEndLevel)
 		{
@@ -666,7 +683,7 @@ start_level:
 	}
 	doNotSaveBackup = false;
 
-	if (playDemo)
+	if (playDemo || watchedReplay)
 		return;
 
 start_level_first:
@@ -874,6 +891,9 @@ start_level_first:
 	}
 #endif
 
+	// Tyrian 2000+: record the level, or replay the recording (seeds the random numbers)
+	levelrec_level_setup();
+
 	initialize_starfield();
 
 	JE_setNewGameSpeed();
@@ -881,11 +901,12 @@ start_level_first:
 	set_volume(tyrMusicVolume, fxVolume);
 
 	/*Save backup game*/
-	if (!playDemo && !doNotSaveBackup && !timedBattleMode)
+	if (!playDemo && !doNotSaveBackup && !timedBattleMode && !levelrec_watching())
 	{
 		temp = twoPlayerMode ? 22 : 11;
 		JE_saveGame(temp, "LAST LEVEL    ");
 	}
+	levelrec_level_begin();
 
 	twoPlayerLinked = false;
 	linkGunDirec = M_PI;
@@ -989,6 +1010,7 @@ start_level_first:
 level_loop:
 
 	stats_level_frame();
+	levelrec_frame();
 
 	//tempScreenSeg = game_screen; /* side-effect of game_screen */
 
@@ -2084,7 +2106,7 @@ draw_player_shot_loop_end:
 					firstGameOver = false;
 				}
 
-				if (!playDemo)
+				if (!playDemo && !levelrec_replaying())
 				{
 					push_joysticks_as_keyboard();
 					handleSdlEvents();
@@ -2099,7 +2121,7 @@ draw_player_shot_loop_end:
 		}
 	}
 
-	if (playDemo) // input stops demo
+	if (playDemo || levelrec_watching()) // input stops demo
 	{
 		push_joysticks_as_keyboard();
 		handleSdlEvents();
@@ -2108,8 +2130,23 @@ draw_player_shot_loop_end:
 		{
 			reallyEndLevel = true;
 
-			stoppedDemo = true;
+			if (playDemo)
+				stoppedDemo = true;
 		}
+		pause_pressed = ingamemenu_pressed = false;
+
+		if (levelrec_take_skip())
+			goto level_loop;
+	}
+	else if (levelrec_fast()) // resuming the level: no input until it is resumed
+	{
+		handleSdlEvents();
+		mouseClearInput();
+		keyboardClearInput();
+		pause_pressed = ingamemenu_pressed = false;
+
+		if (levelrec_take_skip())
+			goto level_loop;
 	}
 	else // input handling for pausing, menu, cheats
 	{
@@ -2124,9 +2161,14 @@ draw_player_shot_loop_end:
 			keyboardClearInput();
 
 			skipStarShowVGA = false;
+			levelrec_cheats_begin();
 			JE_mainKeyboardInput();
+			levelrec_cheats_end();
 			if (skipStarShowVGA)
+			{
+				levelrec_note_skip();
 				goto level_loop;
+			}
 		}
 
 #ifdef NDEBUG
@@ -2518,6 +2560,8 @@ new_game:
 						break; /*store savepoint*/
 
 					case 'b':  // Explicit auto-save.  (Used before bonus games.)
+						if (levelrec_resume_section() != 0)  // resumed or replayed: it is in the recording
+							break;
 						if (twoPlayerMode)
 							temp = 22;
 						else
@@ -2551,6 +2595,15 @@ new_game:
 						// Continue comes back here instead of to the start of the level just
 						// finished (the game saves it again when the next level starts).  Not
 						// right after loading a game: it would only copy that save over Last Level.
+						// A level resumed or replayed (see levelrec.c) goes straight to the
+						// level, as if the player had chosen it here.
+						if (levelrec_resume_section() != 0)
+						{
+							mainLevel = levelrec_resume_section();
+							jumpSection = true;
+							break;
+						}
+
 						if (!playDemo && !doNotSaveBackup && !timedBattleMode && !gameJustLoaded)
 						{
 							JE_saveGame(twoPlayerMode ? 22 : 11, "LAST LEVEL    ");
@@ -3284,6 +3337,7 @@ bool titleScreen(void)
 		MENU_ITEM_INSTRUCTIONS,
 		MENU_ITEM_SETUP,
 		MENU_ITEM_DEMO,
+		MENU_ITEM_REPLAY,
 		MENU_ITEM_ABOUT,
 		MENU_ITEM_QUIT,
 	};
@@ -3295,8 +3349,10 @@ bool titleScreen(void)
 	bool updateNoticeShown = false;
 
 	int continueSlot = continueSaveSlot();
-	size_t firstIndex = continueSlot > 0 ? MENU_ITEM_CONTINUE : MENU_ITEM_NEW_GAME;  // Continue is hidden without a saved game
-	size_t selectedIndex = firstIndex;
+	// Continue is hidden without a saved game, Replay without a recorded level
+	bool shown[COUNTOF(menuText)];
+	int row[COUNTOF(menuText)];  // of the shown items
+	size_t selectedIndex = continueSlot > 0 ? MENU_ITEM_CONTINUE : MENU_ITEM_NEW_GAME;
 	size_t specialNameProgress[SA_ENGAGE] = { 0 };
 
 	const int xCenter = VGAScreen->w / 2;
@@ -3311,13 +3367,21 @@ bool titleScreen(void)
 		if (restart)
 		{
 			continueSlot = continueSaveSlot();
-			firstIndex = continueSlot > 0 ? MENU_ITEM_CONTINUE : MENU_ITEM_NEW_GAME;
-			if (selectedIndex < firstIndex)
-				selectedIndex = firstIndex;
+			int rows = 0;
+			for (size_t i = 0; i < COUNTOF(menuText); ++i)
+			{
+				shown[i] = i == MENU_ITEM_CONTINUE ? continueSlot > 0
+				         : i == MENU_ITEM_REPLAY ? levelrec_can_watch()
+				         : true;
+				row[i] = rows;
+				rows += shown[i];
+			}
+			if (!shown[selectedIndex])
+				selectedIndex = MENU_ITEM_NEW_GAME;
 
-			// with Continue the list closes up a little to stay on the screen
-			yMenuItems = continueSlot > 0 ? 96 : 100;
-			hMenuItem = continueSlot > 0 ? 11 : 12;
+			// with more items the list closes up a little to stay on the screen
+			yMenuItems = rows > 9 ? 92 : rows > 8 ? 96 : 100;
+			hMenuItem = rows > 9 ? 10 : rows > 8 ? 11 : 12;
 
 			play_song(SONG_TITLE);
 
@@ -3355,13 +3419,16 @@ bool titleScreen(void)
 			}
 
 			// Draw menu items.
-			for (size_t i = firstIndex; i < COUNTOF(menuText); ++i)
+			for (size_t i = 0; i < COUNTOF(menuText); ++i)
 			{
+				if (!shown[i])
+					continue;
+
 				const char *const text = menuText[i];
 
 				wMenuItem[i] = JE_textWidth(text, FONT_NORMAL);
 				const int x = xCenter - wMenuItem[i] / 2;
-				const int y = yMenuItems + hMenuItem * (int)(i - firstIndex);
+				const int y = yMenuItems + hMenuItem * row[i];
 
 				drawFontHv(VGAScreen, x - 1, y - 1, menuText[i], FONT_NORMAL, 15, -10);
 				drawFontHv(VGAScreen, x + 1, y + 1, menuText[i], FONT_NORMAL, 15, -10);
@@ -3383,7 +3450,7 @@ bool titleScreen(void)
 		memcpy(VGAScreen->pixels, VGAScreen2->pixels, VGAScreen->pitch * VGAScreen->h);
 
 		// Highlight selected menu item.
-		drawFontHvAligned(VGAScreen, VGAScreen->w / 2, yMenuItems + hMenuItem * (int)(selectedIndex - firstIndex), menuText[selectedIndex], FONT_NORMAL, ALIGN_CENTER, 15, -1);
+		drawFontHvAligned(VGAScreen, VGAScreen->w / 2, yMenuItems + hMenuItem * row[selectedIndex], menuText[selectedIndex], FONT_NORMAL, ALIGN_CENTER, 15, -1);
 
 		JE_mouseStartFilter(0xF0);
 		JE_showVGA();
@@ -3433,12 +3500,15 @@ bool titleScreen(void)
 		if (mouseGetInput(INPUT_ANY, &mouseInput))
 		{
 			// Find menu item that was hovered or clicked.
-			for (size_t i = firstIndex; i < COUNTOF(menuText); ++i)
+			for (size_t i = 0; i < COUNTOF(menuText); ++i)
 			{
+				if (!shown[i])
+					continue;
+
 				const int xMenuItem = xCenter - wMenuItem[i] / 2;
 				if (mouseInput.x >= xMenuItem && mouseInput.x < xMenuItem + wMenuItem[i])
 				{
-					const int yMenuItem = yMenuItems + hMenuItem * (int)(i - firstIndex);
+					const int yMenuItem = yMenuItems + hMenuItem * row[i];
 					if (mouseInput.y >= yMenuItem && mouseInput.y < yMenuItem + hMenuItem)
 					{
 						if (selectedIndex != i)
@@ -3475,18 +3545,18 @@ bool titleScreen(void)
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				selectedIndex = selectedIndex == firstIndex
-					? COUNTOF(menuText) - 1
-					: selectedIndex - 1;
+				do
+					selectedIndex = (selectedIndex + COUNTOF(menuText) - 1) % COUNTOF(menuText);
+				while (!shown[selectedIndex]);
 				break;
 			}
 			case SDL_SCANCODE_DOWN:
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				selectedIndex = selectedIndex == COUNTOF(menuText) - 1
-					? firstIndex
-					: selectedIndex + 1;
+				do
+					selectedIndex = (selectedIndex + 1) % COUNTOF(menuText);
+				while (!shown[selectedIndex]);
 				break;
 			}
 			case SDL_SCANCODE_SPACE:
@@ -3566,12 +3636,16 @@ bool titleScreen(void)
 			{
 				fade_black(15);
 
+				// a level left in the middle when the game closed goes on from there
+				levelrec_request_resume(levelrec_can_resume(continueSlot));
+
 				performSave = false;
 				JE_operation((JE_byte)continueSlot);  // loads it, as Load Game does
 
 				if (gameLoaded)
 					return true;
 
+				levelrec_request_resume(false);
 				restart = true;
 				break;
 			}
@@ -3628,6 +3702,16 @@ bool titleScreen(void)
 
 				playDemo = true;
 				return true;
+			}
+			case MENU_ITEM_REPLAY:
+			{
+				fade_black(15);
+
+				if (levelrec_start_watch())
+					return true;
+
+				restart = true;
+				break;
 			}
 			case MENU_ITEM_ABOUT:
 			{

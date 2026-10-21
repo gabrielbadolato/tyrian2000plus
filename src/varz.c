@@ -22,6 +22,7 @@
 #include "editship.h"
 #include "episodes.h"
 #include "joystick.h"
+#include "levelrec.h"
 #include "logging.h"
 #include "loudness.h"
 #include "mainint.h"
@@ -440,6 +441,8 @@ void JE_drawOptionLevel(void)
 
 void JE_tyrianHalt(JE_byte code)
 {
+	levelrec_close();  // a level being played can be resumed
+
 	deinit_audio();
 	deinit_video();
 	deinit_joysticks();

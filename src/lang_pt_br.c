@@ -188,10 +188,14 @@ const LangEntry lang_pt_br[] =
 	{ "Setup", "Configurações" },
 	{ "About", "Sobre" },
 	{ "Continue", "Continuar" },
+	{ "Replay", "Rever fase" },
 
 	// ---- messages during a level, at most 30 characters ----
 	{ "Enemy approaching from behind.", "Inimigo chegando por trás." },
 	{ "Controller %d: battery low!", "Controle %d: bateria fraca!" },
+	{ "Could not resume the level.", "Não deu para retomar a fase." },
+	{ "Resuming the level... %u%%", "Retomando a fase... %u%%" },
+	{ "Replay of the last level", "Revendo a última fase" },
 	{ "Large mass detected ahead!", "Massa enorme à frente!" },
 	{ "Intercepting enemy aircraft.", "Interceptando naves inimigas." },
 	{ "Cleared enemy platforms.", "Plataformas inimigas limpas." },

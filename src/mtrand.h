@@ -26,4 +26,8 @@ unsigned long mt_rand(void);
 float mt_rand_1(void);
 float mt_rand_lt1(void);
 
+// Tyrian 2000+: a summary of the generator's state, to check that a replay
+// of a level draws the same numbers (see levelrec.c)
+unsigned long mt_state_checksum(void);
+
 #endif /* MTRAND_H */

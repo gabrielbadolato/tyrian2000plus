@@ -49,7 +49,9 @@ the open-source port of Tyrian. What this version adds:
 - Controller button names in the help screens.
 - A keyboard on the screen to type save and high score names with the
   controller, and a warning when the controller's battery is low.
-- "Continue" on the title screen: back to the last game in one press.
+- "Continue" on the title screen: back to the last game in one press, and
+  back to the very point of a level if the game closed in the middle of it.
+- "Replay" on the title screen: watch the last level you played again.
 - In the ship's upgrade menu, each item shows its damage (or armor, shield or
   power) in green when it beats what your ship has and in red when it is
   weaker.
@@ -187,7 +189,14 @@ In a window, the game opens where it was last time, with the same size.
   About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
   game also saves "LAST LEVEL" when you arrive at the ship after a level and
-  when a level starts). Shown when there is one.
+  when a level starts). Shown when there is one. If the game closed in the
+  middle of a level (the window closed, the Steam Deck turned off, a crash),
+  Continue goes back to that point of the level and pauses there; it takes a
+  few seconds, as the game replays the level unseen up to that point.
+  Quitting a level from its menu gives the level up, as always.
+- **Title screen > Replay:** shows the last level you played again (it is
+  recorded as you play, in lastlevel.rec in your user folder). Any key or
+  button stops it. Shown when there is a recorded level.
 - **Setup > Sound > Music Sound:** "Accurate" (the default, Nuked OPL3) or
   "Classic" (the emulator OpenTyrian always used).
 - **Setup > Controls:** keyboard, controller, mouse, Auto Fire, Vibration,

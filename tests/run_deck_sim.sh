@@ -17,7 +17,7 @@ SCRIPT="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 mkdir -p "$3"
 SHOTS="$(cd "$3" && pwd)"
 USERDIR="${4:-$(mktemp -d)}"
-mkdir -p "$USERDIR"
+mkdir -p "$USERDIR/.config"  # as ~/.config exists on a real Deck
 
 cd "$(dirname "$0")/.."
 OUT=build/deck_sim

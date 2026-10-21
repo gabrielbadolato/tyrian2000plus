@@ -164,6 +164,13 @@ int main(int argc, char *argv[])
 	check(find(NOTES_BULLET, "one") >= 0, "a * item");
 	check(find(NOTES_TEXT, "2. Docs are here.") >= 0, "a link's text only, no code marks");
 
+	printf("a link in the middle of a sentence\n");
+	gotCount = 0;
+	whatsnew_build_notes("- See https://x.org/b for details.\n", false, sink);
+	print();
+	check(find(NOTES_LINK, "See") >= 0, "the words before the link name it");
+	check(find(NOTES_SUBBULLET, "for details.") >= 0, "the words after the link are kept");
+
 	printf("only English, asked for Portuguese\n");
 	gotCount = 0;
 	whatsnew_build_notes("**English**\n- only\n", true, sink);

@@ -1,4 +1,4 @@
-# New game, Start Level: play with the stick and A, then the pause menu (Start)
+# New game, Start Level (the second A confirms the planet on the map): play with the stick and A, then the pause menu (Start)
 6000 press a
 2500 press a
 2500 press a
@@ -8,6 +8,7 @@
 400 press down
 400 press down
 400 press a
+2500 press a
 7000 shot 20-fase
 100 stick -20000 0
 100 hold a 3000

@@ -243,8 +243,9 @@ controls again.
   highest score) and the records of each level: best score, fastest time and
   most enemies destroyed. Kept in statistics.cfg, next to the saves.
 - **Setup > Saved Games:** on Windows and Linux, opens the folder with
-  tyrian.sav (your saved games); in the browser, downloads or loads it. See
-  below.
+  tyrian.sav (your saved games) and shows its path on the status line (on a
+  Steam Deck in Game Mode there is no file manager, so the path is what you
+  get); in the browser, downloads or loads it. See below.
 - **Setup > About:** the same About screen, to see it in the middle of a
   saved game.
 - **Setup > What's New** (also at the top of About): what changed in each
@@ -261,7 +262,9 @@ controls again.
   answer brings the notes of each version for What's New, kept in
   release-notes.txt in your user folder for when there is no internet. None
   of your data is sent; without internet, nothing shows. Set it to "Off" to
-  turn it off.
+  turn it off. In the browser the game never asks (that version is always
+  the newest one on itch.io); the page itself fetches the notes for What's
+  New.
 
 ## Saved games between computers and the browser
 

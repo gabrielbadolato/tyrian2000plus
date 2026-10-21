@@ -289,6 +289,31 @@ static void captureKeySetting(size_t i, int x, int y, int w, int xStatus, const 
 }
 
 // opens on the given page and leaves when backing out of it
+// Setup > Saved Games: the status line says where the folder is, in the
+// game's own characters, cut at the start if it is too long for the line.
+static char savesStatus[128] = "";
+#define SAVES_STATUS_X 4  // the whole line: a path is long
+
+static void setSavesStatus(bool opened)
+{
+	const char *path = userDirDisplayPath();
+	char *absolute = NULL;
+	if (path == NULL || path[0] == '\0')
+		path = absolute = SDL_GetBasePath();  // portable: next to the game
+
+	char shown[256] = "";
+	if (path != NULL)
+		lang_from_utf8(shown, sizeof(shown), path);
+	SDL_free(absolute);
+
+	const char *const prefix = opened ? tr("Opening:") : tr("Folder:");
+	const int width = 316 - SAVES_STATUS_X - JE_textWidth(prefix, FONT_SMALL) - JE_textWidth(" ...", FONT_SMALL);
+	const char *start = shown;
+	while (*start != '\0' && JE_textWidth(start, FONT_SMALL) > width)
+		++start;
+	snprintf(savesStatus, sizeof(savesStatus), "%s %s%s", prefix, start != shown ? "..." : "", start);
+}
+
 void setupMenuPage(SetupPage page)
 {
 	typedef enum
@@ -754,7 +779,11 @@ void setupMenuPage(SetupPage page)
 		const char *description = tr(menuItems[*selectedMenuItemIndex].description);
 		if (menuItems[*selectedMenuItemIndex].id == MENU_ITEM_JOYSTICK_NUMBER && joy != NULL)
 			description = joystick_display_name(joystickIndex);
-		JE_textShade(VGAScreen, xMenuItemName, 190, description, 15, 4, PART_SHADE);
+		else if (menuItems[*selectedMenuItemIndex].id == MENU_ITEM_SAVES && savesStatus[0] != '\0')
+			description = savesStatus;  // where the folder is, after choosing the item
+		else
+			savesStatus[0] = '\0';
+		JE_textShade(VGAScreen, description == savesStatus ? SAVES_STATUS_X : xMenuItemName, 190, description, 15, 4, PART_SHADE);
 
 		// Draw picker box and items.
 
@@ -1173,7 +1202,9 @@ void setupMenuPage(SetupPage page)
 					// the page's own window, to download or upload the file
 					emscripten_run_script("if (window.tyrianSaves) window.tyrianSaves.open();");
 #else
-					userDirOpenInFileManager();
+					// The folder's path stays on the status line: on the Steam
+					// Deck in Game Mode there is no file manager to open it.
+					setSavesStatus(userDirOpenInFileManager());
 #endif
 					break;
 				}

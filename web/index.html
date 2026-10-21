@@ -329,8 +329,50 @@
   // the game's Setup > Saved Games
   window.tyrianSaves = { open: openSaves };
 
+  // ---- What's New: the notes of each release, from GitHub ----
+  // The game itself does not ask GitHub in the browser (no threads, and this
+  // page is always the newest version on itch.io), so the page asks, and
+  // writes release-notes.txt in the game's folder the way src/update_check.c
+  // does: an "@@ tag date" line, then the notes (the English and Portuguese
+  // parts), before the game starts.  Without internet the file from the last
+  // visit stays.
+  var releaseNotes = null;
+  fetch("https://api.github.com/repos/gabrielbadolato/tyrian2000plus/releases?per_page=10", {
+    headers: { "Accept": "application/vnd.github+json" }
+  }).then(function (r) {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }).then(function (list) {
+    var text = "# Release notes of Tyrian 2000+, from GitHub, for the What's New screen.\n";
+    list.forEach(function (rel) {
+      if (rel.draft || rel.prerelease || !/^v\d/.test(rel.tag_name || "")) return;
+      text += "@@ " + rel.tag_name + " " + (rel.published_at || "").slice(0, 10) + "\n";
+      (rel.body || "").split(/\r?\n/).forEach(function (line) {
+        text += (line.indexOf("@@") === 0 ? " " : "") + line + "\n";
+      });
+    });
+    releaseNotes = text;
+    writeReleaseNotes();
+  }).catch(function (e) {
+    console.log("release notes not fetched", e);
+  });
+
+  function writeReleaseNotes() {
+    // only once the saves are mounted (preRun) and before the game reads it
+    if (!releaseNotes || !Module.FS || !overlay.classList.contains("ready")) return;
+    try {
+      Module.FS.mkdirTree(GAME_DIR);
+      Module.FS.writeFile(GAME_DIR + "/release-notes.txt", releaseNotes);
+      releaseNotes = null;
+      syncSoon();
+    } catch (e) {
+      console.log("release notes not written", e);
+    }
+  }
+
   function start() {
     if (!overlay.classList.contains("ready")) return;
+    writeReleaseNotes();
     overlay.style.display = "none";
     running = true;
     document.body.classList.add("playing");
@@ -377,6 +419,7 @@
       status.textContent = "";
       overlay.classList.add("ready");
       play.focus();
+      writeReleaseNotes();
     },
     onExit: function () {
       syncSaves();

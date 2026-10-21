@@ -101,6 +101,8 @@ static Uint32 statsSince = 0;
 static Uint32 nextPicture = 0;
 static bool presentWaits = false;
 
+static Sint32 refreshPeriod(void);
+
 // How long the frame being drawn lasts (frame_period() * frameCountMax when it
 // was scheduled: at the "Slow" game speed, frameCountMax changes every frame).
 static Sint32 levelFramePeriod = 0;
@@ -447,9 +449,18 @@ static bool ensureBuffers(void)
 	if (compose == NULL)
 		compose = SDL_CreateRGBSurface(0, VGAScreenSeg->w, VGAScreenSeg->h, 8, 0, 0, 0, 0);
 
-	return snapshot[0] != NULL && snapshot[1] != NULL &&
-	       scratch[0] != NULL && scratch[1] != NULL && compose != NULL &&
-	       (size_t)scratch[0]->pitch * scratch[0]->h == size;
+	const bool ok = snapshot[0] != NULL && snapshot[1] != NULL &&
+	                scratch[0] != NULL && scratch[1] != NULL && compose != NULL &&
+	                (size_t)scratch[0]->pitch * scratch[0]->h == size;
+	if (!ok)
+	{
+		// try again next time, instead of remembering half of the buffers
+		free(snapshot[0]);
+		free(snapshot[1]);
+		snapshot[0] = snapshot[1] = NULL;
+		snapshotSize = 0;
+	}
+	return ok;
 }
 
 static bool wanted(void)
@@ -471,6 +482,15 @@ void smooth_level_begin(void)
 	targets[1] = VGAScreen2;
 	smooth_untag();
 	smooth_recording = wanted() && ensureBuffers();
+
+	// once, so the log says what the display was taken for (a Steam Deck
+	// OLED reported as 60 Hz would show fewer pictures than it could)
+	static bool refreshLogged = false;
+	if (smooth_recording && !refreshLogged)
+	{
+		refreshLogged = true;
+		logInfo("Smooth motion: on, display at %d Hz.", (int)((1000 << 10) / refreshPeriod()));
+	}
 }
 
 void smooth_level_end(void)
@@ -733,6 +753,11 @@ bool smooth_show_until_due(int frames, void (*show)(Uint32 alpha, const void *da
 	const bool shown = showUntilDue(frames * frame_period(), refresh, show, data);
 	countFrame(refresh);
 	return shown;
+}
+
+Uint32 smooth_refresh_ms(void)
+{
+	return (Uint32)refreshPeriod() >> 10;
 }
 
 Uint32 smooth_picture_wait(void)

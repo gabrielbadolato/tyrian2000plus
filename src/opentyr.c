@@ -46,6 +46,7 @@
 #include "palette.h"
 #include "params.h"
 #include "picload.h"
+#include "smooth.h"
 #include "sprite.h"
 #include "stats.h"
 #include "tyrian2.h"
@@ -307,6 +308,7 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_SCALER,
 		MENU_ITEM_SCALING_MODE,
 		MENU_ITEM_VSYNC,
+		MENU_ITEM_SMOOTH_MOTION,
 		MENU_ITEM_SHARP_BILINEAR,
 		MENU_ITEM_BRIGHTNESS,
 		MENU_ITEM_DETAIL_LEVEL,
@@ -413,6 +415,7 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_SCALING_MODE, "Scaling Mode:", "Change the scaling mode.", getScalingModePickerItemsCount, getScalingModePickerItem },
 				{ MENU_ITEM_SHARP_BILINEAR, "Sharp Bilinear:", "Keep pixels even when the scale is not exact.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getOffOnPickerItemsCount, getOffOnPickerItem },
+				{ MENU_ITEM_SMOOTH_MOTION, "Smooth Motion:", "Show the levels at the display's refresh rate.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_BRIGHTNESS, "Brightness:", "Brighten the levels (F11 also works in game).", getBrightnessPickerItemsCount, getBrightnessPickerItem },
 				{ MENU_ITEM_DETAIL_LEVEL, "Detail Level:", "Show fewer or more effects in the levels.", getDetailLevelPickerItemsCount, getDetailLevelPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
@@ -658,6 +661,10 @@ void setupMenuPage(SetupPage page)
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, vsync_enabled ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
+			case MENU_ITEM_SMOOTH_MOTION:
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, smooth_motion ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				break;
+
 			case MENU_ITEM_BRIGHTNESS:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
@@ -856,6 +863,7 @@ void setupMenuPage(SetupPage page)
 									case MENU_ITEM_SCALING_MODE:
 									case MENU_ITEM_SHARP_BILINEAR:
 									case MENU_ITEM_VSYNC:
+									case MENU_ITEM_SMOOTH_MOTION:
 									case MENU_ITEM_BRIGHTNESS:
 									case MENU_ITEM_AUTO_FIRE:
 									case MENU_ITEM_VIBRATION:
@@ -1270,6 +1278,14 @@ void setupMenuPage(SetupPage page)
 					pickerSelectedIndex = vsync_enabled ? 1 : 0;
 					break;
 				}
+				case MENU_ITEM_SMOOTH_MOTION:
+				{
+					JE_playSampleNum(S_CLICK);
+
+					currentPicker = selectedMenuItemId;
+					pickerSelectedIndex = smooth_motion ? 1 : 0;
+					break;
+				}
 				case MENU_ITEM_BRIGHTNESS:
 				{
 					JE_playSampleNum(S_CLICK);
@@ -1514,6 +1530,11 @@ void setupMenuPage(SetupPage page)
 				case MENU_ITEM_VSYNC:
 				{
 					set_vsync(pickerSelectedIndex == 1);
+					break;
+				}
+				case MENU_ITEM_SMOOTH_MOTION:
+				{
+					smooth_motion = pickerSelectedIndex == 1;
 					break;
 				}
 				case MENU_ITEM_BRIGHTNESS:

@@ -34,6 +34,16 @@ change is in this repository's git log.
   play the game's sound effects. With a controller connected, the screen
   shows these buttons instead of the keyboard keys, so no screen of the game
   needs a keyboard on a Steam Deck.
+- **Smooth Motion**: Setup > Graphics > "Smooth Motion" (also in the pause
+  menu's Graphics page). The game still runs at 35 frames per second, exactly
+  as before (the same timing, saves and level recordings); while it waits for
+  the next frame, the screen shows the ships, shots and scenery part of the way
+  between where they were and where they are now, at your monitor's refresh
+  rate (60, 120, 144, 240 Hz or more), never faster than the monitor, even
+  without VSync. It also smooths the fades between screens, the title logo
+  sliding up, the stars and shots of the weapon preview in the ship's
+  Upgrade menu, and the mouse pointer in the menus. Off by default, true to the original; on the Steam Deck it is
+  on from the first start, since its screen runs at 60 or 90 Hz.
 - **Browser: Esc pauses on the first press every time.** After the pause
   the browser no longer grabs the mouse pointer, which made it keep the next
   Esc for itself.

@@ -39,6 +39,7 @@
 #include "palette.h"
 #include "params.h"
 #include "player.h"
+#include "smooth.h"
 #include "sprite.h"
 #include "tyrian2.h"
 #include "varz.h"
@@ -65,6 +66,11 @@ static unsigned int route = 0;
 
 static void finish(int status, const char *message)
 {
+	// smooth motion: every frame shown must come out the same when it is
+	// redrawn from its list of drawings (src/smooth.c)
+	unsigned long same, different, skipped;
+	smooth_test_counts(&same, &different, &skipped);
+	printf("smooth motion: %lu frames redrawn the same, %lu different, %lu not redrawn\n", same, different, skipped);
 	printf("%s: episode %u, difficulty %d, route %u, %u levels, %u s of game time, %u enemies removed by the autopilot%s%s\n",
 	       status == 0 ? "ok" : "FAIL", startEpisode, initialDifficulty, route, levelsPlayed,
 	       virtualTicks / 1000, enemiesRemoved, message ? ": " : "", message ? message : "");
@@ -265,6 +271,9 @@ int main(int argc, char *argv[])
 	// the bosses alive and the level waiting for them forever.
 	youAreCheating = true;
 	smoothScroll = true;
+
+	// record and redraw every frame, and draw a picture halfway between frames
+	smooth_test_enable(true, 32768);
 
 	if (init_audio())
 		loadSndFile(false);

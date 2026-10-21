@@ -498,9 +498,15 @@ void waitUntilElapsed(void)
 
 		Uint32 delay = getFrameCountTicks();
 		if (delay == 0)
+		{
+			mouse_pointer_forget();
 			return;
+		}
 
-		SDL_Delay(MIN(delay, SDL_POLL_INTERVAL));
+		// smooth motion: the mouse pointer at the display's refresh rate
+		const Uint32 pointer = mouse_pointer_between();
+
+		SDL_Delay(MIN(MIN(delay, SDL_POLL_INTERVAL), pointer));
 	}
 }
 

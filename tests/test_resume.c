@@ -51,6 +51,7 @@
 #include "palette.h"
 #include "params.h"
 #include "player.h"
+#include "smooth.h"
 #include "sprite.h"
 #include "tyrian2.h"
 #include "varz.h"
@@ -348,6 +349,9 @@ int main(int argc, char *argv[])
 	JE_loadMainShapeTables("tyrian.shp");
 
 	smoothScroll = true;
+
+	// smooth motion records every frame too: the game must not notice
+	smooth_test_enable(true, 32768);
 
 	if (init_audio())
 		loadSndFile(false);

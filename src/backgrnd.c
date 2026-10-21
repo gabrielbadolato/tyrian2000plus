@@ -21,6 +21,7 @@
 #include "config.h"
 #include "mtrand.h"
 #include "opentyr.h"
+#include "smooth.h"
 #include "swar.h"
 #include "video.h"
 
@@ -44,7 +45,14 @@ JE_byte     smoothie_data[9]; /* [1..9] */
 
 void JE_darkenBackground(JE_word neat)  /* wild detail level */
 {
-	Uint8 *s = VGAScreen->pixels; /* screen pointer, 8-bit specific */
+	darken_background(VGAScreen, neat);
+}
+
+void darken_background(SDL_Surface *surface, JE_word neat)
+{
+	SMOOTH_RECORD(SMOOTH_OP_DARKEN_BACKGROUND, surface, NULL, 0, 0, neat, 0, 0, 0);
+
+	Uint8 *s = surface->pixels; /* screen pointer, 8-bit specific */
 	int x, y;
 	
 	s += 24;
@@ -53,10 +61,10 @@ void JE_darkenBackground(JE_word neat)  /* wild detail level */
 	{
 		for (x = 264; x; x--)
 		{
-			*s = ((((*s & 0x0f) << 4) - (*s & 0x0f) + ((((x - neat - y) >> 2) + *(s-2) + (y == 184 ? 0 : *(s-(VGAScreen->pitch-1)))) & 0x0f)) >> 4) | (*s & 0xf0);
+			*s = ((((*s & 0x0f) << 4) - (*s & 0x0f) + ((((x - neat - y) >> 2) + *(s-2) + (y == 184 ? 0 : *(s-(surface->pitch-1)))) & 0x0f)) >> 4) | (*s & 0xf0);
 			s++;
 		}
-		s += VGAScreen->pitch - 264;
+		s += surface->pitch - 264;
 	}
 }
 
@@ -281,20 +289,37 @@ static void blitBackgroundRowBlend(SDL_Surface *dst, int_fast16_t x, int_fast16_
 	}
 }
 
-void draw_background_1(SDL_Surface *surface)
+// Draws a background layer: 8 rows of tiles from `rows` (a row of the map,
+// `stride` tiles wide) and tile column `column`, at (x, y) inside the first
+// tile.  kind: BACKGROUND_OPAQUE, BACKGROUND_TRANSPARENT or BACKGROUND_BLEND.
+void draw_background_layer(SDL_Surface *surface, int kind, Uint8 **rows, intptr_t column, int x, int y, int stride)
 {
 	assert(surface->w == vga_width &&
 	       surface->h >= vga_height &&
 	       surface->format->BitsPerPixel == 8);
 
-	Uint8 **map = (Uint8 **)mapYPos + mapXbpPos - 12;
-	
+	SMOOTH_RECORD(SMOOTH_OP_BACKGROUND, surface, NULL, x, y, kind, rows, column, stride);
+
+	Uint8 **map = rows + column - 12;
+
 	for (int i = -1; i < 7; i++)
 	{
-		blitBackground1Row(surface, mapXPos, (i * 28) + backPos, map);
-		
-		map += 14;
+		if (kind == BACKGROUND_OPAQUE)
+			blitBackground1Row(surface, x, (i * 28) + y, map);
+		else if (kind == BACKGROUND_TRANSPARENT)
+			blitBackgroundRow(surface, x, (i * 28) + y, map);
+		else
+			blitBackgroundRowBlend(surface, x, (i * 28) + y, map);
+
+		map += stride;
 	}
+}
+
+void draw_background_1(SDL_Surface *surface)
+{
+	smooth_tag(SMOOTH_BACKGROUND, 1, 0);
+	draw_background_layer(surface, BACKGROUND_OPAQUE, (Uint8 **)mapYPos, mapXbpPos, mapXPos, backPos, 14);
+	smooth_untag();
 }
 
 void draw_background_2(SDL_Surface *surface)
@@ -311,14 +336,9 @@ void draw_background_2(SDL_Surface *surface)
 		// water effect combines background 1 and 2 by synchronizing the x coordinate
 		int x = smoothies[1] ? mapXPos : mapX2Pos;
 		
-		Uint8 **map = (Uint8 **)mapY2Pos + (smoothies[1] ? mapXbpPos : mapX2bpPos) - 12;
-		
-		for (int i = -1; i < 7; i++)
-		{
-			blitBackgroundRow(surface, x, (i * 28) + backPos2, map);
-			
-			map += 14;
-		}
+		smooth_tag(SMOOTH_BACKGROUND, 2, 0);
+		draw_background_layer(surface, BACKGROUND_TRANSPARENT, (Uint8 **)mapY2Pos, smoothies[1] ? mapXbpPos : mapX2bpPos, x, backPos2, 14);
+		smooth_untag();
 	}
 	
 	/*Set Movement of background*/
@@ -346,14 +366,9 @@ void draw_background_2_blend(SDL_Surface *surface)
 	if (map2YDelayMax > 1 && backMove2 < 2)
 		backMove2 = (map2YDelay == 1) ? 1 : 0;
 	
-	Uint8 **map = (Uint8 **)mapY2Pos + mapX2bpPos - 12;
-	
-	for (int i = -1; i < 7; i++)
-	{
-		blitBackgroundRowBlend(surface, mapX2Pos, (i * 28) + backPos2, map);
-		
-		map += 14;
-	}
+	smooth_tag(SMOOTH_BACKGROUND, 2, 0);
+	draw_background_layer(surface, BACKGROUND_BLEND, (Uint8 **)mapY2Pos, mapX2bpPos, mapX2Pos, backPos2, 14);
+	smooth_untag();
 	
 	/*Set Movement of background*/
 	if (--map2YDelay == 0)
@@ -387,18 +402,15 @@ void draw_background_3(SDL_Surface *surface)
 		mapY3Pos -= 15;   /*Map Width*/
 	}
 	
-	Uint8 **map = (Uint8 **)mapY3Pos + mapX3bpPos - 12;
-	
-	for (int i = -1; i < 7; i++)
-	{
-		blitBackgroundRow(surface, mapX3Pos, (i * 28) + backPos3, map);
-		
-		map += 15;
-	}
+	smooth_tag(SMOOTH_BACKGROUND, 3, 0);
+	draw_background_layer(surface, BACKGROUND_TRANSPARENT, (Uint8 **)mapY3Pos, mapX3bpPos, mapX3Pos, backPos3, 15);
+	smooth_untag();
 }
 
-static void filterScreenHue(SDL_Surface *screen, Uint8 hue)
+void filterScreenHue(SDL_Surface *screen, Uint8 hue)
 {
+	SMOOTH_RECORD(SMOOTH_OP_FILTER_HUE, screen, NULL, 0, 0, hue, 0, 0, 0);
+
 	Uint8 *screen_pixels = screen->pixels;
 	int screen_pitch = screen->pitch;
 
@@ -424,8 +436,10 @@ static void filterScreenHue(SDL_Surface *screen, Uint8 hue)
 	}
 }
 
-static void filterScreenValue(SDL_Surface *screen, Sint8 brightness)
+void filterScreenValue(SDL_Surface *screen, Sint8 brightness)
 {
+	SMOOTH_RECORD(SMOOTH_OP_FILTER_VALUE, screen, NULL, 0, 0, brightness, 0, 0, 0);
+
 	Uint8 *screen_pixels = screen->pixels;
 	int screen_pitch = screen->pitch;
 
@@ -592,6 +606,8 @@ void JE_checkSmoothies(void)
 
 void lava_filter(SDL_Surface *dst, SDL_Surface *src)
 {
+	SMOOTH_RECORD(SMOOTH_OP_LAVA, dst, src, 0, 0, 0, 0, 0, 0);
+
 	assert(src->w == vga_width &&
 	       src->h >= vga_height &&
 	       src->format->BitsPerPixel == 8);
@@ -670,6 +686,8 @@ void lava_filter(SDL_Surface *dst, SDL_Surface *src)
 
 void water_filter(SDL_Surface *dst, SDL_Surface *src)
 {
+	SMOOTH_RECORD(SMOOTH_OP_WATER, dst, src, 0, 0, 0, 0, 0, 0);
+
 	assert(src->w == vga_width &&
 	       src->h >= vga_height &&
 	       src->format->BitsPerPixel == 8);
@@ -761,6 +779,8 @@ void water_filter(SDL_Surface *dst, SDL_Surface *src)
 
 void iced_blur_filter(SDL_Surface *dst, SDL_Surface *src)
 {
+	SMOOTH_RECORD(SMOOTH_OP_ICED_BLUR, dst, src, 0, 0, 0, 0, 0, 0);
+
 	assert(src->w == vga_width &&
 	       src->h >= vga_height &&
 	       src->format->BitsPerPixel == 8);
@@ -806,6 +826,8 @@ void iced_blur_filter(SDL_Surface *dst, SDL_Surface *src)
 
 void blur_filter(SDL_Surface *dst, SDL_Surface *src)
 {
+	SMOOTH_RECORD(SMOOTH_OP_BLUR, dst, src, 0, 0, 0, 0, 0, 0);
+
 	assert(src->w == vga_width &&
 	       src->h >= vga_height &&
 	       src->format->BitsPerPixel == 8);
@@ -1066,36 +1088,46 @@ void initialize_starfield(void)
 
 void update_and_draw_starfield(SDL_Surface* surface, int move_speed)
 {
-	Uint8* p = (Uint8*)surface->pixels;
-
 	for (int i = MAX_STARS-1; i >= 0; --i)
 	{
 		StarfieldStar* star = &starfield_stars[i];
 
 		star->position += (star->speed + move_speed) * surface->pitch;
 
-		if (star->position < 177 * surface->pitch)
+		smooth_tag(SMOOTH_STAR, i, 0);
+		draw_starfield_star(surface, star->position % surface->pitch, star->position / surface->pitch, star->color);
+	}
+	smooth_untag();
+}
+
+void draw_starfield_star(SDL_Surface *surface, int x, int y, Uint8 color)
+{
+	SMOOTH_RECORD(SMOOTH_OP_STAR, surface, NULL, x, y, color, 0, 0, 0);
+
+	Uint8 *p = surface->pixels;
+	const int position = y * surface->pitch + x;
+
+	if (position < 177 * surface->pitch)
+	{
+		if (p[position] == 0)
 		{
-			if (p[star->position] == 0)
-			{
-				p[star->position] = star->color;
-			}
+			p[position] = color;
+		}
 
-			// If star is bright enough, draw surrounding pixels
-			if (star->color - 4 >= STARFIELD_HUE)
-			{
-				if (p[star->position + 1] == 0)
-					p[star->position + 1] = star->color - 4;
+		// If star is bright enough, draw surrounding pixels
+		if (color - 4 >= STARFIELD_HUE)
+		{
+			if (p[position + 1] == 0)
+				p[position + 1] = color - 4;
 
-				if (star->position > 0 && p[star->position - 1] == 0)
-					p[star->position - 1] = star->color - 4;
+			if (position > 0 && p[position - 1] == 0)
+				p[position - 1] = color - 4;
 
-				if (p[star->position + surface->pitch] == 0)
-					p[star->position + surface->pitch] = star->color - 4;
+			if (p[position + surface->pitch] == 0)
+				p[position + surface->pitch] = color - 4;
 
-				if (star->position >= surface->pitch && p[star->position - surface->pitch] == 0)
-					p[star->position - surface->pitch] = star->color - 4;
-			}
+			if (position >= surface->pitch && p[position - surface->pitch] == 0)
+				p[position - surface->pitch] = color - 4;
 		}
 	}
 }

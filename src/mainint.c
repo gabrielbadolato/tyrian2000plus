@@ -51,6 +51,7 @@
 #include "picload.h"
 #include "player.h"
 #include "shots.h"
+#include "smooth.h"
 #include "sndmast.h"
 #include "sprite.h"
 #include "touch.h"
@@ -1539,6 +1540,7 @@ JE_boolean JE_inGameSetup(void)
 		MENU_ITEM_SCALING_MODE,
 		MENU_ITEM_SHARP_BILINEAR,
 		MENU_ITEM_VSYNC,
+		MENU_ITEM_SMOOTH_MOTION,
 		MENU_ITEM_BRIGHTNESS,
 		MENU_ITEM_DONE,
 	};
@@ -1559,6 +1561,7 @@ JE_boolean JE_inGameSetup(void)
 		[MENU_ITEM_SCALING_MODE - MENU_ITEM_AUTO_FIRE] = { "Scaling Mode", "Change the scaling mode." },
 		[MENU_ITEM_SHARP_BILINEAR - MENU_ITEM_AUTO_FIRE] = { "Sharp Bilinear", "Keep pixels even when the scale is not exact." },
 		[MENU_ITEM_VSYNC - MENU_ITEM_AUTO_FIRE] = { "VSync", "Sync to the display to prevent tearing." },
+		[MENU_ITEM_SMOOTH_MOTION - MENU_ITEM_AUTO_FIRE] = { "Smooth Motion", "Show the level at the display's refresh rate." },
 		[MENU_ITEM_BRIGHTNESS - MENU_ITEM_AUTO_FIRE] = { "Brightness", "Brighten the level (F11 also works)." },
 		[MENU_ITEM_DONE - MENU_ITEM_AUTO_FIRE] = { "Done", "Return to the previous menu." },
 	};
@@ -1584,6 +1587,7 @@ JE_boolean JE_inGameSetup(void)
 		MENU_ITEM_SCALING_MODE,
 		MENU_ITEM_SHARP_BILINEAR,
 		MENU_ITEM_VSYNC,
+		MENU_ITEM_SMOOTH_MOTION,
 		MENU_ITEM_BRIGHTNESS,
 		MENU_ITEM_DONE,
 	};
@@ -1710,6 +1714,9 @@ JE_boolean JE_inGameSetup(void)
 				break;
 			case MENU_ITEM_VSYNC:
 				valueText = vsync_enabled ? tr("On") : tr("Off");
+				break;
+			case MENU_ITEM_SMOOTH_MOTION:
+				valueText = smooth_motion ? tr("On") : tr("Off");
 				break;
 			case MENU_ITEM_BRIGHTNESS:
 				valueText = tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]);
@@ -2095,6 +2102,13 @@ JE_boolean JE_inGameSetup(void)
 				JE_playSampleNum(S_CURSOR);
 
 				set_vsync(!vsync_enabled);
+				break;
+			}
+			case MENU_ITEM_SMOOTH_MOTION:
+			{
+				JE_playSampleNum(S_CURSOR);
+
+				smooth_motion = !smooth_motion;
 				break;
 			}
 			case MENU_ITEM_BRIGHTNESS:
@@ -4260,6 +4274,7 @@ redo:
 
 				if (trail_y > 0 && trail_y < 170)
 				{
+					smooth_tag(SMOOTH_PLAYER, playerNum_, 2 + i);
 					if (shipGr_ == 0)
 					{
 						blit_sprite2x2(VGAScreen, this_player->x - 17, trail_y - 7, *shipGrPtr_, 13);
@@ -4276,6 +4291,7 @@ redo:
 					}
 				}
 			}
+			smooth_untag();
 		}
 	}
 
@@ -4426,6 +4442,7 @@ redo:
 		this_player->last_x_explosion_follow = this_player->x;
 		this_player->last_y_explosion_follow = this_player->y;
 
+		smooth_tag(SMOOTH_PLAYER, playerNum_, 1);  // the shadow
 		if (shipGr_ == 0)
 		{
 			if (background2)
@@ -4459,6 +4476,7 @@ redo:
 			}
 		}
 
+		smooth_tag(SMOOTH_PLAYER, playerNum_, 0);
 		if (this_player->invulnerable_ticks > 0)
 		{
 			--this_player->invulnerable_ticks;
@@ -4533,6 +4551,7 @@ redo:
 				blit_sprite2x2(VGAScreen, this_player->x - 5, this_player->y - 7, *shipGrPtr_, ship_sprite);
 			}
 		}
+		smooth_untag();
 
 		/*Options Location*/
 		if (playerNum_ == 2 && shipGr_ == 0)  // if dragonwing
@@ -4633,7 +4652,11 @@ redo:
 				{
 
 					if (!twoPlayerLinked)
+					{
+						smooth_tag(SMOOTH_PLAYER, playerNum_, 1000);  // the charge
 						blit_sprite2(VGAScreen, this_player->x + (shipGr_ == 0) + 1, this_player->y - 13, spriteSheet10, 77 + chargeLevel + chargeGr * 19);
+						smooth_untag();
+					}
 
 					if (chargeGrWait > 0)
 					{
@@ -4919,10 +4942,12 @@ redo:
 				          y = this_player->sidekick[i].y;
 				const uint sprite = this_option->gr[this_player->sidekick[i].animation_frame] + this_player->sidekick[i].charge;
 
+				smooth_tag(SMOOTH_SIDEKICK, playerNum_ * 2 + i, 0);
 				if (this_player->sidekick[i].style == 1 || this_player->sidekick[i].style == 2)
 					blit_sprite2x2(VGAScreen, x - 6, y, spriteSheet10, sprite);
 				else
 					blit_sprite2(VGAScreen, x, y, spriteSheet9, sprite);
+				smooth_untag();
 			}
 
 			if (--this_player->sidekick[i].charge_ticks == 0)

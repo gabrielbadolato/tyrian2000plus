@@ -31,6 +31,7 @@
 #include "nortsong.h"
 #include "opentyr.h"
 #include "player.h"
+#include "smooth.h"
 #include "update_check.h"
 #include "whatsnew.h"
 #include "varz.h"
@@ -259,12 +260,14 @@ static void loadOpenTyrianConfig(void)
 		logWarn("Failed to open '%s': %s", opentyrianConfigFilename, fileGetError(&file));
 
 		// First start on a Steam Deck: full screen, and the 4:3 picture with even pixels
-		// (1280x800 enlarges 320x200 by 4 down but 3.33 across in Fit 4:3).
+		// (1280x800 enlarges 320x200 by 4 down but 3.33 across in Fit 4:3), and
+		// smooth motion (the screen runs at 60 or 90 Hz, which 35 does not divide).
 		if (running_on_steam_deck())
 		{
-			logInfo("Steam Deck: starting in full screen with Sharp Bilinear.");
+			logInfo("Steam Deck: starting in full screen with Sharp Bilinear and Smooth Motion.");
 			fullscreen_display = 0;
 			sharp_bilinear_enabled = true;
+			smooth_motion = true;
 		}
 
 		return;
@@ -313,6 +316,8 @@ static void loadOpenTyrianConfig(void)
 		bool sharpBilinear;
 		if (config_get_bool_option(section, "sharp_bilinear", &sharpBilinear))
 			sharp_bilinear_enabled = sharpBilinear;
+
+		config_get_bool_option(section, "smooth_motion", &smooth_motion);
 
 		int w, h;
 		if (config_get_int_option(section, "window_width", &w) && config_get_int_option(section, "window_height", &h) &&
@@ -448,6 +453,8 @@ static void saveOpenTyrianConfig(void)
 	config_set_bool_option(section, "vsync", vsync_enabled, OFF_ON);
 
 	config_set_bool_option(section, "sharp_bilinear", sharp_bilinear_enabled, OFF_ON);
+
+	config_set_bool_option(section, "smooth_motion", smooth_motion, OFF_ON);
 
 	if (window_geometry.w > 0)
 	{

@@ -71,6 +71,11 @@ bool set_scaling_mode_by_name(const char *name);
 void deinit_video(void);
 
 void JE_clr256(SDL_Surface *);
+// Shows `surface` instead of VGAScreen (smooth motion's pictures in between).
+void video_present(SDL_Surface *surface);
+// How many times JE_showVGA was called (the mouse pointer of smooth motion).
+extern unsigned int vga_shows;
+
 void JE_showVGA(void);
 void video_refresh(void);  // shows the last frame again (the touch controls changed)
 void video_get_output_rect(SDL_Rect *out);  // where the game is in the window

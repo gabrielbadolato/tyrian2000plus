@@ -103,6 +103,16 @@ Uint32 getFrameCount2Ticks(void)
 	return diff >= 0 ? ((Uint32)diff + half) >> 10 : 0;
 }
 
+Sint32 frame_period(void)
+{
+	return framePeriod;
+}
+
+Sint32 frame_time_left(void)
+{
+	return (Sint32)(frameCountEnd - (SDL_GetTicks() << 10));
+}
+
 void delayUntilElapsed(void)
 {
 	const Uint32 half = 1 << 9;

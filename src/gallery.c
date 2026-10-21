@@ -33,6 +33,8 @@
 #include "gallery.h"
 #include "gallery_catalog.h"
 
+#include "backgrnd.h"
+#include "config.h"
 #include "config_file.h"
 #include "demo.h"
 #include "episodes.h"
@@ -55,6 +57,7 @@
 #include "picload.h"
 #include "player.h"
 #include "shopstats.h"
+#include "shots.h"
 #include "sndmast.h"
 #include "sprite.h"
 #include "stats.h"
@@ -98,6 +101,7 @@ typedef struct
 	Uint16 type;  // enemyDat index, armor and slot, while it is recorded (not kept)
 	Uint8 armor;
 	Uint8 slot;
+	Uint16 anim;  // its animation (catalogAnims; 0: none), for one of the list
 } Part;
 
 typedef struct
@@ -132,9 +136,18 @@ typedef struct
 	bool killed;     // its last piece was destroyed
 	SeenEnemy look;  // parts where they are in the thing
 	unsigned int made;  // the frame it came (for gallery_dump)
+	long scroll;        // how far its map layer had scrolled then (for gallery_dump)
 } Thing;
 
 static unsigned int frameCount;
+static long groundScroll, topScroll;  // the map layers, since the level started
+
+// How far the map layer of the enemy in `slot` has scrolled: where it is on
+// the map is its y less this (0 in the sky).
+static long layerScroll(unsigned int slot)
+{
+	return slot < 25 ? 0 : (slot >= 50 && slot < 75) ? topScroll : groundScroll;
+}
 
 static Thing things[100];
 static Uint8 slotThing[100];  // the thing of the enemy in each slot + 1, or 0
@@ -339,6 +352,7 @@ void gallery_level_start(void)
 	memset(things, 0, sizeof(things));
 	memset(slotThing, 0, sizeof(slotThing));
 	memset(slotAlone, 0, sizeof(slotAlone));
+	groundScroll = topScroll = 0;
 
 	if (!recording)
 		return;
@@ -527,7 +541,7 @@ static void finishThing(unsigned int t)
 		}
 		// when it came and where (the things that come together, such as a
 		// boss and its arms when they are not linked)
-		fprintf(gallery_dump, "\t@%u:%d:%d\n", thing->made, minX, minY);
+		fprintf(gallery_dump, "\t@%u:%d:%d:%ld\n", thing->made, minX, minY, minY - thing->scroll);
 	}
 
 	char level[11];
@@ -556,6 +570,16 @@ static void finishThing(unsigned int t)
 	}
 	if (matches > 0)
 		return;
+
+	// left out of the list on purpose (a dot that is hardly seen): nothing
+	if (!gallery_test_no_list)
+	{
+		bool hidden = true;
+		for (unsigned int i = 0; i < look.parts && hidden; ++i)
+			hidden = catalogHas(CATALOG_HIDDEN, look.part[i].type);
+		if (hidden)
+			return;
+	}
 
 	// not in the list: as it looks
 	int entry = findEnemy(&look);
@@ -728,6 +752,7 @@ static void lookAtPending(void)
 			memset(&things[thing], 0, sizeof(things[thing]));
 			things[thing].used = true;
 			things[thing].made = frameCount;
+			things[thing].scroll = layerScroll(group[0]);
 		}
 
 		for (unsigned int g = 0; g < groupCount; ++g)
@@ -741,6 +766,9 @@ void gallery_level_frame(void)
 {
 	if (recording)
 	{
+		// (as JE_drawEnemy moves them: slots 50-74 with the top layer)
+		groundScroll += backMove;
+		topScroll += backMove3;
 		lookAtPending();
 		finishGoneThings();
 	}
@@ -839,7 +867,7 @@ static bool ensureEnemies(void)
 			for (unsigned int p = 0; p < c->parts && p < MAX_PARTS; ++p)
 			{
 				const CatalogPart *cp = &catalogParts[c->first + p];
-				e->part[e->parts++] = (Part){ .bank = cp->bank, .size = cp->size, .gr = cp->gr, .x = cp->x, .y = cp->y };
+				e->part[e->parts++] = (Part){ .bank = cp->bank, .size = cp->size, .gr = cp->gr, .x = cp->x, .y = cp->y, .anim = cp->anim };
 			}
 			e->episode = c->episode;
 			e->listed = true;
@@ -895,6 +923,8 @@ static unsigned int catalogMatch(const SeenEnemy *look, unsigned int *match, uns
 		for (unsigned int k = catalogTypeFirst(look->part[i].type); catalogTypeIs(k, look->part[i].type); ++k)
 		{
 			const unsigned int e = catalogTypes[k].enemy;
+			if (e == CATALOG_HIDDEN)
+				continue;
 			unsigned int c = 0;
 			while (c < candidates && candidate[c] != e)
 				++c;
@@ -1216,6 +1246,8 @@ typedef struct
 static Entry entries[MAX_ENTRIES];
 static unsigned int entryCount;
 static unsigned int foundCount;
+static unsigned int enemyEpisode;  // the Enemies page shows only this episode's (0: all)
+static unsigned int animTick;      // frames since the gallery opened: the enemies' animation
 
 static void addEntry(EntryKind kind, unsigned int id, bool seen)
 {
@@ -1295,7 +1327,8 @@ static void buildEntries(GalleryTab tab)
 		// by episode: the list, then the others in the order they were met
 		for (unsigned int ep = 0; ep <= 99; ++ep)
 			for (unsigned int i = 0; i < enemyCount; ++i)
-				if (!piece[i] && (enemies[i].episode == ep || (ep == 99 && enemies[i].episode > 99)))
+				if (!piece[i] && (enemies[i].episode == ep || (ep == 99 && enemies[i].episode > 99)) &&
+				    (enemyEpisode == 0 || enemies[i].episode == enemyEpisode))
 					addEntry(KIND_ENEMY, i, enemies[i].seen);
 		break;
 	}
@@ -1339,7 +1372,23 @@ static void freeBankSheets(void)
 }
 
 // The picture of an entry, into the canvas.
-static void drawEntryPicture(const Entry *entry)
+// The picture of a piece of an enemy `tick` frames into its animation (as
+// the levels do it: a picture each frame, all the time or a round when it
+// fires; 999 shows nothing).
+static unsigned int partPicture(const Part *p, unsigned int tick)
+{
+	if (p->anim == 0 || p->anim >= COUNTOF(catalogAnims))
+		return p->gr;
+	const CatalogAnim *a = &catalogAnims[p->anim];
+	if (a->count == 0)
+		return p->gr;
+	unsigned int frame = tick % a->count;
+	if (a->when == 2)
+		frame = tick % 70 < a->count ? tick % 70 : 0;  // a round now and then
+	return catalogFrames[a->first + frame];
+}
+
+static void drawEntryPicture(const Entry *entry, unsigned int tick)
 {
 	canvasClear();
 
@@ -1378,11 +1427,39 @@ static void drawEntryPicture(const Entry *entry)
 		return;
 	case KIND_ENEMY:
 	{
+		// an animated one in the place all its pictures take, so it does not
+		// move about nor change size
 		const SeenEnemy *e = &enemies[entry->id];
+		unsigned int rounds = 1;
 		for (unsigned int i = 0; i < e->parts; ++i)
+			if (e->part[i].anim != 0 && e->part[i].anim < COUNTOF(catalogAnims))
+				rounds = MAX(rounds, catalogAnims[e->part[i].anim].count);
+		int x1 = INT32_MAX, y1 = INT32_MAX, x2 = INT32_MIN, y2 = INT32_MIN;
+		for (unsigned int r = 0; r <= (rounds > 1 ? rounds : 0); ++r)
 		{
-			const Part *p = &e->part[i];
-			canvasPiece(bankSheet(p->bank), p->gr, p->size, 40 + p->x, 40 + p->y);
+			const unsigned int at = r < rounds && rounds > 1 ? r : tick;
+			canvasClear();
+			for (unsigned int i = 0; i < e->parts; ++i)
+			{
+				const Part *p = &e->part[i];
+				const unsigned int gr = partPicture(p, at);
+				if (gr != 999 && gr != 0)
+					canvasPiece(bankSheet(p->bank), gr, p->size, 40 + p->x, 40 + p->y);
+			}
+			if (canvas.x2 > canvas.x1)
+			{
+				x1 = MIN(x1, canvas.x1);
+				y1 = MIN(y1, canvas.y1);
+				x2 = MAX(x2, canvas.x2);
+				y2 = MAX(y2, canvas.y2);
+			}
+		}
+		if (x2 > x1)
+		{
+			canvas.x1 = x1;
+			canvas.y1 = y1;
+			canvas.x2 = x2;
+			canvas.y2 = y2;
 		}
 		return;
 	}
@@ -1607,7 +1684,7 @@ static void drawDetails(const Entry *entry)
 
 	// the picture, down to where the numbers start
 	const int picY = y, infoY = GRID_Y + 2 + 19 + 84 + 3;
-	drawEntryPicture(entry);
+	drawEntryPicture(entry, animTick);
 	showCanvas(VGAScreen, PANEL_X + 2, picY, PANEL_W - 4, infoY - 3 - picY, 3, false, !entry->seen);
 	y = infoY;
 
@@ -1701,6 +1778,203 @@ static void drawDetails(const Entry *entry)
 	}
 }
 
+/* -------- the view: an entry seen moving -------- */
+
+// In the view the grid's place is a stage: an enemy animated, a ship flying,
+// a weapon or a sidekick firing, as the ship menu shows them
+// (JE_weaponViewFrame).  The shots are made by the game's own code, on a
+// screen of the gallery's (the shots live in the ship menu's box, x 0-140
+// and y 0-170 of it), and a piece of that screen is shown.
+enum
+{
+	STAGE_X1 = GRID_X - 3,
+	STAGE_Y1 = GRID_Y - 2,
+	STAGE_X2 = GRID_X + GRID_COLS * CELL_W + 2,
+	STAGE_Y2 = COUNT_Y + 8,
+	DEMO_X = 64,   // the ship, on the demo screen
+	DEMO_Y = 150,
+	DEMO_LEFT = DEMO_X + 7 - (STAGE_X2 - STAGE_X1) / 2,  // shown from here
+	DEMO_TOP = DEMO_Y - 110,
+	DEMO_STARS = 60,
+};
+
+static SDL_Surface *demoScreen;
+static Player demoSavedPlayer;
+static uint demoSavedPower;
+static JE_byte demoSavedRepeat[11], demoSavedMulti[11];
+static int demoStar[DEMO_STARS][3];  // x, y, speed
+
+static bool demoStart(void)
+{
+	if (demoScreen == NULL)
+		demoScreen = SDL_CreateRGBSurface(0, VGAScreen->w, VGAScreen->h, 8, 0, 0, 0, 0);
+	if (demoScreen == NULL)
+		return false;
+
+	demoSavedPlayer = player[0];
+	demoSavedPower = power;
+	memcpy(demoSavedRepeat, shotRepeat, sizeof(shotRepeat));
+	memcpy(demoSavedMulti, shotMultiPos, sizeof(shotMultiPos));
+
+	// stars of its own (the game's use mt_rand)
+	Uint32 seed = 12345;
+	for (int i = 0; i < DEMO_STARS; ++i)
+	{
+		for (int k = 0; k < 3; ++k)
+		{
+			seed = seed * 1103515245u + 12345u;
+			demoStar[i][k] = (int)((seed >> 8) % (k == 0 ? (unsigned)(STAGE_X2 - STAGE_X1) : k == 1 ? (unsigned)(STAGE_Y2 - STAGE_Y1) : 3u));
+		}
+		demoStar[i][2] += 1;
+	}
+	return true;
+}
+
+// a new entry or power: no shots of the one before
+static void demoReset(void)
+{
+	memset(shotAvail, 0, sizeof(shotAvail));
+	memset(shotRepeat, 1, sizeof(shotRepeat));
+	memset(shotMultiPos, 0, sizeof(shotMultiPos));
+}
+
+static void demoEnd(void)
+{
+	demoReset();
+	player[0] = demoSavedPlayer;
+	power = demoSavedPower;
+	memcpy(shotRepeat, demoSavedRepeat, sizeof(shotRepeat));
+	memcpy(shotMultiPos, demoSavedMulti, sizeof(shotMultiPos));
+	memset(soundQueue, 0, sizeof(soundQueue));
+}
+
+// The ship `ship` at (x, y) as the levels draw it (JE_playerMovement),
+// banked -2..2.
+static void demoDrawShip(SDL_Surface *surface, unsigned int ship, int x, int y, int banking)
+{
+	const int graphic = ships[ship].shipgraphic;
+	if (graphic == 0)
+	{
+		blit_sprite2x2(surface, x - 17, y - 7, spriteSheet9, 13 + banking * 2);
+		blit_sprite2x2(surface, x + 7, y - 7, spriteSheet9, 51 + banking * 2);
+	}
+	else if (graphic == 1)
+	{
+		blit_sprite2x2(surface, x - 17, y - 7, spriteSheet9, 220);
+		blit_sprite2x2(surface, x + 7, y - 7, spriteSheet9, 222);
+	}
+	else if (graphic > 500)
+	{
+		blit_sprite2x2(surface, x - 5, y - 7, spriteSheetT2000, graphic - 500 + banking * 2);
+	}
+	else
+	{
+		blit_sprite2x2(surface, x - 5, y - 7, spriteSheet9, graphic + banking * 2);
+	}
+}
+
+// One frame of the stage for `entry`, `tick` frames since it was chosen;
+// weapons at `level` 1..11, in `mode` (rear weapons with two).
+static void demoFrame(const Entry *entry, unsigned int tick, unsigned int level, unsigned int mode)
+{
+	const int w = STAGE_X2 - STAGE_X1, h = STAGE_Y2 - STAGE_Y1;
+
+	fill_rectangle_xy(VGAScreen, STAGE_X1, STAGE_Y1, STAGE_X2 - 1, STAGE_Y2 - 1, 0);
+	for (int i = 0; i < DEMO_STARS; ++i)
+	{
+		const int y = (demoStar[i][1] + (int)(tick * (unsigned)demoStar[i][2])) % h;
+		((Uint8 *)VGAScreen->pixels)[(STAGE_Y1 + y) * VGAScreen->pitch + STAGE_X1 + demoStar[i][0]] = demoStar[i][2] == 3 ? 0x0e : demoStar[i][2] == 2 ? 0x0a : 0x07;
+	}
+
+	if (entry->kind == KIND_ENEMY || entry->kind == KIND_SHIELD || entry->kind == KIND_GENERATOR || entry->kind == KIND_SPECIAL)
+	{
+		drawEntryPicture(entry, tick);
+		showCanvas(VGAScreen, STAGE_X1 + 4, STAGE_Y1 + 4, w - 8, h - 8, 4, false, false);
+		return;
+	}
+
+	// a ship that sways, the others are shown by the USP Talon
+	const unsigned int ship = entry->kind == KIND_SHIP ? entry->id : 1;
+	const int sway = entry->kind == KIND_SHIP ? 40 : 0;
+	static const Sint8 wave[16] = { 0, 4, 7, 9, 10, 9, 7, 4, 0, -4, -7, -9, -10, -9, -7, -4 };
+	const unsigned int phase = tick / 6;
+	const int x = DEMO_X + wave[phase % 16] * sway / 10;
+	const int banking = sway == 0 ? 0 : wave[(phase + 4) % 16] / 5;
+
+	SDL_Surface *const screen = VGAScreen;
+	SDL_FillRect(demoScreen, NULL, 0);
+	VGAScreen = demoScreen;
+
+	player[0].x = x;
+	player[0].y = DEMO_Y;
+	player[0].mouseX = x;
+	player[0].mouseY = DEMO_Y;
+	player[0].delta_x_shot_move = 0;
+	player[0].delta_y_shot_move = 0;
+	player[0].last_x_explosion_follow = x;
+	player[0].last_y_explosion_follow = DEMO_Y;
+	power = 900;
+
+	if (entry->kind == KIND_WEAPON)
+	{
+		const unsigned int bay = shopRear[entry->id] && !shopFront[entry->id] ? REAR_WEAPON : FRONT_WEAPON;
+		if (shotRepeat[bay] > 0)
+		{
+			--shotRepeat[bay];
+		}
+		else
+		{
+			const unsigned int m = weaponPort[entry->id].opnum >= 2 ? mode : 0;
+			player_shot_create(entry->id, bay, player[0].x, player[0].y, player[0].mouseX, player[0].mouseY, weaponPort[entry->id].op[m][level - 1], 1);
+		}
+	}
+	else if (entry->kind == KIND_SIDEKICK && options[entry->id].wport > 0)
+	{
+		for (unsigned int i = 0; i < 2; ++i)
+		{
+			const unsigned int bay = i == 0 ? SHOT_LEFT_SIDEKICK : SHOT_RIGHT_SIDEKICK;
+			if (shotRepeat[bay] > 0)
+				--shotRepeat[bay];
+			else
+				player_shot_create(options[entry->id].wport, bay, x + (i == 0 ? -22 : 24), DEMO_Y + 6, player[0].mouseX, player[0].mouseY, options[entry->id].wpnum, 1);
+		}
+	}
+	simulate_player_shots();
+	memset(soundQueue, 0, sizeof(soundQueue));
+
+	demoDrawShip(demoScreen, ship, x, DEMO_Y, banking);
+	if (entry->kind == KIND_SIDEKICK)
+	{
+		const JE_OptionType *o = &options[entry->id];
+		const unsigned int sprite = o->gr[o->ani > 0 ? (tick / 2) % o->ani : 0];
+		for (unsigned int i = 0; i < 2; ++i)
+		{
+			const int sx = x + (i == 0 ? -22 : 24), sy = DEMO_Y + 6;
+			if (o->tr == 1 || o->tr == 2)
+				blit_sprite2x2(demoScreen, sx - 6, sy, spriteSheet10, sprite);
+			else
+				blit_sprite2(demoScreen, sx, sy, spriteSheet9, sprite);
+		}
+	}
+	VGAScreen = screen;
+
+	// the stage: the demo screen over the stars
+	for (int v = 0; v < h; ++v)
+	{
+		const int sy = DEMO_TOP + v;
+		if (sy < 0 || sy >= demoScreen->h)
+			continue;
+		const Uint8 *src = (const Uint8 *)demoScreen->pixels + sy * demoScreen->pitch;
+		Uint8 *dst = (Uint8 *)VGAScreen->pixels + (STAGE_Y1 + v) * VGAScreen->pitch + STAGE_X1;
+		for (int u = 0; u < w; ++u)
+		{
+			const int sx = DEMO_LEFT + u;
+			if (sx >= 0 && sx < demoScreen->w && src[sx] != 0)
+				dst[u] = src[sx];
+		}
+	}
+}
+
 // A page up (-1) or down: the rows shown move a whole page, so none is shown again
 static void turnPage(int *cursor, int *top, int dir)
 {
@@ -1729,7 +2003,7 @@ static void drawGrid(int top, int cursor)
 			JE_rectangle(VGAScreen, x - 1, y - 1, x + CELL_W - 2, y + CELL_H - 2, 0x10 * 15 + 12);
 		}
 
-		drawEntryPicture(&entries[index]);
+		drawEntryPicture(&entries[index], 0);
 		// a tiny enemy twice as big
 		showCanvas(VGAScreen, x + 1, y + 1, CELL_W - 4, CELL_H - 4, entries[index].kind == KIND_ENEMY ? 2 : 1, true, !entries[index].seen);
 	}
@@ -1760,8 +2034,12 @@ void galleryScreen(void)
 	GalleryTab tab = GALLERY_SHIPS;
 	int cursor = 0, top = 0;
 	bool fadeIn = true;
-	bool held[2] = { false, false };
+	bool held[3] = { false, false, false };
 	int statsTop = 0, statsCount = 0;
+	bool view = false;  // the stage instead of the grid
+	unsigned int viewTick = 0, level = 5, mode = 0;
+	enemyEpisode = 0;
+	animTick = 0;
 
 	buildEntries(tab);
 
@@ -1784,6 +2062,25 @@ void galleryScreen(void)
 		{
 			stats_draw_lines(statsTop, STATS_Y, STATS_LINES);
 		}
+		else if (view)
+		{
+			demoFrame(&entries[cursor], viewTick, level, mode);
+			JE_rectangle(VGAScreen, STAGE_X1 - 1, STAGE_Y1 - 1, STAGE_X2, STAGE_Y2, 0x10 * 15 + 12);
+
+			char line[64];
+			const Entry *e = &entries[cursor];
+			if (e->kind == KIND_WEAPON)
+			{
+				snprintf(line, sizeof(line), tr("Weapon power %u"), level);
+				drawFontHvShadow(VGAScreen, STAGE_X1 + 3, STAGE_Y1 + 3, line, FONT_SMALL, 15, 2, false, 1);
+				if (weaponPort[e->id].opnum >= 2)
+				{
+					snprintf(line, sizeof(line), tr("Mode %u"), mode + 1);
+					drawFontHvShadow(VGAScreen, STAGE_X1 + 3, STAGE_Y1 + 12, line, FONT_SMALL, 15, 2, false, 1);
+				}
+			}
+			++viewTick;
+		}
 		else
 		{
 			drawGrid(top, cursor);
@@ -1791,9 +2088,15 @@ void galleryScreen(void)
 			char line[96];
 			if (tab == GALLERY_OTHER)
 				snprintf(line, sizeof(line), tr("Found: %u"), foundCount);
+			else if (tab == GALLERY_ENEMIES && enemyEpisode != 0)
+				snprintf(line, sizeof(line), tr("Episode %u: %u of %u"), enemyEpisode, foundCount, entryCount);
 			else
 				snprintf(line, sizeof(line), tr("Found: %u of %u"), foundCount, entryCount);
 			drawFontHvShadow(VGAScreen, GRID_X, COUNT_Y, line, FONT_SMALL, 15, 2, false, 1);
+		}
+
+		if (tab != GALLERY_STATS)
+		{
 
 			JE_barShade(VGAScreen, PANEL_X, GRID_Y - 2, PANEL_X + PANEL_W, COUNT_Y + 8);
 			if (entryCount > 0)
@@ -1804,15 +2107,43 @@ void galleryScreen(void)
 
 		const int j = joystick_first_gamepad();
 		char help[128];
-		if (j >= 0)
+		const bool twoModes = view && entries[cursor].kind == KIND_WEAPON && weaponPort[entries[cursor].id].opnum >= 2;
+		if (j >= 0 && view)
+		{
+			if (entries[cursor].kind == KIND_WEAPON)
+				snprintf(help, sizeof(help), twoModes ? tr("Up/Down: power. %s: mode. %s: back.") : tr("Up/Down: power. %s%s: back."),
+				         twoModes ? joystick_button_icon(j, SDL_CONTROLLER_BUTTON_Y) : "", joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
+			else
+				snprintf(help, sizeof(help), tr("Left/Right: the next. %s: back."), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
+		}
+		else if (j >= 0 && tab == GALLERY_ENEMIES)
+			snprintf(help, sizeof(help), tr("%s%s: page. %s: see it. %s: episode. %s: back."),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_Y),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
+		else if (j >= 0 && tab != GALLERY_STATS)
+			snprintf(help, sizeof(help), tr("%s%s: page. %s: see it. %s: back."),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A),
+			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
+		else if (j >= 0)
 			snprintf(help, sizeof(help), tr("%s%s: page. %s: back."),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
+		else if (view && entries[cursor].kind == KIND_WEAPON)
+			snprintf(help, sizeof(help), "%s", twoModes ? tr("Up/Down: power. Space: mode. Esc: back.") : tr("Up/Down: power. Left/Right: the next. Esc: back."));
+		else if (view)
+			snprintf(help, sizeof(help), "%s", tr("Left/Right: the next. Esc: back."));
+		else if (tab == GALLERY_ENEMIES)
+			snprintf(help, sizeof(help), "%s", tr("Tab: page. Enter: see it. E: episode. Esc: back."));
 		else if (tab == GALLERY_STATS)
 			snprintf(help, sizeof(help), "%s", tr("Tab: page. Up/Down: scroll. Esc: back."));
 		else
-			snprintf(help, sizeof(help), "%s", tr("Tab: page. Arrows: choose. Esc: back."));
+			snprintf(help, sizeof(help), "%s", tr("Tab: page. Enter: see it. Esc: back."));
 		JE_textShade(VGAScreen, GRID_X, HELP_Y, help, 15, 4, PART_SHADE);
 
 		if (fadeIn)
@@ -1826,15 +2157,73 @@ void galleryScreen(void)
 		JE_mouseReplace();
 
 		waitUntilElapsed();
+		++animTick;
 
 		const int oldCursor = cursor, oldStatsTop = statsTop;
 		const GalleryTab oldTab = tab;
 		int newTab = tab;
 		bool done = false;
 
+		bool openView = false, closeView = false, nextEpisode = false;
+		int viewStep = 0;
+
 		KeyboardInput keyboardInput;
 		while (keyboardGetInput(&keyboardInput))
 		{
+			if (view)
+			{
+				// the stage: the next entry, the power and the mode of a weapon
+				switch (keyboardInput.scancode)
+				{
+				case SDL_SCANCODE_ESCAPE:
+				case SDL_SCANCODE_RETURN:
+					closeView = true;
+					break;
+				case SDL_SCANCODE_LEFT:
+					viewStep = -1;
+					break;
+				case SDL_SCANCODE_RIGHT:
+					viewStep = 1;
+					break;
+				case SDL_SCANCODE_UP:
+					if (level < 11)
+						++level;
+					demoReset();
+					break;
+				case SDL_SCANCODE_DOWN:
+					if (level > 1)
+						--level;
+					demoReset();
+					break;
+				case SDL_SCANCODE_SPACE:
+				case SDL_SCANCODE_M:
+					mode ^= 1;
+					demoReset();
+					break;
+				case SDL_SCANCODE_TAB:
+					closeView = true;
+					newTab += (keyboardInput.mod & KMOD_SHIFT) ? -1 : 1;
+					break;
+				default:
+					break;
+				}
+				continue;
+			}
+
+			if (tab != GALLERY_STATS)
+			{
+				if (keyboardInput.scancode == SDL_SCANCODE_RETURN || keyboardInput.scancode == SDL_SCANCODE_SPACE)
+				{
+					openView = true;
+					continue;
+				}
+				if (keyboardInput.scancode == SDL_SCANCODE_E && tab == GALLERY_ENEMIES)
+				{
+					nextEpisode = true;
+					continue;
+				}
+			}
+
 			if (tab == GALLERY_STATS)
 			{
 				// the statistics scroll
@@ -1908,16 +2297,32 @@ void galleryScreen(void)
 			}
 		}
 
-		// the controller's shoulder buttons change the page
-		const SDL_GameControllerButton shoulders[2] = { SDL_CONTROLLER_BUTTON_LEFTSHOULDER, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER };
-		for (int s = 0; s < 2; ++s)
+		// the controller's shoulder buttons change the page; Y the episode
+		// of the enemies, or the mode of a weapon
+		const SDL_GameControllerButton buttons[3] = { SDL_CONTROLLER_BUTTON_LEFTSHOULDER, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, SDL_CONTROLLER_BUTTON_Y };
+		for (int s = 0; s < 3; ++s)
 		{
 			bool down = false;
 			for (int k = 0; k < joysticks; ++k)
-				if (joystick[k].controller != NULL && SDL_GameControllerGetButton(joystick[k].controller, shoulders[s]))
+				if (joystick[k].controller != NULL && SDL_GameControllerGetButton(joystick[k].controller, buttons[s]))
 					down = true;
 			if (down && !held[s])
-				newTab += s == 0 ? -1 : 1;
+			{
+				if (s < 2)
+				{
+					newTab += s == 0 ? -1 : 1;
+					closeView = view;
+				}
+				else if (view)
+				{
+					mode ^= 1;
+					demoReset();
+				}
+				else if (tab == GALLERY_ENEMIES)
+				{
+					nextEpisode = true;
+				}
+			}
 			held[s] = down;
 		}
 
@@ -1926,7 +2331,14 @@ void galleryScreen(void)
 		{
 			if (mouseInput.button == SDL_BUTTON_RIGHT)
 			{
-				done = true;
+				if (view)
+					closeView = true;
+				else
+					done = true;
+			}
+			else if (mouseInput.button == SDL_BUTTON_LEFT && view)
+			{
+				closeView = true;
 			}
 			else if (mouseInput.button == SDL_BUTTON_LEFT)
 			{
@@ -1948,7 +2360,9 @@ void galleryScreen(void)
 				else if (mx >= GRID_X && mx < GRID_X + GRID_COLS * CELL_W && my >= GRID_Y && my < GRID_Y + GRID_ROWS * CELL_H)
 				{
 					const int index = (top + (my - GRID_Y) / CELL_H) * GRID_COLS + (mx - GRID_X) / CELL_W;
-					if (index < (int)entryCount)
+					if (index == cursor)
+						openView = true;  // a click on the one chosen
+					else if (index < (int)entryCount)
 						cursor = index;
 				}
 				else if (my >= COUNT_Y - 2 && my < COUNT_Y + 10 && mx >= GRID_X + GRID_COLS * CELL_W - 16 && mx < GRID_X + GRID_COLS * CELL_W + 8)
@@ -1956,7 +2370,56 @@ void galleryScreen(void)
 					// the arrows: a page up or down
 					turnPage(&cursor, &top, mx < GRID_X + GRID_COLS * CELL_W - 2 ? -1 : 1);
 				}
+				else if (my >= COUNT_Y - 2 && my < COUNT_Y + 10 && mx >= GRID_X && tab == GALLERY_ENEMIES)
+				{
+					nextEpisode = true;  // the count: the next episode
+				}
+				else if (mx >= PANEL_X && my >= GRID_Y && my < COUNT_Y)
+				{
+					openView = true;  // the picture
+				}
 			}
+		}
+
+		if (nextEpisode)
+		{
+			// the next episode that has enemies, then all of them
+			const unsigned int was = enemyEpisode;
+			do
+			{
+				enemyEpisode = (enemyEpisode + 1) % 6;
+				buildEntries(tab);
+			} while (enemyEpisode != 0 && entryCount == 0 && enemyEpisode != was);
+			cursor = 0;
+			top = 0;
+			JE_playSampleNum(S_CLICK);
+		}
+		if (view && (closeView || done))
+		{
+			view = false;
+			demoEnd();
+			done = false;  // Esc closes the stage, not the gallery
+			if (closeView)
+				JE_playSampleNum(S_SPRING);
+		}
+		else if (view && viewStep != 0)
+		{
+			const int next = cursor + viewStep;
+			if (next >= 0 && next < (int)entryCount)
+			{
+				cursor = next;
+				viewTick = 0;
+				mode = 0;
+				demoReset();
+			}
+		}
+		else if (openView && !view && entryCount > 0 && entries[cursor].seen && demoStart())
+		{
+			view = true;
+			viewTick = 0;
+			mode = 0;
+			demoReset();
+			JE_playSampleNum(S_CLICK);
 		}
 
 		newTab = (newTab + GALLERY_TABS) % GALLERY_TABS;
@@ -1991,5 +2454,10 @@ void galleryScreen(void)
 		}
 	}
 
+	if (demoScreen != NULL)
+	{
+		SDL_FreeSurface(demoScreen);
+		demoScreen = NULL;
+	}
 	freeBankSheets();
 }

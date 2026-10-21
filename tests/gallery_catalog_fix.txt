@@ -1,0 +1,28 @@
+# What a look at every entry of the Gallery's list found, for
+# tests/make_gallery_catalog.py --fix=: one fix per line, each piece by
+# "dataset:enemyDat index" (dataset 1 = episodes 1-3, 4, 5).
+#   hide  a        not shown
+#   split a        each group of pieces that touch is an enemy of its own
+#   rows  a        each row of pieces is one (things in a line, one over the other)
+#   banks a        each group of pieces from one sprite bank is one
+#   once  a        each picture once (the same enemy twice, side by side)
+#   into  a b      the enemy with b is a part of the one with a
+#   stack a b ...  rows that come one at a time, top to bottom: one enemy
+
+stack 1:366 1:369 1:372 1:377 1:383  # a boss that comes row by row (episode 2)
+rows 1:18     # spears in formation
+banks 1:326   # two signs that only came together
+once 1:228    # the same enemy twice
+split 4:37    # two domes apart
+rows 4:340    # an eye and a ball under it
+split 4:351   # two hands far apart
+rows 4:642    # a column of balls
+stack 1:243 1:241  # the two halves of a ball, one after the other
+stack 1:713 1:716  # the top of a column of fire
+rows 1:319    # a mine and a rock under it
+into 1:171 4:171   # the same enemy, its pieces a little apart
+rows 5:564    # a column of balls
+split 5:1024  # two buildings apart
+hide 5:1245   # dots too small to show
+hide 5:1261
+hide 5:1262

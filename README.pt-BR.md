@@ -260,7 +260,10 @@ os controles de toque sumirem de novo.
   onde o viu pela primeira vez. Os inimigos são uma lista de todos os do jogo
   (cada um uma vez, as peças de um chefe ou de uma construção juntas), então
   dá para ver quantos faltam. Tab, ou LB e RB no controle, trocam a página; as setas
-  escolhem. Fica no arquivo gallery.cfg, junto dos saves, e vai se enchendo
+  escolhem. Enter (A no controle, ou um clique na figura) mostra em
+  movimento: a arma atirando, na potência de 1 a 11 (cima/baixo), o sidekick
+  atirando, a nave voando, o inimigo animado. Na página dos inimigos, E (Y no
+  controle) mostra um episódio de cada vez. Fica no arquivo gallery.cfg, junto dos saves, e vai se enchendo
   enquanto você joga daqui para a frente.
 - **Setup > Gallery > Statistics (Estatísticas):** os totais de todos os
   seus jogos (tempo nas fases, fases concluídas, inimigos destruídos, mortes,

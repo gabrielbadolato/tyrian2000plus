@@ -35,6 +35,11 @@
  * ship's menu.  With "setup" (after it) it starts at the Setup menu instead
  * (Gallery... is there).
  *
+ * "frames=<file.tsv>" right after the data folder writes the animation of
+ * every enemy of the data of episodes 1-3, 4 and 5 (for
+ * tests/make_gallery_catalog.py --frames=): dataset, enemyDat index, ani,
+ * animate, then the pictures (egraphic).
+ *
  *   XDG_CONFIG_HOME=<dir> test_gallery <data-dir> wait wait shot=a.bmp Tab shot=b.bmp
  */
 #include "config.h"
@@ -169,6 +174,13 @@ static int showScreen(int argc, char **argv)
 		++script;
 		--scriptLeft;
 	}
+	const char *frames = NULL;
+	if (scriptLeft > 0 && strncmp(*script, "frames=", 7) == 0)
+	{
+		frames = *script + 7;
+		++script;
+		--scriptLeft;
+	}
 	const bool setup = scriptLeft > 0 && strcmp(*script, "setup") == 0;
 	if (setup)
 	{
@@ -191,6 +203,28 @@ static int showScreen(int argc, char **argv)
 
 	JE_loadHelpText();
 	JE_scanForEpisodes();
+	if (frames != NULL)
+	{
+		FILE *f = fopen(frames, "w");
+		if (f == NULL)
+			return EXIT_FAILURE;
+		const int datasets[3] = { 1, 4, 5 };
+		for (int d = 0; d < 3; ++d)
+		{
+			if (!episodeAvail[datasets[d] - 1])
+				continue;
+			JE_initEpisode((JE_byte)datasets[d]);
+			for (int i = 0; i <= ENEMY_NUM; ++i)
+			{
+				fprintf(f, "%d\t%d\t%u\t%u", datasets[d], i, enemyDat[i].ani, enemyDat[i].animate);
+				for (int k = 0; k < 20; ++k)
+					fprintf(f, "\t%u", enemyDat[i].egraphic[k]);
+				fputc('\n', f);
+			}
+		}
+		fclose(f);
+		return EXIT_SUCCESS;
+	}
 	if (episode > 0)
 		JE_initEpisode((JE_byte)episode);
 

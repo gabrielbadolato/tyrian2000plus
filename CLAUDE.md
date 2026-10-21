@@ -298,9 +298,18 @@ bate um recorde que já existia, a tela de fim de fase original
 nova (B3) foi descartada: o jogo já mostra % destruídos e datacubes ali.
 
 Galeria: Setup > "Gallery..." (`galleryScreen()` em `src/gallery.c`, ideia
-aprovada pelo Gabriel em 2026-10-21; versão enxuta primeiro, a maior depois
-se ele gostar: animação, demonstração da arma, inimigos SEM nome (Gabriel: nomes nossos podem infringir políticas),
-filtro por episódio). Abas Ships/Weapons/Sidekicks/Other (escudos,
+aprovada pelo Gabriel em 2026-10-21; inimigos SEM nome (Gabriel: nomes
+nossos podem infringir políticas). Versão maior (galeria-7): Enter / A /
+clique na figura abre o "palco" no lugar da grade (`demoFrame()`): arma
+atirando pela USP Talon com o código do próprio jogo (`player_shot_create`
+e `simulate_player_shots`, como `JE_weaponViewFrame`, numa tela própria
+trocando `VGAScreen`; `demoStart/demoEnd` guardam e devolvem `player[0]`,
+`power`, `shotRepeat`), potência 1-11 em cima/baixo, modo da arma de trás
+em Espaço/Y; sidekick atirando dos dois lados; nave voando com inclinação;
+inimigo animado; lados passam ao próximo. Inimigos animados também no
+painel (`partPicture()`, quadros de `catalogAnims`/`catalogFrames`, tirados
+do enemyDat por `test_gallery <data> frames=<arq>`). Filtro por episódio na
+aba Enemies (E / Y / clique na contagem, `enemyEpisode`). Abas Ships/Weapons/Sidekicks/Other (escudos,
 geradores, especiais)/Enemies/Statistics, com as imagens do jogo (sprites desenhados
 num `Canvas` próprio, decodificador igual ao `blit_sprite2`). Itens: os que
 os menus da nave oferecem (a Galeria lê de novo as listas "]I" de
@@ -324,12 +333,22 @@ destruída) ou no fim da fase. Lista fixa (pedido do Gabriel, 2026-10-21):
 enemyDat das peças, por "dataset": 1 = episódios 1-3, 4, 5), gerado por
 `tests/make_gallery_catalog.py` a partir de `GALLERY_DUMP=<arq.tsv>` do
 `test_autoplay` (todos os episódios × dificuldades 1,2,3,4,6,8 × 2 caminhos;
-cada linha termina com `@quadro:x:y`, quando e onde a coisa veio; o script
+cada linha termina com `@quadro:x:y:ymapa`, quando e onde a coisa veio e,
+para peças do mapa, o y no mapa (`groundScroll`/`topScroll`); o script
 separa coisas que só se encostaram, junta tipos que vêm juntos em pelo menos
 metade das vezes e se tocam, coisas no céu do mesmo quadro sempre no mesmo
 lugar (braço de chefe sem linknum), metades lado a lado do mesmo quadro
 (braços, tentáculos; se passam de 260 px, fica uma só), peça cujas figuras
-estão todas noutra entrada, tira repetidos e figuras vazias com `--drop=`).
+estão todas noutra entrada, pedaços do mapa que sempre se encontram no
+mesmo lugar do mapa (`join_map`), tira repetidos e figuras vazias com
+`--drop=`). O que a revisão olho a olho achou fica em
+`tests/gallery_catalog_fix.txt` (`--fix=`: hide, split, rows, banks, once,
+into, stack; "stack" monta chefe que chega fileira por fileira no céu, como
+o da GYGES), pela peça (dataset:índice), então vale para a próxima coleta.
+Peça escondida vai na lista com `CATALOG_HIDDEN`: a Galeria não a mostra
+nem cria entrada para ela. Comando completo: `make_gallery_catalog.py
+--frames=<frames.tsv> --fix=tests/gallery_catalog_fix.txt
+src/gallery_catalog.h <tsv>...`.
 Inimigos não têm nome na ficha (pedido do Gabriel 2026-10-21). `catalogMatch()` marca cada entrada da lista que a coisa contém
 (duas construções lado a lado = duas); o que a lista não tem vira entrada
 pela aparência (`pieceOf` esconde pedaços). Inimigo novo/fase nova: rodar a

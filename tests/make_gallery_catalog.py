@@ -4,11 +4,16 @@
 #
 #   tests/run_autoplay.sh-like runs with GALLERY_DUMP=<file.tsv> (see
 #   tests/test_autoplay.c), then:
-#   tests/make_gallery_catalog.py <out.h> <e1-d2-r0.tsv> <more.tsv>...
+#   tests/make_gallery_catalog.py [--drop=<file>] [--frames=<file>]
+#       [--fix=tests/gallery_catalog_fix.txt] <out.h> <e1-d2-r0.tsv> <more.tsv>...
+#
+# --frames: the enemies' animations (test_gallery <data> frames=<file>);
+# --fix: what a look at every entry found (see that file).
 #
 # Each line of a .tsv is one thing the Gallery recorded in a level (an enemy,
 # or the pieces of a boss or a building): episode, level, destroyed, then
-# bank:sprite:size:x:y:enemyDat index:slot of each piece.  The list keeps one
+# bank:sprite:size:x:y:enemyDat index:slot of each piece, and
+# @frame:x:y:y on the map (when and where it came).  The list keeps one
 # entry for each enemy: the same pieces seen in many runs are one; a part of
 # a boss seen apart (it came first, or stayed) and a variant with a piece
 # missing go into the whole; pieces drawn on top of each other once; a group
@@ -36,8 +41,10 @@ def read(path, order_base):
             made = None
             if cols[-1].startswith('@'):
                 # the frame it came and where: things that came together
-                f_, x_, y_ = (int(v) for v in cols.pop()[1:].split(':'))
-                made = ((order_base, f_), x_, y_)
+                v = [int(v) for v in cols.pop()[1:].split(':')]
+                made = ((order_base, v[0]), v[1], v[2])
+                # (and, since a later run, where on the map: v[3])
+                map_dy = v[3] - v[2] if len(v) > 3 else None
             if len(cols) < 4:
                 continue
             try:
@@ -47,7 +54,7 @@ def read(path, order_base):
             if any(len(p) != 7 for p in parts):
                 continue
             things.append({'episode': int(cols[0]), 'level': cols[1].strip(), 'parts': parts,
-                           'order': order_base + n, 'made': made})
+                           'order': order_base + n, 'made': made, 'map_dy': map_dy if made else None})
     return join_made_together(things)
 
 
@@ -228,6 +235,73 @@ def rigid_pairs(things, seen_type, seen_pair):
     return best
 
 
+def join_map(ts, groups):
+    # the pieces of a big thing on the map (the rows of a boss built into the
+    # map) can come as things of their own, frames apart: where they are on
+    # the map says if they meet.  Two kinds of piece that, every time they
+    # are in the same level, meet always in the same place are one enemy.
+    def layer(p):
+        return 'top' if 50 <= p[6] < 75 else 'ground'
+
+    visits = defaultdict(list)  # (run, level, layer): (group, its pieces on the map)
+    for ti, (t, gs) in enumerate(zip(ts, groups)):
+        if t.get('map_dy') is None or not t['parts'] or t['parts'][0][6] < MAP_SLOT:
+            continue
+        for gi, g in enumerate(gs):
+            on_map = [(p, (p[3], p[4] + t['map_dy'])) for p in g]
+            visits[(t['made'][0][0], t['level'], layer(g[0]))].append(((ti, gi), on_map))
+
+    def meeting(items):
+        # pieces of two groups that meet: (a, b, offset), by a grid
+        grid = defaultdict(list)
+        for k, (_, on_map) in enumerate(items):
+            for p, (x, y) in on_map:
+                grid[(x // 32, y // 32)].append((k, p, x, y))
+        for (cx, cy), cell in grid.items():
+            near = [q for dx in (-1, 0, 1) for dy in (-1, 0, 1) for q in grid.get((cx + dx, cy + dy), ())]
+            for k, p, x, y in cell:
+                for k2, p2, x2, y2 in near:
+                    if k2 <= k or p[5] == p2[5]:
+                        continue
+                    a, b = (p[:3] + (x, y) + p[5:], p2[:3] + (x2, y2) + p2[5:])
+                    if touch(a, b):
+                        if a[5] < b[5]:
+                            yield k, k2, a, b, (b[3] - a[3], b[4] - a[4])
+                        else:
+                            yield k2, k, b, a, (a[3] - b[3], a[4] - b[4])
+
+    meet, together_n = defaultdict(Counter), Counter()
+    for items in visits.values():
+        for (a, b, off) in {(a[5], b[5], off) for _, _, a, b, off in meeting(items)}:
+            meet[(a, b)][off] += 1
+    for items in visits.values():
+        n = Counter(p[5] for _, on_map in items for p, _ in on_map)
+        for (a, b) in meet:
+            together_n[(a, b)] += n[a] * n[b]
+    fixed = {}
+    for pair, offs in meet.items():
+        off, k = offs.most_common(1)[0]
+        if k >= 2 and 10 * k >= 9 * together_n[pair]:
+            fixed[pair] = off
+
+    out = []
+    for items in visits.values():
+        group = list(range(len(items)))
+
+        def root(i):
+            while group[i] != i:
+                i = group[i]
+            return i
+        for k, k2, a, b, off in meeting(items):
+            if fixed.get((a[5], b[5])) == off:
+                group[root(k2)] = root(k)
+        joined = defaultdict(list)
+        for k, (_, on_map) in enumerate(items):
+            joined[root(k)].append([p[:3] + xy + p[5:] for p, xy in on_map])
+        out += [sum(gs, []) for gs in joined.values() if len(gs) > 1]
+    return out
+
+
 def size(group):
     w = lambda p: 24 if p[2] else 12
     h = lambda p: 28 if p[2] else 14
@@ -328,6 +402,26 @@ def main():
             for line in f:
                 if line.strip():
                     drop.add(tuple(tuple(int(v) for v in c.split(':')) for c in line.split()))
+    anim = {}
+    if args[0].startswith('--frames='):
+        # how each enemy is animated (test_gallery <data> frames=<file>):
+        # dataset, enemyDat index, ani, animate, the 20 pictures
+        with open(args.pop(0)[9:]) as f:
+            for line in f:
+                v = [int(x) for x in line.split()]
+                if v[3] in (1, 2) and v[2] > 1:
+                    anim[(v[0], v[1])] = (v[3], v[4:4 + min(v[2], 20)])
+    fixes = []
+    if args[0].startswith('--fix='):
+        # what a look at every entry found (tests/gallery_catalog_fix.txt):
+        # "hide 1:66" (not shown), "split 1:66" (each group of pieces that
+        # touch is an enemy of its own), "rows", "into", "stack" (see below),
+        # by the enemyDat index of a piece
+        with open(args.pop(0)[6:]) as f:
+            for line in f:
+                words = line.split('#')[0].split()
+                if words:
+                    fixes.append((words[0], [tuple(int(v) for v in w.split(':')) for w in words[1:]]))
     out_path = args[0]
     things = []
     for i, path in enumerate(args[1:]):
@@ -346,9 +440,11 @@ def main():
 
         # every enemy met, by its types: the look it has most often
         forms = defaultdict(Counter)
+        sample = {}  # a look: its pieces, with their enemyDat index
         first = {}
         groups = [split_rigid(t, seen_type, seen_pair, rigid) for t in ts]
         joined, alias = join_pairs(ts, groups)
+        joined += join_map(ts, groups)
         for t, gs in zip(ts + [None] * len(joined), groups + [[g] for g in joined]):
             if t is None:
                 t = {'order': 1 << 40, 'episode': 9}
@@ -356,6 +452,7 @@ def main():
                 parts = clean(piece)
                 types = frozenset(p[5] for p in parts)
                 forms[types][look(parts)] += 1
+                sample[look(parts)] = parts
                 if types not in first or t['order'] < first[types][0]:
                     first[types] = (t['order'], t['episode'])
 
@@ -376,7 +473,8 @@ def main():
             lk, n = forms[s].most_common(1)[0]
             e = entries.get(lk)  # another enemy that looks the same: once
             if e is None:
-                entries[lk] = {'look': lk, 'types': {(ds, t) for t in s}, 'order': first[s][0], 'episode': first[s][1]}
+                entries[lk] = {'look': lk, 'types': {(ds, t) for t in s}, 'order': first[s][0], 'episode': first[s][1],
+                               'parts': [(ds,) + p for p in sample[lk]]}
             else:
                 e['types'] |= {(ds, t) for t in s}
                 if first[s][0] < e['order']:
@@ -417,14 +515,119 @@ def main():
                     k['order'], k['episode'] = e['order'], e['episode']
                 break
 
-    kept = [e for e in entries.values() if e['look'] not in drop and 'into' not in e]
+    entries = {k: e for k, e in entries.items() if 'into' not in e}
+    for what, keys in fixes:
+        e = next((e for e in entries.values() if keys[0] in e['types']), None)
+        if e is None:
+            print('fix: nothing has %d:%d' % keys[0])
+            continue
+        if what == 'stack':
+            # rows that come one by one in the sky, one under the other, each
+            # centred on the first: one enemy (the pieces never meet when made)
+            rows = [next((r for r in entries.values() if k in r['types']), None) for k in keys]
+            if None in rows or len({id(r) for r in rows}) < len(rows):
+                print('fix: cannot stack %s' % ' '.join('%d:%d' % k for k in keys))
+                continue
+            width = lambda ps: max(p[4] + (24 if p[3] else 12) for p in ps)
+            height = lambda ps: max(p[5] + (28 if p[3] else 14) for p in ps)
+            mid, y, parts = width(rows[0]['parts']) // 2, 0, []
+            for r in rows:
+                dx = mid - width(r['parts']) // 2
+                parts += [p[:4] + (p[4] + dx, p[5] + y) + p[6:] for p in r['parts']]
+                y += height(r['parts'])
+                del entries[r['look']]
+            lk = look(clean([p[1:] for p in parts]))
+            early = min(rows, key=lambda r: r['order'])
+            entries[lk] = dict(e, look=lk, parts=parts, types=set().union(*(r['types'] for r in rows)),
+                               order=early['order'], episode=early['episode'])
+        elif what == 'into':
+            # "into 1:66 1:70": the enemy with 1:70 is a part of the one with 1:66
+            b = next((r for r in entries.values() if keys[1] in r['types']), None)
+            if b is None or b is e:
+                print('fix: cannot put %d:%d into %d:%d' % (keys[1] + keys[0]))
+                continue
+            del entries[b['look']]
+            e['types'] |= b['types']
+            if b['order'] < e['order']:
+                e['order'], e['episode'] = b['order'], b['episode']
+        elif what == 'hide':
+            e['hidden'] = True
+        elif what == 'once':
+            # the same enemy twice, side by side: once
+            del entries[e['look']]
+            seen, parts = set(), []
+            for p in e['parts']:
+                if (p[1], p[2], p[3]) not in seen:
+                    seen.add((p[1], p[2], p[3]))
+                    parts.append(p)
+            lk = look(clean([p[1:] for p in parts]))
+            if lk in entries:
+                entries[lk]['types'] |= e['types']
+            else:
+                entries[lk] = dict(e, look=lk, parts=parts)
+        elif what in ('split', 'rows', 'banks'):
+            # "split": each group of pieces that touch is an enemy of its own;
+            # "rows": each row of them (things in a line, one over the other);
+            # "banks": each group of pieces from the same sprite bank
+            del entries[e['look']]
+            ps = e['parts']
+            group = list(range(len(ps)))
+
+            def root(i):
+                while group[i] != i:
+                    i = group[i]
+                return i
+            for i, a in enumerate(ps):
+                for j in range(i + 1, len(ps)):
+                    if touch(a[1:], ps[j][1:]) and (what == 'split' or (a[5] == ps[j][5] if what == 'rows' else a[1] == ps[j][1])):
+                        group[root(j)] = root(i)
+            comps = defaultdict(list)
+            for i, p in enumerate(ps):
+                comps[root(i)].append(p)
+            comps = sorted(comps.values(), key=len, reverse=True)
+            # a group with only pictures of a bigger one is a piece of it
+            gpics = lambda c: {(p[1], p[2], p[3]) for p in c}
+            kept_comps = []
+            for comp in comps:
+                big = next((k for k in kept_comps if gpics(comp) <= gpics(k[0])), None)
+                if big is None:
+                    kept_comps.append([comp, {(p[0], p[6]) for p in comp}])
+                else:
+                    big[1] |= {(p[0], p[6]) for p in comp}
+            kept_comps[0][1] |= set(e['types']) - {(p[0], p[6]) for p in ps}
+            taken = set()
+            for comp, types in kept_comps:  # each type once, in the biggest
+                types -= taken
+                taken |= types
+                lk = look(clean([p[1:] for p in comp]))
+                if lk in entries:
+                    entries[lk]['types'] |= types
+                else:
+                    entries[lk] = dict(e, look=lk, types=types, parts=comp)
+
+    kept = [e for e in entries.values() if e['look'] not in drop and not e.get('hidden')]
+    hidden = {t for e in entries.values() if e.get('hidden') for t in e['types']} - \
+        {t for e in kept for t in e['types']}
     kept.sort(key=lambda e: (e['episode'], e['order']))
     parts_out, enemies_out, types_out = [], [], []
+    frames_out = [(0, [])]  # 0: not animated
     for i, e in enumerate(kept):
         enemies_out.append((e['episode'], len(e['look']), len(parts_out)))
-        parts_out += e['look']
+        for lp in e['look']:
+            # its animation: the pictures of its enemyDat entry, from the one it shows
+            src = next((p for p in e['parts'] if (p[1], p[2], p[3]) == lp[:3]), None)
+            a = anim.get((src[0], src[6])) if src is not None else None
+            n = 0
+            if a is not None and lp[1] in a[1]:
+                k = a[1].index(lp[1])
+                seq = (a[0], a[1][k:] + a[1][:k])
+                if seq not in frames_out:
+                    frames_out.append(seq)
+                n = frames_out.index(seq)
+            parts_out.append(lp + (n,))
         for ds, t in sorted(e['types']):
             types_out.append((ds, t, i))
+    types_out += [(ds, t, 0xFFFF) for ds, t in hidden]
     types_out.sort()
 
     with open(out_path, 'w') as f:
@@ -453,6 +656,8 @@ def main():
 #ifndef GALLERY_CATALOG_H
 #define GALLERY_CATALOG_H
 
+#define CATALOG_HIDDEN 0xFFFF  // CatalogType.enemy of a piece the Gallery does not show
+
 #include "SDL_types.h"
 
 typedef struct
@@ -460,6 +665,7 @@ typedef struct
 	Uint8 bank, size;
 	Uint16 gr;
 	Sint16 x, y;
+	Uint16 anim;  // in catalogAnims (0: not animated)
 } CatalogPart;
 
 typedef struct
@@ -476,16 +682,33 @@ typedef struct
 	Uint16 enemy;   // in catalogEnemies
 } CatalogType;
 
+typedef struct
+{
+	Uint8 when;    // 1: always, 2: when it fires (as enemyDat animate)
+	Uint8 count;
+	Uint16 first;  // in catalogFrames: the pictures, one a frame (999: none)
+} CatalogAnim;
+
 ''')
         f.write('static const CatalogPart catalogParts[] =\n{\n')
         for p in parts_out:
-            f.write('\t{ %d, %d, %d, %d, %d },\n' % (p[0], p[2], p[1], p[3], p[4]))
+            f.write('\t{ %d, %d, %d, %d, %d, %d },\n' % (p[0], p[2], p[1], p[3], p[4], p[5]))
         f.write('};\n\nstatic const CatalogEnemy catalogEnemies[] =\n{\n')
         for e in enemies_out:
             f.write('\t{ %d, %d, %d },\n' % e)
         f.write('};\n\nstatic const CatalogType catalogTypes[] =\n{\n')
         for t in types_out:
             f.write('\t{ %d, %d, %d },\n' % t)
+        f.write('};\n\nstatic const CatalogAnim catalogAnims[] =\n{\n')
+        first = 0
+        for when, seq in frames_out:
+            f.write('\t{ %d, %d, %d },\n' % (when, len(seq), first))
+            first += len(seq)
+        f.write('};\n\nstatic const Uint16 catalogFrames[] =\n{\n')
+        for when, seq in frames_out[1:]:
+            f.write('\t%s,\n' % ', '.join(str(g) for g in seq))
+        if len(frames_out) == 1:
+            f.write('\t0\n')
         f.write('};\n\n#endif /* GALLERY_CATALOG_H */\n')
 
     print('%d things, %d enemies in the list, %d pieces' % (len(things), len(kept), len(parts_out)))

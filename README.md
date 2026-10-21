@@ -252,7 +252,11 @@ controls again.
   met it. The enemies are a list of all of the game's (each one once, the
   pieces of a boss or of a building together), so you can see how many are
   left. Tab, or
-  LB and RB on the controller, change the page; arrows choose. It is kept in
+  LB and RB on the controller, change the page; arrows choose. Enter (A on
+  the controller, or a click on the picture) shows it in motion: a weapon
+  firing, at power 1 to 11 (Up/Down), a sidekick firing, a ship flying, an
+  enemy animated. On the enemies page, E (Y on the controller) shows one
+  episode at a time. It is kept in
   gallery.cfg, next to the saves, and fills up as you play from now on.
 - **Setup > Gallery > Statistics:** the totals of all your games (time in
   levels, levels completed, enemies destroyed, deaths, secret levels,

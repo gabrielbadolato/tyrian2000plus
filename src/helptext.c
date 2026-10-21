@@ -55,7 +55,7 @@ char pName[21][16];                                                      /* [1..
 char miscText[HELPTEXT_MISCTEXT_COUNT][42];                              /* [1..68] of string [41] */
 char miscTextB[HELPTEXT_MISCTEXTB_COUNT][HELPTEXT_MISCTEXTB_SIZE];       /* [1..5] of string [10] */
 char keyName[8][18];                                                     /* [1..8] of string [17] */
-char menuText[10][HELPTEXT_MENUTEXT_SIZE];                               /* Continue, [1..7] of string [20], + Replay, About */
+char menuText[8][HELPTEXT_MENUTEXT_SIZE];                                /* Continue, [1..7] of string [20] */
 char outputs[9][31];                                                     /* [1..9] of string [30] */
 char topicName[6][21];                                                   /* [1..6] of string [20] */
 char mainMenuHelp[HELPTEXT_MAINMENUHELP_COUNT][66];                      /* [1..34] of string [65] */
@@ -345,11 +345,8 @@ void JE_loadHelpText(void)
 	strcpy(menuText[7], menuText[6]);
 	strcpy(menuText[6], menuText[5]);
 	SDL_strlcpy(menuText[5], tr("Setup"), sizeof(menuText[5]));
-
-	// Tyrian2000 Plus: Replay after Demo, About before Quit
-	strcpy(menuText[9], menuText[7]);
-	SDL_strlcpy(menuText[7], tr("Replay"), sizeof(menuText[7]));
-	SDL_strlcpy(menuText[8], tr("About"), sizeof(menuText[8]));
+	// (Tyrian2000 Plus: About and Replay Last Level are in Setup, so the
+	// list keeps the original spacing)
 
 	/*Event text*/
 	readEncryptedString(&file, NULL, 0);

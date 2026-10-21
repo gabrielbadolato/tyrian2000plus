@@ -10,6 +10,11 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Title screen with room to breathe**: the menu is back to the original
+  game's items (plus Continue) and spacing, so the lines no longer touch.
+  "Replay" is now "Replay Last Level" in Setup, and About is only in Setup
+  (it was in both places); the update notes in the corner say "See Setup."
+
 - **Browser: the mouse stays in the game**: during a level, once the mouse is
   used (a click, or a key after moving it), the page holds the pointer, so the
   ship keeps following the mouse instead of stopping when the pointer reaches

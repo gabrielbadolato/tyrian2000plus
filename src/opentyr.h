@@ -69,7 +69,7 @@ typedef enum
 
 // Setup opened on one of its pages; backing out of that page leaves it
 void setupMenuPage(SetupPage page);
-void setupMenu(void);
+bool setupMenu(void);  // from the title screen; true: Replay Last Level was chosen
 void controlsMenu(void);  // Setup > Controls only
 
 #endif /* OPENTYR_H */

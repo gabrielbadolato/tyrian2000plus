@@ -1147,7 +1147,14 @@ static void drawEntryPicture(const Entry *entry)
 	switch (entry->kind)
 	{
 	case KIND_SHIP:
-		if (ships[entry->id].shipgraphic > 500)
+		// two-sprite ships, as the levels draw them (JE_playerMovement)
+		if (ships[entry->id].shipgraphic <= 1)
+		{
+			const bool nort = ships[entry->id].shipgraphic == 1;
+			canvasSprite2x2(&spriteSheet9, nort ? 220 : 13, 0, 0, NULL);
+			canvasSprite2x2(&spriteSheet9, nort ? 222 : 51, 24, 0, NULL);
+		}
+		else if (ships[entry->id].shipgraphic > 500)
 			canvasSprite2x2(&spriteSheetT2000, ships[entry->id].shipgraphic - 500, 0, 0, NULL);
 		else
 			canvasSprite2x2(&spriteSheet9, ships[entry->id].shipgraphic, 0, 0, NULL);
@@ -1165,8 +1172,10 @@ static void drawEntryPicture(const Entry *entry)
 		graphic = powerSys[entry->id].itemgraphic;
 		break;
 	case KIND_SPECIAL:
-		graphic = special[entry->id].itemgraphic;
-		break;
+		// drawn from the sheet of the HUD, as in JE_inGameDisplays
+		if (special[entry->id].itemgraphic > 0)
+			canvasSprite2x2(&spriteSheet10, special[entry->id].itemgraphic, 0, 0, NULL);
+		return;
 	case KIND_ENEMY:
 	{
 		const SeenEnemy *e = &enemies[entry->id];
@@ -1324,7 +1333,8 @@ static void drawDetails(const Entry *entry)
 	char buffer[64], line[96];
 	const char *const name = entryName(entry, buffer, sizeof(buffer));
 
-	// the name, on two lines if it is long
+	// the name, on two lines if it is long, in the small font only if it
+	// does not fit in two
 	int y = GRID_Y + 2;
 	const int maxW = PANEL_W - 8;
 	if (JE_textWidth(name, FONT_NORMAL) <= maxW)
@@ -1334,37 +1344,45 @@ static void drawDetails(const Entry *entry)
 	}
 	else
 	{
-		// break at the last space that fits
-		char first[64];
-		snprintf(first, sizeof(first), "%s", name);
-		char *cut = NULL;
-		for (char *s = strchr(first, ' '); s != NULL; s = strchr(s + 1, ' '))
+		const Font fonts[2] = { FONT_NORMAL, FONT_SMALL };
+		bool drawn = false;
+		for (int f = 0; f < 2 && !drawn; ++f)
 		{
-			*s = '\0';
-			const bool fits = JE_textWidth(first, FONT_SMALL) <= maxW;
-			*s = ' ';
-			if (!fits)
-				break;
-			cut = s;
-		}
-		if (cut != NULL)
-		{
+			// break at the last space that fits
+			char first[64];
+			snprintf(first, sizeof(first), "%s", name);
+			char *cut = NULL;
+			for (char *s = strchr(first, ' '); s != NULL; s = strchr(s + 1, ' '))
+			{
+				*s = '\0';
+				const bool fits = JE_textWidth(first, fonts[f]) <= maxW;
+				*s = ' ';
+				if (!fits)
+					break;
+				cut = s;
+			}
+			if (cut == NULL || JE_textWidth(cut + 1, fonts[f]) > maxW)
+				continue;
+
 			*cut = '\0';
-			drawFontHvShadow(VGAScreen, PANEL_X + 4, y, first, FONT_SMALL, 15, 4, false, 1);
-			drawFontHvShadow(VGAScreen, PANEL_X + 4, y + 9, cut + 1, FONT_SMALL, 15, 4, false, 1);
+			const int brightness = fonts[f] == FONT_NORMAL ? 2 : 4, height = fonts[f] == FONT_NORMAL ? 12 : 9;
+			drawFontHvShadow(VGAScreen, PANEL_X + 4, y, first, fonts[f], 15, brightness, false, 1);
+			drawFontHvShadow(VGAScreen, PANEL_X + 4, y + height, cut + 1, fonts[f], 15, brightness, false, 1);
+			y += 2 * height;
+			drawn = true;
 		}
-		else
+		if (!drawn)
 		{
 			drawFontHvShadow(VGAScreen, PANEL_X + 4, y, name, FONT_SMALL, 15, 4, false, 1);
+			y += 12;
 		}
-		y += 19;
 	}
 
-	// the picture
-	const int picY = y, picH = 84;
+	// the picture, down to where the numbers start
+	const int picY = y, infoY = GRID_Y + 2 + 19 + 84 + 3;
 	drawEntryPicture(entry);
-	showCanvas(VGAScreen, PANEL_X + 2, picY, PANEL_W - 4, picH, 3, false, !entry->seen);
-	y = picY + picH + 3;
+	showCanvas(VGAScreen, PANEL_X + 2, picY, PANEL_W - 4, infoY - 3 - picY, 3, false, !entry->seen);
+	y = infoY;
 
 	if (!entry->seen)
 	{

@@ -73,6 +73,12 @@ void deinit_video(void);
 void JE_clr256(SDL_Surface *);
 // Shows `surface` instead of VGAScreen (smooth motion's pictures in between).
 void video_present(SDL_Surface *surface);
+// Smooth motion's finer pictures: how many times bigger than the game's screen
+// the window shows it (1 to 4; 1 with a scaler other than None), and showing
+// one (scale times the size of the screen, 8 bits per pixel, `pitch` bytes
+// per row) where the screen goes.
+int video_fine_scale(void);
+void video_present_fine(const Uint8 *pixels, int pitch, int scale);
 // How many times JE_showVGA was called (the mouse pointer of smooth motion).
 extern unsigned int vga_shows;
 

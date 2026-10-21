@@ -21,6 +21,7 @@
 #include "keyboard.h"
 #include "logging.h"
 #include "opentyr.h"
+#include "palette.h"
 #include "smooth.h"
 #include "touch.h"
 #include "video_scale.h"
@@ -66,6 +67,12 @@ static SDL_Texture *main_window_texture = NULL;
 static SDL_Texture *prescale_texture = NULL;
 static int prescale_w = 0, prescale_h = 0;
 
+// smooth motion's finer pictures, and their sharp bilinear prescale
+static SDL_Texture *fine_texture = NULL;
+static int fine_w = 0, fine_h = 0;
+static SDL_Texture *fine_prescale_texture = NULL;
+static int fine_prescale_w = 0, fine_prescale_h = 0;
+
 static ScalerFunction scaler_function;
 
 static void init_renderer(void);
@@ -85,6 +92,8 @@ static int window_get_display_index(void);
 static void window_center_in_display(int display_index);
 static bool window_restore_geometry(void);
 static void calc_dst_render_rect(SDL_Surface *src_surface, SDL_Rect *dst_rect);
+static SDL_Texture *sharp_bilinear_prescale_of(SDL_Texture *source, SDL_Texture **texture, int *texture_w, int *texture_h, const SDL_Rect *dst_rect);
+static void present(SDL_Texture *output_texture, const SDL_Rect *dst_rect);
 static void scale_and_flip(SDL_Surface *);
 
 #ifdef __EMSCRIPTEN__
@@ -184,6 +193,23 @@ static void deinit_prescale_texture(void)
 		prescale_texture = NULL;
 	}
 	prescale_w = prescale_h = 0;
+
+	if (fine_prescale_texture != NULL)
+	{
+		SDL_DestroyTexture(fine_prescale_texture);
+		fine_prescale_texture = NULL;
+	}
+	fine_prescale_w = fine_prescale_h = 0;
+}
+
+static void deinit_fine_texture(void)
+{
+	if (fine_texture != NULL)
+	{
+		SDL_DestroyTexture(fine_texture);
+		fine_texture = NULL;
+	}
+	fine_w = fine_h = 0;
 }
 
 // the prescale texture could not be made; draw without it until the option is set again
@@ -201,6 +227,7 @@ void set_sharp_bilinear(bool enabled)
 static void deinit_renderer(void)
 {
 	deinit_prescale_texture();
+	deinit_fine_texture();
 	touch_release_textures();
 
 	if (main_window_renderer != NULL)
@@ -491,6 +518,68 @@ void video_present(SDL_Surface *surface)
 	scale_and_flip(surface);
 }
 
+int video_fine_scale(void)
+{
+	if (scaler != 0 || main_window_renderer == NULL)  // "None"
+		return 1;
+
+	const int scale_x = last_output_rect.w / vga_width;
+	const int scale_y = last_output_rect.h / vga_height;
+	const int scale = scale_x < scale_y ? scale_x : scale_y;
+	return scale < 1 ? 1 : scale > 4 ? 4 : scale;
+}
+
+void video_present_fine(const Uint8 *const pixels, const int pitch, const int scale)
+{
+	const int w = vga_width * scale, h = vga_height * scale;
+
+	if (fine_texture == NULL || fine_w != w || fine_h != h)
+	{
+		deinit_fine_texture();
+		fine_texture = SDL_CreateTexture(main_window_renderer, main_window_tex_format->format, SDL_TEXTUREACCESS_STREAMING, w, h);
+		if (fine_texture == NULL)
+		{
+			logWarn("Failed to create the smooth motion texture (%dx%d): %s", w, h, SDL_GetError());
+			return;
+		}
+		fine_w = w;
+		fine_h = h;
+	}
+
+	void *locked;
+	int locked_pitch;
+	if (SDL_LockTexture(fine_texture, NULL, &locked, &locked_pitch) != 0)
+		return;
+
+	const int bytes = main_window_tex_format->BytesPerPixel;
+	for (int y = 0; y < h; ++y)
+	{
+		const Uint8 *src = pixels + (size_t)y * pitch;
+		Uint8 *dst = (Uint8 *)locked + (size_t)y * locked_pitch;
+		if (bytes == 4)
+		{
+			for (int x = 0; x < w; ++x)
+				((Uint32 *)dst)[x] = rgb_palette[src[x]];
+		}
+		else
+		{
+			for (int x = 0; x < w; ++x)
+				((Uint16 *)dst)[x] = rgb_palette[src[x]];
+		}
+	}
+	SDL_UnlockTexture(fine_texture);
+
+	SDL_Rect dst_rect;
+	calc_dst_render_rect(VGAScreen, &dst_rect);
+
+	present(sharp_bilinear_prescale_of(fine_texture, &fine_prescale_texture, &fine_prescale_w, &fine_prescale_h, &dst_rect), &dst_rect);
+#ifdef __EMSCRIPTEN__
+	emscripten_sleep(0);  // as in scale_and_flip
+#endif
+
+	last_output_rect = dst_rect;
+}
+
 static void calc_dst_render_rect(SDL_Surface *const src_surface, SDL_Rect *const dst_rect)
 {
 	// Decides how the logical output texture (after software scaling applied) will fit
@@ -556,21 +645,21 @@ static void calc_dst_render_rect(SDL_Surface *const src_surface, SDL_Rect *const
 	touch_adjust_game_rect(win_w, win_h, dst_rect);
 }
 
-/** Returns the texture to draw at dst_rect: the scaler output, or its sharp bilinear prescale. */
-static SDL_Texture *sharp_bilinear_prescale(const SDL_Rect *const dst_rect)
+/** The same for `source`, keeping its prescale texture in *texture (w x h). */
+static SDL_Texture *sharp_bilinear_prescale_of(SDL_Texture *const source, SDL_Texture **const texture, int *const texture_w, int *const texture_h, const SDL_Rect *const dst_rect)
 {
 	if (!sharp_bilinear_enabled || prescale_failed)
-		return main_window_texture;
+		return source;
 
 	int tex_w, tex_h;
-	SDL_QueryTexture(main_window_texture, NULL, NULL, &tex_w, &tex_h);
+	SDL_QueryTexture(source, NULL, NULL, &tex_w, &tex_h);
 
 	// Exact multiples (and Center) already look sharp with nearest-neighbor.
 	if (dst_rect->w % tex_w == 0 && dst_rect->h % tex_h == 0)
-		return main_window_texture;
+		return source;
 
 	if (!SDL_RenderTargetSupported(main_window_renderer))
-		return main_window_texture;
+		return source;
 
 	// Round each axis up, so the final bilinear step shrinks slightly (by less than one block)
 	// instead of enlarging; that keeps the blended seam at most one window pixel wide.
@@ -589,31 +678,40 @@ static SDL_Texture *sharp_bilinear_prescale(const SDL_Rect *const dst_rect)
 	const int w = tex_w * factor_x;
 	const int h = tex_h * factor_y;
 
-	if (prescale_texture == NULL || prescale_w != w || prescale_h != h)
+	if (*texture == NULL || *texture_w != w || *texture_h != h)
 	{
-		deinit_prescale_texture();
+		if (*texture != NULL)
+			SDL_DestroyTexture(*texture);
+		*texture_w = *texture_h = 0;
 
-		prescale_texture = SDL_CreateTexture(main_window_renderer, main_window_tex_format->format, SDL_TEXTUREACCESS_TARGET, w, h);
-		if (prescale_texture == NULL)
+		*texture = SDL_CreateTexture(main_window_renderer, main_window_tex_format->format, SDL_TEXTUREACCESS_TARGET, w, h);
+		if (*texture == NULL)
 		{
 			logWarn("Failed to create sharp bilinear texture (%dx%d): %s", w, h, SDL_GetError());
 			prescale_failed = true;  // not saved: the setting stays as the player chose
-			return main_window_texture;
+			return source;
 		}
-		SDL_SetTextureScaleMode(prescale_texture, SDL_ScaleModeLinear);
-		prescale_w = w;
-		prescale_h = h;
+		SDL_SetTextureScaleMode(*texture, SDL_ScaleModeLinear);
+		*texture_w = w;
+		*texture_h = h;
 	}
 
-	SDL_SetTextureScaleMode(main_window_texture, SDL_ScaleModeNearest);
+	SDL_SetTextureScaleMode(source, SDL_ScaleModeNearest);
 
-	if (SDL_SetRenderTarget(main_window_renderer, prescale_texture) != 0)
-		return main_window_texture;
-	SDL_RenderCopy(main_window_renderer, main_window_texture, NULL, NULL);
+	if (SDL_SetRenderTarget(main_window_renderer, *texture) != 0)
+		return source;
+	SDL_RenderCopy(main_window_renderer, source, NULL, NULL);
 	SDL_SetRenderTarget(main_window_renderer, NULL);
 
-	return prescale_texture;
+	return *texture;
 }
+
+/** Returns the texture to draw at dst_rect: the scaler output, or its sharp bilinear prescale. */
+static SDL_Texture *sharp_bilinear_prescale(const SDL_Rect *const dst_rect)
+{
+	return sharp_bilinear_prescale_of(main_window_texture, &prescale_texture, &prescale_w, &prescale_h, dst_rect);
+}
+
 
 static Uint32 last_present_ticks;
 

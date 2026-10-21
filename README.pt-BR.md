@@ -70,6 +70,9 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
   tela mostra o movimento entre um quadro e outro na taxa do seu monitor (60,
   120, 144, 240 Hz...), nas fases, nos escurecimentos entre telas e na prévia
   das armas do menu da nave.
+  Nas fases, as imagens do meio são desenhadas em até 4x a resolução do jogo
+  (conforme o tamanho da janela, com o scaler "None"), então até um fundo que
+  anda um pixel por quadro desliza de quarto em quarto de pixel.
 - Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
 - Tela About com a história do projeto e os créditos.

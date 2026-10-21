@@ -10,6 +10,20 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Smooth Motion, finer**: in the levels, the pictures in between are now
+  drawn at up to 4x the game's resolution (1280x800), chosen by the size of
+  the window, so things that move less than a pixel per frame glide too. The
+  far background of many levels scrolls one pixel per frame and used to jump
+  from frame to frame even with Smooth Motion on; now it moves in quarter
+  pixels. It turns on and off with Smooth Motion and needs the "None" scaler
+  (the default); if a computer is too slow for it, the game uses 3x or 2x.
+- **Smooth Motion, slow scrolling**: where a level scrolls slowly (a layer
+  moves one pixel every few frames, as in the rocky part of level 1), the
+  background and the enemies on the ground now glide at an even speed instead
+  of stopping and jumping. The same when the ship moves sideways: the layers
+  and the enemies on them slide by a fraction of its movement, which was
+  rounded to 1, 2, 1, 2 pixels; now they slide evenly. An enemy that flashes
+  when hit no longer skips its in-between pictures.
 - **Browser: the mouse stays in the game**: during a level, once the mouse is
   used (a click, or a key after moving it), the page holds the pointer, so the
   ship keeps following the mouse instead of stopping when the pointer reaches

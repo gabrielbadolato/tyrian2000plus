@@ -33,6 +33,7 @@
 #include "jukebox.h"
 #include "keyboard.h"
 #include "lang.h"
+#include "levelrec.h"
 #include "logging.h"
 #include "loudness.h"
 #include "mainint.h"
@@ -314,6 +315,9 @@ static void setSavesStatus(bool opened)
 	snprintf(savesStatus, sizeof(savesStatus), "%s %s%s", prefix, start != shown ? "..." : "", start);
 }
 
+static bool setupFromTitle;     // Setup opened by setupMenu()
+static bool setupReplayChosen;  // Replay Last Level was chosen
+
 void setupMenuPage(SetupPage page)
 {
 	typedef enum
@@ -365,6 +369,7 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_MUSIC_VOLUME,
 		MENU_ITEM_SOUND_VOLUME,
 		MENU_ITEM_MUSIC_CHIP,
+		MENU_ITEM_REPLAY,
 	} MenuItemId;
 
 	// items that stand for one of several actions share the first one's id
@@ -403,7 +408,7 @@ void setupMenuPage(SetupPage page)
 		const char *header;
 		bool compact;  // tighter rows, for long lists
 		int wItemName; // 0 = default
-		const MenuItem items[13];
+		const MenuItem items[15];
 	} Menu;
 
 	static const Menu menus[] = {
@@ -414,7 +419,6 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_SOUND, "Sound...", "Change the sound settings." },
 				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
 				{ MENU_ITEM_GAME_SPEED, "Game Speed:", "Change how fast the levels run.", getGameSpeedPickerItemsCount, getGameSpeedPickerItem },
-				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
 				{ MENU_ITEM_LANGUAGE, "Language:", "Choose the language of the menus and help.", getLanguagePickerItemsCount, getLanguagePickerItem },
 #ifndef __EMSCRIPTEN__  // the browser version is always the newest one
@@ -425,6 +429,8 @@ void setupMenuPage(SetupPage page)
 #else
 				{ MENU_ITEM_SAVES, "Saved Games...", "Open the folder with tyrian.sav, your saved games." },
 #endif
+				{ MENU_ITEM_JUKEBOX, "Jukebox...", "Listen to the music of Tyrian." },
+				{ MENU_ITEM_REPLAY, "Replay Last Level...", "Watch the last level you played." },
 				{ MENU_ITEM_STATISTICS, "Statistics...", "Totals of all your games and the records of each level." },
 				{ MENU_ITEM_WHATS_NEW, "What's New...", "What changed in each version of the game." },
 				{ MENU_ITEM_ABOUT, "About...", "What this is, where it came from, and credits." },
@@ -609,12 +615,25 @@ void setupMenuPage(SetupPage page)
 
 		const Menu *menu = &menus[currentMenu];
 
+		// Replay only from the title screen (not with a game going on), and
+		// only with a recorded level
+		MenuItem shownItems[COUNTOF(menu->items)];
+		size_t shownCount = 0;
+		for (size_t i = 0; ; ++i)
+		{
+			if (menu->items[i].id == MENU_ITEM_REPLAY && !(setupFromTitle && levelrec_can_watch()))
+				continue;
+			shownItems[shownCount++] = menu->items[i];
+			if (menu->items[i].id == (MenuItemId)-1)
+				break;
+		}
+
 		const int wMenuItemName = menu->wItemName != 0 ? menu->wItemName : 135;
 		const int xMenuItemValue = xMenuItemName + wMenuItemName;
 		const int wMenuItemValue = menu->wItemName != 0 ? 320 - 10 - xMenuItemValue : 95;
 		const int wMenuItem = wMenuItemName + wMenuItemValue;
 		size_t itemsCount = 0;
-		while (menu->items[itemsCount].id != (MenuItemId)-1)
+		while (shownItems[itemsCount].id != (MenuItemId)-1)
 			++itemsCount;
 
 		const int yMenuItems = menu->compact ? 30 : 37;
@@ -634,7 +653,7 @@ void setupMenuPage(SetupPage page)
 		const int hPickerItem = dyPickerItem - dyPickerItemPadding;
 
 		size_t *const selectedMenuItemIndex = &selectedMenuItemIndexes[currentMenu];
-		const MenuItem *const menuItems = menu->items;
+		const MenuItem *const menuItems = shownItems;
 
 		// Draw menu items.
 
@@ -1208,6 +1227,15 @@ void setupMenuPage(SetupPage page)
 #endif
 					break;
 				}
+				case MENU_ITEM_REPLAY:
+				{
+					JE_playSampleNum(S_SELECT);
+
+					// titleScreen() plays it once Setup is closed
+					setupReplayChosen = true;
+					currentMenu = MENU_NONE;
+					break;
+				}
 				case MENU_ITEM_STATISTICS:
 				{
 					JE_playSampleNum(S_SELECT);
@@ -1635,9 +1663,13 @@ static File logFile;
 static SDL_LogOutputFunction defaultLogOutput;
 static void *defaultLogUserdata;
 
-void setupMenu(void)
+bool setupMenu(void)
 {
+	setupFromTitle = true;
+	setupReplayChosen = false;
 	setupMenuPage(SETUP_PAGE_MAIN);
+	setupFromTitle = false;
+	return setupReplayChosen;
 }
 
 void controlsMenu(void)

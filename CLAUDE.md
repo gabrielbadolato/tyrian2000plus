@@ -263,8 +263,9 @@ fecha no meio da fase (sem o TOKEN_END), "Continue" (só se o save do slot
 11/22 ainda é o do início da fase) reproduz escondido e rápido até ali
 (`levelrec_fast()`, sem som nem espera; mostra "Resuming the level... N%") e
 pausa. Sair da fase pelo menu (Quit) ou terminá-la grava o fim: não retoma.
-Teclas de trapaça/debug no meio da fase param a gravação ali. "Replay" na tela
-de título (`MENU_ITEM_REPLAY`, escondido sem gravação) mostra a gravação
+Teclas de trapaça/debug no meio da fase param a gravação ali. Setup > "Replay
+Last Level..." (`MENU_ITEM_REPLAY` em `src/opentyr.c`; só no Setup aberto
+pela tela de título, `setupMenu()` devolve true, e com gravação) mostra a gravação
 (`levelrec_watching()`), sem salvar nada nem contar estatísticas. Se um
 checksum não bate, a retomada desiste e a fase recomeça (volta à nave, como
 ao morrer). Teste: `tests/run_resume.sh <pasta-data>` (ASan/UBSan; com
@@ -295,9 +296,11 @@ nova (B3) foi descartada: o jogo já mostra % destruídos e datacubes ali.
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).
 
-About: item "About" na tela de título, antes do Quit (inserido em
-`menuText[6]` ao carregar o `tyrian.hdt`, `src/helptext.c`), e também em
-Setup > "About..." (`aboutScreen()` em `src/about.c`) mostra o que é o
+Tela de título: os 7 itens do original (+ Continue), com o espaçamento
+original (13 px; 12 px com Continue). Sem espaço para mais: item novo vai no
+Setup (decisão do Gabriel em 2026-10-21, que tirou About e Replay de lá).
+
+About: Setup > "About..." (`aboutScreen()` em `src/about.c`) mostra o que é o
 jogo, o recado do Gabriel, os créditos (os do jogo original são lidos do
 `tyrian.cdt`) e links que abrem no navegador com `SDL_OpenURL`. O mesmo texto,
 em português, está no `README.pt-BR.md` (e em inglês no `README.md`, o principal no GitHub); mudou um, mude os outros. O README original
@@ -307,7 +310,7 @@ Aviso de atualização: ao abrir, `update_check_start()` (`src/update_check.c`)
 consulta em segundo plano a última Release do GitHub (API pública, sem token;
 WinHTTP no Windows, `curl` no Linux) e compara com `opentyrian_version` (o
 `git describe`, ex. v1.0.2). Se houver mais nova, a tela de título mostra
-"vX is out! See About." no canto e o About ganha os links de download (itch.io e GitHub). Opção
+"vX is out! See Setup." no canto e o About ganha os links de download (itch.io e GitHub). Opção
 Setup > "Check Updates" (`check` na seção "updates", ligada por padrão).
 Build sem tag de versão não consulta. Para testar o aviso, compile com
 `VCS_IDREV='echo v1.0.1'`.
@@ -326,7 +329,7 @@ como inglês): AO COLAR O PT NAS NOTAS DE UMA RELEASE, pôr o título
 "**Português**" antes dele. Versão mais nova que a instalada aparece primeiro
 ("vX - new"), então até uma versão antiga mostra o que a nova traz. A fonte
 pequena não tem ">" (vira "/"). Depois de atualizar, a tela de título mostra
-"New in vX! See About." até abrir a tela (`notes_seen` na seção "updates";
+"New in vX! See Setup." até abrir a tela (`notes_seen` na seção "updates";
 sem opentyrian.cfg conta como já visto). Teste: `tests/test_whatsnew.c`
 (aceita um JSON salvo da API como argumento).
 

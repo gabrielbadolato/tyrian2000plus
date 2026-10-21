@@ -8,6 +8,12 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Browser: Esc pauses on the first press every time.** After the pause
+  the browser no longer grabs the mouse pointer, which made it keep the next
+  Esc for itself.
+
 ## v1.3 (2026-10-20)
 
 - **Classic music by default**: the music sounds as it always did in

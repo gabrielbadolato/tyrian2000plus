@@ -10,6 +10,23 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Classic music by default**: the music sounds as it always did in
+  OpenTyrian again, unless you pick "Accurate" in Setup > Sound > "Music
+  Sound". If you already chose Classic there, nothing changes; if you had
+  chosen Accurate, pick it once more.
+
+- **Back to a level in progress**: if the game closes in the middle of a
+  level (the window closed, the Steam Deck turned off, a crash), Continue
+  takes you back to that point of the level, paused, instead of its start.
+  Every level is recorded as you play (your moves, not pictures) in
+  lastlevel.rec in your user folder; Continue replays it unseen and fast up
+  to where it stopped. Quitting a level from its menu still gives the level
+  up, as before. If the replay ever came out different from what you played,
+  you are taken back to the ship, to start the level again.
+- **Replay**: a new title screen item, "Replay", shows the last level you
+  played again, from its recording. Any key or button stops it.
+- Fixed a special weapon fired next to another one reading past the end of
+  its weapon data (from the original game) (#41).
 - **Play in the browser**: the itch.io page can run the game right in the
   browser, with nothing to install. Saves and settings stay in that browser;
   Xbox and PlayStation controllers work. The same code as the Windows and
@@ -53,7 +70,6 @@ change is in this repository's git log.
   back there (#39).
 - Closing the window with its X button now keeps your settings, like Quit
   does (before, changes made in that session were lost) (#39).
-
 ## v1.1 (2026-10-20)
 
 - **Continue** on the title screen: loads the game last saved or loaded

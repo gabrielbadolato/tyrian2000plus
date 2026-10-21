@@ -18,12 +18,16 @@ saves ficam guardados naquele navegador).
 
 <table>
   <tr>
-    <td><img src="doc/screenshots/1-tela-titulo.png" width="400" alt="Tela de título"></td>
+    <td><img src="doc/screenshots/1-tela-titulo.png" width="400" alt="Tela de título com Continue"></td>
     <td><img src="doc/screenshots/2-fase.png" width="400" alt="Uma fase"></td>
   </tr>
   <tr>
-    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pausa com Auto Fire e Graphics"></td>
-    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map"></td>
+    <td><img src="doc/screenshots/3-loja.png" width="400" alt="Loja comparando cada arma com a da nave (verde é melhor)"></td>
+    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pausa com Auto Fire, Controls e Graphics"></td>
+  </tr>
+  <tr>
+    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map com os ícones dos botões do Xbox"></td>
+    <td><img src="doc/screenshots/6-estatisticas.png" width="400" alt="Estatísticas e recordes das fases"></td>
   </tr>
 </table>
 
@@ -48,12 +52,16 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - Nomes dos botões do controle nas telas de ajuda.
 - Teclado na tela para digitar com o controle o nome do jogo salvo e dos
   recordes, e aviso quando a bateria do controle está fraca.
-- "Continue" (Continuar) na tela de título: volta ao último jogo com um toque.
+- "Continue" (Continuar) na tela de título: volta ao último jogo com um toque,
+  e ao ponto exato da fase se o jogo fechou no meio dela.
+- "Replay" (Rever fase) na tela de título: assista de novo à última fase que
+  você jogou.
 - No menu de melhorias da nave, cada item mostra o dano (ou casco, escudo ou
   energia) em verde quando é melhor do que o da sua nave e em vermelho quando
   é pior.
-- Música mais fiel: o emulador Nuked OPL3, próximo de uma placa Sound Blaster
-  de 1995 de verdade (o som antigo continua em Setup > Sound).
+- Um segundo som de música para escolher em Setup > Sound: o emulador Nuked
+  OPL3, próximo de uma placa Sound Blaster de 1995 de verdade (o som clássico
+  continua sendo o padrão).
 - Mais opções de vídeo, inclusive na pausa, e o filtro Sharp Bilinear.
 - Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
@@ -187,10 +195,18 @@ Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
   idioma (Language), Check Updates, estatísticas (Statistics) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
   carregado (o jogo também salva "LAST LEVEL" ao chegar na nave depois de
-  cada fase e ao começar cada fase). Só aparece quando existe um.
-- **Setup > Sound > Music Sound (Som da música):** "Accurate" (Fiel, o
-  padrão, Nuked OPL3) ou "Classic" (Clássico, o emulador que o OpenTyrian
-  sempre usou).
+  cada fase e ao começar cada fase). Só aparece quando existe um. Se o jogo
+  fechou no meio de uma fase (janela fechada, Steam Deck desligado, travou),
+  o Continue volta àquele ponto da fase e pausa ali; leva alguns segundos,
+  porque o jogo repete a fase escondido até aquele ponto. Sair da fase pelo
+  menu dela continua sendo desistir da fase, como sempre.
+- **Tela de título > Replay (Rever fase):** mostra de novo a última fase que
+  você jogou (ela é gravada enquanto você joga, no lastlevel.rec da sua pasta
+  de usuário). Qualquer tecla ou botão para. Só aparece quando há uma fase
+  gravada.
+- **Setup > Sound > Music Sound (Som da música):** "Classic" (Clássico, o
+  padrão, o emulador que o OpenTyrian sempre usou) ou "Accurate" (Fiel, Nuked
+  OPL3).
 - **Setup > Controls:** teclado, controle, mouse, Auto Fire, vibração
   (Vibration), o desenho do controle (Controller Map, com o nível da bateria)
   e a lista de atalhos do teclado (Shortcuts).

@@ -31,6 +31,7 @@
 #include "joystick.h"
 #include "keyboard.h"
 #include "lang.h"
+#include "levelrec.h"
 #include "lds_play.h"
 #include "logging.h"
 #include "loudness.h"
@@ -3632,7 +3633,6 @@ void JE_pauseGame(void)
 #endif
 
 			keysactive[SDL_SCANCODE_P] = false;
-
 			done = true;
 		}
 
@@ -3859,7 +3859,7 @@ redo:
 
 				/* joystick input */
 				check_joystick_hotplug();  // pick up controllers connected mid-level
-				if (joystick_take_lost() && !playDemo)
+				if (joystick_take_lost() && !playDemo && !levelrec_replaying())
 					pause_pressed = true;  // a controller went away: don't let the ship die meanwhile
 				const int lowBattery = joystick_take_low_battery();
 				if (lowBattery >= 0 && !playDemo)
@@ -3961,7 +3961,11 @@ redo:
 
 				// Auto Fire: each press of the fire button starts or stops constant fire.
 				// Not while recording a demo: the demo stores the keys as pressed.
-				if (autoFireToggle && !playDemo && !recordDemo && !constantPlay)
+				if (levelrec_replaying())
+				{
+					// the recorded input has Auto Fire in it already (see below)
+				}
+				else if (autoFireToggle && !playDemo && !recordDemo && !constantPlay)
 				{
 					const int p = this_player == &player[1] ? 1 : 0;
 
@@ -4035,6 +4039,40 @@ redo:
 					accelYC++;
 				else if (mouseYC < -2)
 					accelYC--;
+
+				// Tyrian 2000+: record what the controls did, or replay it (see levelrec.c)
+				{
+					const unsigned int p = playerNum_ - 1;
+					LevelRecInput input = {
+						.dx = this_player->x - *mouseX_,
+						.dy = this_player->y - *mouseY_,
+						.accelX = accelXC,
+						.accelY = accelYC,
+						.flags = (button[0] ? 1 : 0) | (button[1] ? 2 : 0) | (button[2] ? 4 : 0) | (button[3] ? 8 : 0) |
+						         (link_gun_analog ? LEVELREC_LINK_GUN_ANALOG : 0) |
+						         (fireButtonHeld ? LEVELREC_FIRE_BUTTON_HELD : 0) |
+						         (p < 2 && autoFiring[p] ? LEVELREC_AUTO_FIRING : 0) |
+						         (p < 2 && fireWasHeld[p] ? LEVELREC_FIRE_WAS_HELD : 0),
+						.linkGunAngle = link_gun_analog ? link_gun_angle : 0,
+					};
+					if (levelrec_player_input(p, &input))
+					{
+						this_player->x = *mouseX_ + input.dx;
+						this_player->y = *mouseY_ + input.dy;
+						accelXC = input.accelX;
+						accelYC = input.accelY;
+						for (unsigned int i = 0; i < 4; ++i)
+							button[i] = input.flags & (1 << i);
+						link_gun_analog = input.flags & LEVELREC_LINK_GUN_ANALOG;
+						link_gun_angle = input.linkGunAngle;
+						fireButtonHeld = input.flags & LEVELREC_FIRE_BUTTON_HELD;
+						if (p < 2)
+						{
+							autoFiring[p] = input.flags & LEVELREC_AUTO_FIRING;
+							fireWasHeld[p] = input.flags & LEVELREC_FIRE_WAS_HELD;
+						}
+					}
+				}
 
 			}   /*endLevel*/
 
@@ -4225,6 +4263,8 @@ redo:
 
 	if (playDemo)
 		JE_dString(VGAScreen, 115, 10, miscText[7], SMALL_FONT_SHAPES); // insert coin
+	else if (levelrec_watching())
+		JE_dString(VGAScreen, 130 - JE_textWidth(tr("Replay of the last level"), SMALL_FONT_SHAPES) / 2, 10, tr("Replay of the last level"), SMALL_FONT_SHAPES);
 
 	if (this_player->is_alive && !endLevel)
 	{

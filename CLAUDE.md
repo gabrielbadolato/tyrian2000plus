@@ -236,6 +236,27 @@ depois de carregar um jogo (`gameJustLoaded`). `JE_saveGame` grava o
 opentyrian.cfg quando muda `lastSaveSlot`, para o Continue sobreviver a um
 fechamento à força. Retomar no meio da fase (via demo) é o próximo passo.
 
+Retomar fase e Replay (`src/levelrec.c`): toda fase é gravada enquanto se
+joga em `lastlevel.rec` (pasta do usuário): cabeçalho com o save "LAST LEVEL"
+do início da fase, os dois `Player` e as globais que passam de uma fase para
+outra (`StartState`), a semente do `mt_rand`, e depois, quadro a quadro, a
+entrada de cada jogador já combinada (o ponto onde o modo em rede envia a dele,
+em `JE_playerMovement`) e, a cada 35 quadros, um checksum do estado. Se o jogo
+fecha no meio da fase (sem o TOKEN_END), "Continue" (só se o save do slot
+11/22 ainda é o do início da fase) reproduz escondido e rápido até ali
+(`levelrec_fast()`, sem som nem espera; mostra "Resuming the level... N%") e
+pausa. Sair da fase pelo menu (Quit) ou terminá-la grava o fim: não retoma.
+Teclas de trapaça/debug no meio da fase param a gravação ali. "Replay" na tela
+de título (`MENU_ITEM_REPLAY`, escondido sem gravação) mostra a gravação
+(`levelrec_watching()`), sem salvar nada nem contar estatísticas. Se um
+checksum não bate, a retomada desiste e a fase recomeça (volta à nave, como
+ao morrer). Teste: `tests/run_resume.sh <pasta-data>` (ASan/UBSan; com
+TEST_MANUAL=1 usa tiro, sidekicks, Auto Fire e armas especiais aleatórias;
+5º argumento 2 = dois jogadores) grava cada fase de cada episódio, retoma,
+retoma de novo e assiste, conferindo quadro a quadro. Global nova que passe de
+uma fase para a outra e mude a fase precisa entrar no `StartState` (o teste
+acha: foi assim com `portConfigDone` e a dificuldade do episódio 5).
+
 Janela: posição, tamanho e maximizado ficam em `window_*` na seção "video"
 (`window_geometry`, `video_remember_window()` em `src/video.c`); volta ao
 abrir e ao sair da tela cheia; se o lugar não está em nenhuma tela, centraliza.
@@ -325,7 +346,10 @@ mesmo tamanho quando a ampliação não é inteira (`sharp_bilinear_prescale()`
 em `src/video.c`). Em múltiplos exatos nada muda.
 
 Música: Setup > Sound > "Music Sound" (`src/oplchip.c`, `music_chip` =
-accurate/classic na seção "sound"). Accurate (padrão) usa o Nuked OPL3 1.8
+accurate/classic na seção "sound"). Classic é o padrão (pedido do Gabriel em
+2026-10-21); o cfg só vale se `music_chip_chosen = yes` (gravado quando o
+jogador escolhe no menu), porque a v1.1/v1.2 sempre gravavam "accurate".
+Accurate usa o Nuked OPL3 1.8
 (`src/opl3.c`, LGPL 2.1+, sem alteração); Classic é o emulador do DOSBox
 (`src/opl.c`). Os dois recebem todas as escritas; o volume do Nuked foi
 igualado medindo as 41 músicas (fator 6/5).

@@ -66,6 +66,15 @@ void mt_srand(unsigned long s)
 	pm = x + M;
 }
 
+// Tyrian 2000+: a summary of the generator's state, to check that a replay
+// of a level draws the same numbers (see levelrec.c)
+unsigned long mt_state_checksum(void)
+{
+	if (!p0)
+		return 0;
+	return ((unsigned long)(p0 - x) * 2654435761UL ^ *p0 ^ *pm) & 0xffffffffUL;
+}
+
 /* generates a random number on the interval [0,0xffffffff] */
 unsigned long mt_rand(void)
 {

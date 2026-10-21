@@ -320,8 +320,10 @@ static void loadOpenTyrianConfig(void)
 	section = config_find_section(config, "sound", NULL);
 	if (section != NULL)
 	{
+		config_get_bool_option(section, "music_chip_chosen", &opl_chosen);
+
 		const char *chip;
-		if (config_get_string_option(section, "music_chip", &chip))
+		if (opl_chosen && config_get_string_option(section, "music_chip", &chip))
 			opl_accurate = strcmp(chip, "classic") != 0;
 	}
 
@@ -427,6 +429,7 @@ static void saveOpenTyrianConfig(void)
 		exit(EXIT_FAILURE);  // out of memory
 
 	config_set_string_option(section, "music_chip", opl_accurate ? "accurate" : "classic");
+	config_set_bool_option(section, "music_chip_chosen", opl_chosen, NO_YES);
 
 	section = config_find_or_add_section(config, "language", NULL);
 	if (section == NULL)

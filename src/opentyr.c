@@ -1502,6 +1502,7 @@ void setupMenuPage(SetupPage page)
 				case MENU_ITEM_MUSIC_CHIP:
 				{
 					opl_set_accurate(pickerSelectedIndex == 1);
+					opl_chosen = true;
 					break;
 				}
 				case MENU_ITEM_VIBRATION:

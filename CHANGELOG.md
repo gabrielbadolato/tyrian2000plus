@@ -8,7 +8,7 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## Next version
+## v1.4 (2026-10-21)
 
 - **What's New**: Setup > "What's New..." (also at the top of About) shows
   what changed in each version, newest first, in English or Portuguese. When a

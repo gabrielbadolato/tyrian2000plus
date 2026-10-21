@@ -769,7 +769,7 @@ const LangEntry lang_pt_br[] =
 	{ "Datacubes Found", "Datacubes achados" },
 	{ "Highest Score", "Maior pontuação" },
 	{ "Level Records", "Recordes por fase" },
-	{ "Finish a level to set its records.", "Termine uma fase para ter os recordes dela." },
+	{ "Finish a level to set its records.", "Termine uma fase para ter recordes." },
 	{ "Episode %d", "Episódio %d" },
 	{ "Score", "Pontos" },
 	{ "Time", "Tempo" },

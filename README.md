@@ -64,7 +64,7 @@ the open-source port of Tyrian. What this version adds:
   default).
 - More graphics options, including in the pause menu, and a Sharp Bilinear
   filter.
-- Smooth Motion (Setup > Graphics, off by default): the game still runs at
+- Smooth Motion (Setup > Graphics, on by default): the game still runs at
   35 frames per second, exactly as before, but the screen shows the movement
   in between at your monitor's refresh rate (60, 120, 144, 240 Hz...), in the
   levels, the fades between screens and the weapon preview of the ship menu.
@@ -159,7 +159,7 @@ through the itch.io app you don't need the script: the app updates itself.
 
 **Deck screen:** the default is "Fit 4:3", true to 1995 monitors. For full
 screen with sharp pixels, use Setup > Graphics > Scaling Mode > "Integer". The
-game runs at 35 frames per second; Smooth Motion (on by default on the Deck)
+game runs at 35 frames per second; Smooth Motion (on by default)
 shows the movement at the screen's refresh rate, so any rate works. If you
 turn it off, set the Deck OLED to 70 Hz (per-game profile) and leave the Deck
 LCD at 60 Hz. Don't turn on Steam's frame limit.

@@ -432,8 +432,9 @@ em /sys/devices/virtual/dmi/id/board_vendor, `running_on_steam_deck()` em
 (decisão do Gabriel em 2026-10-21). Quem já tem cfg não muda.
 
 Movimento suave (`src/smooth.c`, Setup > Graphics > "Smooth Motion" e na
-página Graphics da pausa; `smooth_motion` na seção "video", desligado por
-padrão, ligado na 1ª vez no Deck; escrito do zero, SEM código do Modern Tyrian
+página Graphics da pausa; `smooth_motion` na seção "video", ligado por
+padrão desde a v1.5 (pedido do Gabriel em 2026-10-21; o "off" que a v1.4
+gravava só vale com `smooth_motion_chosen = yes`, gravado ao escolher no menu); escrito do zero, SEM código do Modern Tyrian
 nem do Engaged, a pedido do Gabriel): a fase continua a 35 quadros/s. Cada
 primitiva de desenho (blit_sprite*, JE_pix, fill_rectangle_xy, JE_barShade,
 fundos `draw_background_layer`, filtros lava/água/blur, estrelas,

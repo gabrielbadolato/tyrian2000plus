@@ -10,6 +10,9 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Smooth Motion is on by default.** If you turn it off in Setup > Graphics,
+  it stays off. (Version 1.4 saved "off" for everyone, so that saved setting
+  no longer counts unless it was picked in the menu.)
 - **Title screen with room to breathe**: the menu is back to the original
   game's items (plus Continue) and spacing, so the lines no longer touch.
   "Replay" is now "Replay Last Level" in Setup, and About is only in Setup

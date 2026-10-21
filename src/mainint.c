@@ -2109,6 +2109,7 @@ JE_boolean JE_inGameSetup(void)
 				JE_playSampleNum(S_CURSOR);
 
 				smooth_motion = !smooth_motion;
+				smooth_motion_chosen = true;
 				break;
 			}
 			case MENU_ITEM_BRIGHTNESS:

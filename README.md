@@ -246,7 +246,9 @@ controls again.
   "???"); the ones the ship menus never offer, such as the secret ships,
   appear only once you find them. Each item shows its numbers (damage, armor,
   price); each enemy its armor, how many you destroyed and where you first
-  met it, and the pieces of a boss or of a building show together. Tab, or
+  met it. The enemies are a list of all of the game's (each one once, the
+  pieces of a boss or of a building together), so you can see how many are
+  left. Tab, or
   LB and RB on the controller, change the page; arrows choose. It is kept in
   gallery.cfg, next to the saves, and fills up as you play from now on.
 - **Setup > Gallery > Statistics:** the totals of all your games (time in

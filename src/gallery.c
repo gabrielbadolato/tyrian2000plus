@@ -22,14 +22,16 @@
  *
  * Items: the ones the ship's upgrade menu offered (the "]I" lists of
  * levelsN.dat, read again by the gallery to know which items there are) and
- * the ones the players had.  Enemies: what the levels made, by how it looks
- * (sprite bank, sprite and size), since the same enemy has several entries in
- * the data and the data of episodes 4 and 5 is not the data of 1 to 3.  The
- * pieces of a boss (enemies with the same linknum, made in the same frame,
- * touching) make one entry.  All of it is kept in gallery.cfg; nothing here
- * changes the game.
+ * the ones the players had.  Enemies: a fixed list of the game's enemies
+ * (src/gallery_catalog.h, made by tests/make_gallery_catalog.py from every
+ * level played by the autopilot), each one by how it looks, with the
+ * enemyDat index of its pieces.  What the levels make is put together in
+ * things (the pieces of a boss or of a building) and each thing marks the
+ * enemies of the list it is made of; one the list does not have is kept as
+ * it looks.  All of it is kept in gallery.cfg; nothing here changes the game.
  */
 #include "gallery.h"
+#include "gallery_catalog.h"
 
 #include "config_file.h"
 #include "demo.h"
@@ -70,6 +72,8 @@
 #include <string.h>
 
 bool gallery_test_record = false;
+bool gallery_test_no_list = false;
+FILE *gallery_dump = NULL;
 
 static const char *const galleryFilename = "gallery.cfg";
 
@@ -91,6 +95,9 @@ typedef struct
 	Uint8 size;   // 0: one sprite, 1: 2x2 sprites
 	Uint16 gr;    // first sprite
 	Sint16 x, y;  // from the first piece
+	Uint16 type;  // enemyDat index, armor and slot, while it is recorded (not kept)
+	Uint8 armor;
+	Uint8 slot;
 } Part;
 
 typedef struct
@@ -102,6 +109,8 @@ typedef struct
 	unsigned int episode;
 	char level[11];
 	unsigned int killed;
+	bool listed;  // one of the game's enemies (src/gallery_catalog.h)
+	bool seen;
 } SeenEnemy;
 
 static SeenEnemy *enemies;  // MAX_ENEMIES
@@ -443,9 +452,34 @@ static int comparePart(const void *a, const void *b)
 }
 
 // Whether the enemy in `slot` belongs to a thing and is still there.
+static unsigned int catalogMatch(const SeenEnemy *look, unsigned int *match, unsigned int max);
+static bool catalogHas(unsigned int entry, Uint16 type);
+
 static bool slotInThing(unsigned int slot)
 {
 	return slotThing[slot] != 0 && enemyAvail[slot] != 1;
+}
+
+// One more of an enemy met (destroyed or not).
+static void seeEnemy(SeenEnemy *e, const char *level, unsigned int armor, bool indestructible, bool killed)
+{
+	if (!e->seen)
+	{
+		e->seen = true;
+		snprintf(e->level, sizeof(e->level), "%s", level);
+		dirty = true;
+	}
+	if (armor > e->armor || (indestructible && !e->indestructible))
+	{
+		e->armor = MAX(e->armor, armor);
+		e->indestructible |= indestructible;
+		dirty = true;
+	}
+	if (killed)
+	{
+		++e->killed;
+		dirty = true;
+	}
 }
 
 // Records a thing whose pieces are all gone.
@@ -478,6 +512,45 @@ static void finishThing(unsigned int t)
 	}
 	qsort(look.part, look.parts, sizeof(Part), comparePart);
 
+	if (gallery_dump != NULL)
+	{
+		fprintf(gallery_dump, "%u\t%.10s\t%d", episodeNum, levelName, thing->killed);
+		for (unsigned int i = 0; i < look.parts; ++i)
+		{
+			const Part *p = &look.part[i];
+			fprintf(gallery_dump, "\t%u:%u:%u:%d:%d:%u:%u", p->bank, p->gr, p->size, p->x, p->y, p->type, p->slot);
+		}
+		fprintf(gallery_dump, "\n");
+	}
+
+	char level[11];
+	snprintf(level, sizeof(level), "%s", levelName);
+	for (size_t n = strlen(level); n > 0 && level[n - 1] == ' '; --n)
+		level[n - 1] = '\0';
+
+	// the enemies of the list it is (two buildings side by side are two)
+	unsigned int match[MAX_PARTS];
+	const unsigned int matches = catalogMatch(&look, match, COUNTOF(match));
+	for (unsigned int m = 0; m < matches; ++m)
+	{
+		SeenEnemy *e = &enemies[match[m]];
+		unsigned int armor = 0;
+		bool indestructible = false;
+		for (unsigned int i = 0; i < look.parts; ++i)
+		{
+			if (!catalogHas(match[m], look.part[i].type))
+				continue;
+			if (look.part[i].armor == 255)
+				indestructible = true;
+			else
+				armor += look.part[i].armor;
+		}
+		seeEnemy(e, level, armor, indestructible, thing->killed);
+	}
+	if (matches > 0)
+		return;
+
+	// not in the list: as it looks
 	int entry = findEnemy(&look);
 	if (entry < 0)
 		entry = findWhole(&look);  // seen whole before: that one
@@ -487,19 +560,12 @@ static void finishThing(unsigned int t)
 			return;
 		entry = (int)enemyCount++;
 		look.episode = episodeNum;
-		snprintf(look.level, sizeof(look.level), "%s", levelName);
-		for (size_t n = strlen(look.level); n > 0 && look.level[n - 1] == ' '; --n)
-			look.level[n - 1] = '\0';
 		look.killed = 0;
+		look.listed = false;
+		look.seen = false;
 		enemies[entry] = look;
-		dirty = true;
 	}
-
-	if (thing->killed)
-	{
-		++enemies[entry].killed;
-		dirty = true;
-	}
+	seeEnemy(&enemies[entry], level, look.armor, look.indestructible, thing->killed);
 }
 
 // Records the things none of whose pieces are left.
@@ -540,6 +606,9 @@ static void addToThing(unsigned int t, unsigned int slot, int x, int y)
 	part->gr = (Uint16)gr;
 	part->x = (Sint16)x;
 	part->y = (Sint16)y;
+	part->type = enemy[slot].enemytype;
+	part->armor = (Uint8)armor;
+	part->slot = (Uint8)slot;
 
 	if (armor == 255)
 		look->indestructible = true;
@@ -743,11 +812,115 @@ static void saveIds(ConfigSection *section, const char *key, const bool *seen, s
 	config_set_string_option(section, key, buffer);
 }
 
+// The list of the game's enemies first, none seen.
 static bool ensureEnemies(void)
 {
 	if (enemies == NULL)
 		enemies = calloc(MAX_ENEMIES, sizeof(*enemies));
-	return enemies != NULL;
+	if (enemies == NULL)
+		return false;
+
+	if (enemyCount == 0 && !gallery_test_no_list)
+	{
+		for (unsigned int i = 0; i < COUNTOF(catalogEnemies) && i < MAX_ENEMIES; ++i)
+		{
+			const CatalogEnemy *c = &catalogEnemies[i];
+			SeenEnemy *e = &enemies[i];
+			memset(e, 0, sizeof(*e));
+			for (unsigned int p = 0; p < c->parts && p < MAX_PARTS; ++p)
+			{
+				const CatalogPart *cp = &catalogParts[c->first + p];
+				e->part[e->parts++] = (Part){ .bank = cp->bank, .size = cp->size, .gr = cp->gr, .x = cp->x, .y = cp->y };
+			}
+			e->episode = c->episode;
+			e->listed = true;
+		}
+		enemyCount = MIN(COUNTOF(catalogEnemies), (size_t)MAX_ENEMIES);
+	}
+	return true;
+}
+
+// The entries of catalogTypes for an enemyDat index of this episode's data
+static unsigned int catalogTypeFirst(Uint16 type)
+{
+	const unsigned int dataset = episodeNum <= 3 ? 1 : episodeNum;
+	unsigned int lo = 0, hi = COUNTOF(catalogTypes);
+	while (lo < hi)
+	{
+		const unsigned int mid = (lo + hi) / 2;
+		const CatalogType *t = &catalogTypes[mid];
+		if (t->dataset < dataset || (t->dataset == dataset && t->type < type))
+			lo = mid + 1;
+		else
+			hi = mid;
+	}
+	return lo;
+}
+
+static bool catalogTypeIs(unsigned int k, Uint16 type)
+{
+	const unsigned int dataset = episodeNum <= 3 ? 1 : episodeNum;
+	return k < COUNTOF(catalogTypes) && catalogTypes[k].dataset == dataset && catalogTypes[k].type == type;
+}
+
+// Whether the enemy `entry` of the list has pieces of enemyDat index `type`
+static bool catalogHas(unsigned int entry, Uint16 type)
+{
+	for (unsigned int k = catalogTypeFirst(type); catalogTypeIs(k, type); ++k)
+		if (catalogTypes[k].enemy == entry)
+			return true;
+	return false;
+}
+
+// The enemies of the list that a thing seen is, by the enemyDat index of its
+// pieces: for each piece, the enemy that has the most pieces of the thing
+// (the smallest if more do).  Returns how many.
+static unsigned int catalogMatch(const SeenEnemy *look, unsigned int *match, unsigned int max)
+{
+	if (gallery_test_no_list)
+		return 0;
+
+	unsigned int candidate[64], score[64], candidates = 0;
+	for (unsigned int i = 0; i < look->parts; ++i)
+	{
+		for (unsigned int k = catalogTypeFirst(look->part[i].type); catalogTypeIs(k, look->part[i].type); ++k)
+		{
+			const unsigned int e = catalogTypes[k].enemy;
+			unsigned int c = 0;
+			while (c < candidates && candidate[c] != e)
+				++c;
+			if (c == candidates)
+			{
+				if (candidates == COUNTOF(candidate))
+					continue;
+				candidate[candidates] = e;
+				score[candidates++] = 0;
+			}
+			++score[c];
+		}
+	}
+
+	unsigned int matches = 0;
+	for (unsigned int i = 0; i < look->parts; ++i)
+	{
+		int best = -1;
+		for (unsigned int c = 0; c < candidates; ++c)
+		{
+			if (!catalogHas(candidate[c], look->part[i].type))
+				continue;
+			if (best < 0 || score[c] > score[best] ||
+			    (score[c] == score[best] && catalogEnemies[candidate[c]].parts < catalogEnemies[candidate[best]].parts))
+				best = (int)c;
+		}
+		if (best < 0)
+			continue;
+		unsigned int m = 0;
+		while (m < matches && match[m] != candidate[best])
+			++m;
+		if (m == matches && matches < max)
+			match[matches++] = candidate[best];
+	}
+	return matches;
 }
 
 void gallery_load(void)
@@ -762,7 +935,7 @@ void gallery_load(void)
 	dirty = false;
 
 	if (!ensureEnemies())
-		return;
+		return;  // the list, none seen
 
 	File file = userFileOpen(galleryFilename, "r");
 	if (file.error)
@@ -804,6 +977,7 @@ void gallery_load(void)
 
 		SeenEnemy *e = &enemies[enemyCount];
 		memset(e, 0, sizeof(*e));
+		e->seen = true;
 
 		// "bank:sprite:size:x:y" for each piece
 		const char *s = parts;
@@ -838,8 +1012,20 @@ void gallery_load(void)
 		if (config_get_string_option(section, "level", &level))
 			snprintf(e->level, sizeof(e->level), "%s", level);
 
-		if (findEnemy(e) < 0)
+		// one of the list: that one is seen
+		const int listed = findEnemy(e);
+		if (listed < 0)
+		{
 			++enemyCount;
+		}
+		else if (enemies[listed].listed && !enemies[listed].seen)
+		{
+			enemies[listed].seen = true;
+			enemies[listed].killed = e->killed;
+			enemies[listed].armor = e->armor;
+			enemies[listed].indestructible = e->indestructible;
+			memcpy(enemies[listed].level, e->level, sizeof(e->level));
+		}
 	}
 
 	config_deinit(&config);
@@ -864,6 +1050,8 @@ static void saveGallery(void)
 	for (unsigned int i = 0; i < enemyCount; ++i)
 	{
 		const SeenEnemy *e = &enemies[i];
+		if (!e->seen)
+			continue;
 
 		section = config_add_section(&config, "enemy", NULL);
 		if (section == NULL)
@@ -1083,20 +1271,21 @@ static void buildEntries(GalleryTab tab)
 		break;
 	case GALLERY_ENEMIES:
 	{
-		// a piece of another one (seen before the rest of it came) is left out
+		// one not in the list that is a piece of another (seen before the
+		// rest of it came) is left out
 		static bool piece[MAX_ENEMIES];
 		for (unsigned int i = 0; i < enemyCount; ++i)
 		{
 			piece[i] = false;
-			for (unsigned int k = 0; k < enemyCount && !piece[i]; ++k)
+			for (unsigned int k = 0; k < enemyCount && !piece[i] && !enemies[i].listed; ++k)
 				piece[i] = pieceOf(&enemies[i], &enemies[k]);
 		}
 
-		// by episode, in the order they were met
+		// by episode: the list, then the others in the order they were met
 		for (unsigned int ep = 0; ep <= 99; ++ep)
 			for (unsigned int i = 0; i < enemyCount; ++i)
 				if (!piece[i] && (enemies[i].episode == ep || (ep == 99 && enemies[i].episode > 99)))
-					addEntry(KIND_ENEMY, i, true);
+					addEntry(KIND_ENEMY, i, enemies[i].seen);
 		break;
 	}
 	default:
@@ -1217,7 +1406,7 @@ static void showCanvas(SDL_Surface *surface, int bx, int by, int bw, int bh, int
 
 		// a long row or column would be a thin line: fit its width and show
 		// its middle (crop)
-		if (crop && num * 2 < den)
+		if (crop && num * 2 < den && (w >= 3 * h || h >= 3 * w))
 			num = MIN(den, MAX(bw * 64 / w, bh * 64 / h));
 
 		if (num < 1)
@@ -1472,6 +1661,17 @@ static void drawDetails(const Entry *entry)
 	}
 }
 
+// A page up (-1) or down: the rows shown move a whole page, so none is shown again
+static void turnPage(int *cursor, int *top, int dir)
+{
+	const int rows = ((int)entryCount + GRID_COLS - 1) / GRID_COLS;
+	*top = MAX(0, MIN(*top + dir * GRID_ROWS, rows - GRID_ROWS));
+	if (dir < 0)
+		*cursor = MAX(*cursor % GRID_COLS, *cursor - GRID_COLS * GRID_ROWS);
+	else
+		*cursor = MIN((int)entryCount - 1, *cursor + GRID_COLS * GRID_ROWS);
+}
+
 static void drawGrid(int top, int cursor)
 {
 	JE_barShade(VGAScreen, GRID_X - 3, GRID_Y - 2, GRID_X + GRID_COLS * CELL_W + 2, GRID_Y + GRID_ROWS * CELL_H + 1);
@@ -1549,7 +1749,7 @@ void galleryScreen(void)
 			drawGrid(top, cursor);
 
 			char line[96];
-			if (tab == GALLERY_ENEMIES || tab == GALLERY_OTHER)
+			if (tab == GALLERY_OTHER)
 				snprintf(line, sizeof(line), tr("Found: %u"), foundCount);
 			else
 				snprintf(line, sizeof(line), tr("Found: %u of %u"), foundCount, entryCount);
@@ -1646,10 +1846,10 @@ void galleryScreen(void)
 					cursor = (int)entryCount - 1;  // the last row is short
 				break;
 			case SDL_SCANCODE_PAGEUP:
-				cursor = MAX(cursor % GRID_COLS, cursor - GRID_COLS * GRID_ROWS);
+				turnPage(&cursor, &top, -1);
 				break;
 			case SDL_SCANCODE_PAGEDOWN:
-				cursor = MIN((int)entryCount - 1, cursor + GRID_COLS * GRID_ROWS);
+				turnPage(&cursor, &top, 1);
 				break;
 			case SDL_SCANCODE_HOME:
 				cursor = 0;
@@ -1714,10 +1914,7 @@ void galleryScreen(void)
 				else if (my >= COUNT_Y - 2 && my < COUNT_Y + 10 && mx >= GRID_X + GRID_COLS * CELL_W - 16 && mx < GRID_X + GRID_COLS * CELL_W + 8)
 				{
 					// the arrows: a page up or down
-					if (mx < GRID_X + GRID_COLS * CELL_W - 2)
-						cursor = MAX(cursor % GRID_COLS, cursor - GRID_COLS * GRID_ROWS);
-					else
-						cursor = MIN((int)entryCount - 1, cursor + GRID_COLS * GRID_ROWS);
+					turnPage(&cursor, &top, mx < GRID_X + GRID_COLS * CELL_W - 2 ? -1 : 1);
 				}
 			}
 		}

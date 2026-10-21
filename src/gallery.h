@@ -22,6 +22,7 @@
 #include "opentyr.h"
 
 #include <stdbool.h>
+#include <stdio.h>
 
 // The Gallery (Setup > "Gallery..."): the ships, weapons, sidekicks and other
 // items the player has come across, and the enemies met in the levels, drawn
@@ -47,6 +48,13 @@ void gallery_shop_items(void);
 
 // Tests: record also with constant play (-c), which levels normally do not.
 extern bool gallery_test_record;
+
+// Tests: without the list of the game's enemies (src/gallery_catalog.h).
+extern bool gallery_test_no_list;
+
+// Tests: each enemy recorded is also written here, with the enemyDat index
+// of its pieces (to make the list of the game's enemies).
+extern FILE *gallery_dump;
 
 // How many entries the gallery has seen, of each kind (tests).  The last
 // page is the statistics (src/stats.c), which has no entries.

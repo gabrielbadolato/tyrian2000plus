@@ -295,7 +295,7 @@ nova (B3) foi descartada: o jogo já mostra % destruídos e datacubes ali.
 
 Galeria: Setup > "Gallery..." (`galleryScreen()` em `src/gallery.c`, ideia
 aprovada pelo Gabriel em 2026-10-21; versão enxuta primeiro, a maior depois
-se ele gostar: animação, demonstração da arma, nomes nossos para chefes,
+se ele gostar: animação, demonstração da arma, inimigos SEM nome (Gabriel: nomes nossos podem infringir políticas),
 filtro por episódio). Abas Ships/Weapons/Sidekicks/Other (escudos,
 geradores, especiais)/Enemies/Statistics, com as imagens do jogo (sprites desenhados
 num `Canvas` próprio, decodificador igual ao `blit_sprite2`). Itens: os que
@@ -315,9 +315,18 @@ viram uma "coisa" (`Thing`); peça do mapa que chega depois encostada numa
 peça do mapa que ainda está lá também entra (construção que vem fileira por
 fileira; inimigos ligados que chegam um a um são formação, não entram). A
 coisa só é gravada quando todas as peças somem (destruída se a última foi
-destruída) ou no fim da fase; se for pedaço de uma entrada maior já gravada
-(`pieceOf`), conta nela, e a aba Enemies esconde as entradas que são pedaço
-de outra (gallery.cfg antigo também). Armadura 0 (cenário, não é alvo) e
+destruída) ou no fim da fase. Lista fixa (pedido do Gabriel, 2026-10-21):
+`src/gallery_catalog.h` tem os ~390 inimigos do jogo (aparência + índices do
+enemyDat das peças, por "dataset": 1 = episódios 1-3, 4, 5), gerado por
+`tests/make_gallery_catalog.py` a partir de `GALLERY_DUMP=<arq.tsv>` do
+`test_autoplay` (todos os episódios × dificuldades 1,2,3,4,6,8 × 2 caminhos;
+o script separa coisas que só se encostaram, junta tipos que vêm juntos em
+pelo menos metade das vezes e se tocam, tira repetidos e figuras vazias com
+`--drop=`). `catalogMatch()` marca cada entrada da lista que a coisa contém
+(duas construções lado a lado = duas); o que a lista não tem vira entrada
+pela aparência (`pieceOf` esconde pedaços). Inimigo novo/fase nova: rodar a
+coleta e gerar de novo. Inimigo lançado por outro (`gallery_enemy_launched`,
+em `JE_newEnemy`) é sempre coisa própria. Armadura 0 (cenário, não é alvo) e
 peça invisível ficam de fora. Fica em `gallery.cfg` na
 pasta do usuário (tyrian.sav não muda); só lê o jogo, não muda nada nem a
 gravação da fase. Demos, Replay e `-c` não gravam (os testes ligam

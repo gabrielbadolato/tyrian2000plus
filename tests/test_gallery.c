@@ -41,6 +41,7 @@
 #include "episodes.h"
 #include "file.h"
 #include "gallery.h"
+#include "gallery_catalog.h"
 #include "helptext.h"
 #include "keyboard.h"
 #include "lang.h"
@@ -258,6 +259,7 @@ static void kill(unsigned int slot)
 
 static int recordTest(void)
 {
+	gallery_test_no_list = true;  // the fake enemies are not the game's
 	makeSheet();
 	episodeNum = 1;
 	snprintf(levelName, sizeof(levelName), "%-10s", "TYRIAN");
@@ -391,6 +393,44 @@ static int recordTest(void)
 		check(strstr(text, "'killed' '1'") != NULL, "an enemy and the boss counted destroyed once");
 		check(strstr(text, "'indestructible' 'yes'") != NULL, "the piece that cannot be destroyed");
 		check(strstr(text, "'level' 'TYRIAN'\n") != NULL, "the level where it was met");
+	}
+
+	// the game's list (src/gallery_catalog.h): a thing met is the entries it
+	// is made of, by the enemyDat index of its pieces
+	gallery_test_no_list = false;
+	remove(path);
+	gallery_load();
+	check(gallery_seen_count(GALLERY_ENEMIES) == 0, "the list, none seen");
+	gallery_level_start();
+	int one = -1, other = -1;  // two enemies of episodes 1-3, one piece each
+	for (size_t k = 0; k < COUNTOF(catalogTypes) && other < 0; ++k)
+	{
+		const CatalogType *t = &catalogTypes[k];
+		if (t->dataset != 1 || catalogEnemies[t->enemy].parts != 1)
+			continue;
+		if (one < 0)
+			one = (int)k;
+		else if (catalogTypes[one].enemy != t->enemy)
+			other = (int)k;
+	}
+	check(other >= 0, "the list has enemies");
+	if (other >= 0)
+	{
+		// side by side on the ground, made together: one thing, two enemies
+		makeEnemy(30, 1, 1, 10, 10, 0, 10);
+		makeEnemy(31, 3, 1, 34, 10, 0, 10);
+		enemy[30].enemytype = catalogTypes[one].type;
+		enemy[31].enemytype = catalogTypes[other].type;
+		enemyDat[catalogTypes[one].type].armor = 10;
+		enemyDat[catalogTypes[other].type].armor = 10;
+		gallery_level_frame();
+		kill(30);
+		kill(31);
+		gallery_level_frame();
+		check(gallery_seen_count(GALLERY_ENEMIES) == 2, "two enemies of the list side by side are two");
+		gallery_level_end();
+		gallery_load();
+		check(gallery_seen_count(GALLERY_ENEMIES) == 2, "gallery.cfg reads back the list's enemies");
 	}
 
 	printf(fails ? "FAILED\n" : "all passed\n");

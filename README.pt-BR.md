@@ -253,8 +253,9 @@ os controles de toque sumirem de novo.
   (com o nome "???"); o que os menus da nave nunca oferecem, como as naves
   secretas, só aparece depois de achado. Cada item mostra os números dele
   (dano, casco, preço); cada inimigo, a blindagem, quantos você destruiu e
-  onde o viu pela primeira vez, e as peças de um chefe ou de uma construção
-  aparecem juntas. Tab, ou LB e RB no controle, trocam a página; as setas
+  onde o viu pela primeira vez. Os inimigos são uma lista de todos os do jogo
+  (cada um uma vez, as peças de um chefe ou de uma construção juntas), então
+  dá para ver quantos faltam. Tab, ou LB e RB no controle, trocam a página; as setas
   escolhem. Fica no arquivo gallery.cfg, junto dos saves, e vai se enchendo
   enquanto você joga daqui para a frente.
 - **Setup > Gallery > Statistics (Estatísticas):** os totais de todos os

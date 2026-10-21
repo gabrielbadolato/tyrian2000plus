@@ -284,6 +284,8 @@ int main(int argc, char *argv[])
 	// the gallery records what the levels make (constant play normally does not)
 	gallery_test_record = true;
 	gallery_load();
+	if (getenv("GALLERY_DUMP") != NULL)
+		gallery_dump = fopen(getenv("GALLERY_DUMP"), "a");
 
 	if (init_audio())
 		loadSndFile(false);

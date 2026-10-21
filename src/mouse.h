@@ -21,6 +21,8 @@
 
 #include "opentyr.h"
 
+#include "SDL.h"
+
 enum
 {
 	MOUSE_POINTER_NORMAL = 0,
@@ -38,5 +40,17 @@ extern JE_byte mouseCursor;
 void JE_mouseStart(void);
 void JE_mouseStartFilter(Uint8 filter);
 void JE_mouseReplace(void);
+
+// Smooth motion outside the levels: the pointer follows the mouse at the
+// display's refresh rate while the game waits for its next frame.
+// waitUntilElapsed: after a frame was shown with the pointer, shows the screen
+// again with the pointer where the mouse is now, if it moved.
+// Returns how long to wait (ms) before calling it again.
+Uint32 mouse_pointer_between(void);
+void mouse_pointer_forget(void);
+// On a copy of the screen as it was shown (with the pointer): takes the
+// pointer away / draws it where the mouse is now.
+void mouse_pointer_remove(SDL_Surface *copy);
+void mouse_pointer_draw_now(SDL_Surface *copy);
 
 #endif /* MOUSE_H */

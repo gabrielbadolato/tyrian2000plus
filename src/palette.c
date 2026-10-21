@@ -23,10 +23,12 @@
 #include "logging.h"
 #include "nortsong.h"
 #include "opentyr.h"
+#include "smooth.h"
 #include "video.h"
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 static Uint32 rgb_to_yuv(int r, int g, int b);
 
@@ -143,6 +145,67 @@ void step_fade_palette(int diff[256][3], int steps, unsigned int first_color, un
 	}
 }
 
+// With smooth motion, the pictures between two steps of a fade show the colors
+// part of the way from the last step to this one.
+typedef struct
+{
+	const SDL_Color *from;
+	unsigned int first_color, last_color;
+} FadeStep;
+
+static void show_fade_picture(Uint32 alpha, const void *data)
+{
+	const FadeStep *const step = data;
+
+	Uint32 rgb[256], yuv[256];
+	memcpy(rgb, rgb_palette, sizeof(rgb));
+	memcpy(yuv, yuv_palette, sizeof(yuv));
+
+	for (unsigned int i = step->first_color; i <= step->last_color; i++)
+	{
+		const SDL_Color from = step->from[i];
+		const int r = from.r + (((int)palette[i].r - from.r) * (Sint64)alpha >> 16);
+		const int g = from.g + (((int)palette[i].g - from.g) * (Sint64)alpha >> 16);
+		const int b = from.b + (((int)palette[i].b - from.b) * (Sint64)alpha >> 16);
+		rgb_palette[i] = SDL_MapRGB(main_window_tex_format, r, g, b);
+		yuv_palette[i] = rgb_to_yuv(r, g, b);
+	}
+
+	JE_showVGA();
+
+	memcpy(rgb_palette, rgb, sizeof(rgb));
+	memcpy(yuv_palette, yuv, sizeof(yuv));
+}
+
+static void fade_steps(int diff[256][3], int steps, unsigned int first_color, unsigned int last_color)
+{
+	static Palette from;
+	const FadeStep step = { from, first_color, last_color };
+	bool smoothed = false;
+
+	for (; steps > 0; steps--)
+	{
+		setFrameCount(1);
+
+		memcpy(from, palette, sizeof(from));
+		step_fade_palette(diff, steps, first_color, last_color);
+
+		if (smooth_show_until_due(1, show_fade_picture, &step))
+			smoothed = true;
+		else
+			JE_showVGA();
+
+		waitUntilElapsed();
+	}
+
+	if (smoothed)
+		JE_showVGA();  // the last step itself
+
+	// Discard input during fade.
+	keyboardClearInput();
+	mouseClearInput();
+}
+
 void fade_palette(Palette colors, int steps, unsigned int first_color, unsigned int last_color)
 {
 	assert(steps > 0);
@@ -150,20 +213,7 @@ void fade_palette(Palette colors, int steps, unsigned int first_color, unsigned 
 	static int diff[256][3];
 	init_step_fade_palette(diff, colors, first_color, last_color);
 	
-	for (; steps > 0; steps--)
-	{
-		setFrameCount(1);
-		
-		step_fade_palette(diff, steps, first_color, last_color);
-		
-		JE_showVGA();
-		
-		waitUntilElapsed();
-	}
-
-	// Discard input during fade.
-	keyboardClearInput();
-	mouseClearInput();
+	fade_steps(diff, steps, first_color, last_color);
 }
 
 void fade_solid(SDL_Color color, int steps, unsigned int first_color, unsigned int last_color)
@@ -173,20 +223,7 @@ void fade_solid(SDL_Color color, int steps, unsigned int first_color, unsigned i
 	static int diff[256][3];
 	init_step_fade_solid(diff, color, first_color, last_color);
 	
-	for (; steps > 0; steps--)
-	{
-		setFrameCount(1);
-		
-		step_fade_palette(diff, steps, first_color, last_color);
-		
-		JE_showVGA();
-		
-		waitUntilElapsed();
-	}
-
-	// Discard input during fade.
-	keyboardClearInput();
-	mouseClearInput();
+	fade_steps(diff, steps, first_color, last_color);
 }
 
 void fade_black(int steps)

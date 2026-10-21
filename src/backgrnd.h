@@ -38,9 +38,18 @@ extern JE_byte smoothie_data[9];
 extern int starfield_speed;
 
 void JE_darkenBackground(JE_word neat);
+void darken_background(SDL_Surface *surface, JE_word neat);
 
 void blit_background_row(SDL_Surface *surface, int x, int y, Uint8 **map);
 void blit_background_row_blend(SDL_Surface *surface, int x, int y, Uint8 **map);
+
+enum
+{
+	BACKGROUND_OPAQUE,       // background 1
+	BACKGROUND_TRANSPARENT,
+	BACKGROUND_BLEND,
+};
+void draw_background_layer(SDL_Surface *surface, int kind, Uint8 **rows, intptr_t column, int x, int y, int stride);
 
 void draw_background_1(SDL_Surface *surface);
 void draw_background_2(SDL_Surface *surface);
@@ -48,6 +57,8 @@ void draw_background_2_blend(SDL_Surface *surface);
 void draw_background_3(SDL_Surface *surface);
 
 void JE_filterScreen(JE_shortint col, JE_shortint generic_int);
+void filterScreenHue(SDL_Surface *screen, Uint8 hue);
+void filterScreenValue(SDL_Surface *screen, Sint8 brightness);
 
 void JE_checkSmoothies(void);
 void lava_filter(SDL_Surface *dst, SDL_Surface *src);
@@ -61,5 +72,6 @@ void showNormal(SDL_Surface *dst, SDL_Surface *src);
 
 void initialize_starfield(void);
 void update_and_draw_starfield(SDL_Surface* surface, int move_speed);
+void draw_starfield_star(SDL_Surface *surface, int x, int y, Uint8 color);
 
 #endif /* BACKGRND_H */

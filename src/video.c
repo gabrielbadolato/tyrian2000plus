@@ -21,6 +21,7 @@
 #include "keyboard.h"
 #include "logging.h"
 #include "opentyr.h"
+#include "smooth.h"
 #include "touch.h"
 #include "video_scale.h"
 
@@ -473,12 +474,21 @@ bool set_scaling_mode_by_name(const char *name)
 
 void JE_clr256(SDL_Surface *screen)
 {
+	SMOOTH_RECORD(SMOOTH_OP_CLEAR, screen, NULL, 0, 0, 0, 0, 0, 0);
 	SDL_FillRect(screen, NULL, 0);
 }
 
+unsigned int vga_shows = 0;
+
 void JE_showVGA(void)
 {
+	++vga_shows;
 	scale_and_flip(VGAScreen);
+}
+
+void video_present(SDL_Surface *surface)
+{
+	scale_and_flip(surface);
 }
 
 static void calc_dst_render_rect(SDL_Surface *const src_surface, SDL_Rect *const dst_rect)

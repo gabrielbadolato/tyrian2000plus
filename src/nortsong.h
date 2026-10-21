@@ -34,6 +34,10 @@ extern JE_word tempVolume;
 
 void setFrameSpeed(Uint16 speed);
 void setFrameCount(JE_word frameCount);
+// For smooth motion (src/smooth.c), in 1/1024 ms: the length of one count of
+// setFrameCount, and how long until the count set last ends.
+Sint32 frame_period(void);
+Sint32 frame_time_left(void);
 void setFrameCount2(JE_word frameCount2);
 Uint32 getFrameCountTicks(void);
 Uint32 getFrameCount2Ticks(void);

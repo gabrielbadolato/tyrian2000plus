@@ -31,6 +31,7 @@
 #include "nortvars.h"
 #include "opentyr.h"
 #include "shots.h"
+#include "smooth.h"
 #include "sprite.h"
 #include "vga256d.h"
 #include "video.h"
@@ -1158,6 +1159,28 @@ void JE_doSP(JE_word x, JE_word y, JE_word num, JE_byte explowidth, JE_byte colo
 	}
 }
 
+void draw_superpixel(SDL_Surface *surface, int x, int y, Uint8 z, Uint8 color)
+{
+	SMOOTH_RECORD(SMOOTH_OP_SUPERPIXEL, surface, NULL, x, y, z, color, 0, 0);
+
+	if ((unsigned)x < (unsigned)surface->w && (unsigned)y < (unsigned)surface->h)
+	{
+		Uint8 *s = (Uint8 *)surface->pixels; /* screen pointer, 8-bit specific */
+		s += y * surface->pitch;
+		s += x;
+
+		*s = (((*s & 0x0f) + z) >> 1) + color;
+		if (x > 0)
+			*(s - 1) = (((*(s - 1) & 0x0f) + (z >> 1)) >> 1) + color;
+		if (x < surface->w - 1)
+			*(s + 1) = (((*(s + 1) & 0x0f) + (z >> 1)) >> 1) + color;
+		if (y > 0)
+			*(s - surface->pitch) = (((*(s - surface->pitch) & 0x0f) + (z >> 1)) >> 1) + color;
+		if (y < surface->h - 1)
+			*(s + surface->pitch) = (((*(s + surface->pitch) & 0x0f) + (z >> 1)) >> 1) + color;
+	}
+}
+
 void JE_drawSP(void)
 {
 	for (int i = MAX_SUPERPIXELS; i--; )
@@ -1169,22 +1192,12 @@ void JE_drawSP(void)
 
 			if (superpixels[i].x < (unsigned)VGAScreen->w && superpixels[i].y < (unsigned)VGAScreen->h)
 			{
-				Uint8 *s = (Uint8 *)VGAScreen->pixels; /* screen pointer, 8-bit specific */
-				s += superpixels[i].y * VGAScreen->pitch;
-				s += superpixels[i].x;
-
-				*s = (((*s & 0x0f) + superpixels[i].z) >> 1) + superpixels[i].color;
-				if (superpixels[i].x > 0)
-					*(s - 1) = (((*(s - 1) & 0x0f) + (superpixels[i].z >> 1)) >> 1) + superpixels[i].color;
-				if (superpixels[i].x < VGAScreen->w - 1u)
-					*(s + 1) = (((*(s + 1) & 0x0f) + (superpixels[i].z >> 1)) >> 1) + superpixels[i].color;
-				if (superpixels[i].y > 0)
-					*(s - VGAScreen->pitch) = (((*(s - VGAScreen->pitch) & 0x0f) + (superpixels[i].z >> 1)) >> 1) + superpixels[i].color;
-				if (superpixels[i].y < VGAScreen->h - 1u)
-					*(s + VGAScreen->pitch) = (((*(s + VGAScreen->pitch) & 0x0f) + (superpixels[i].z >> 1)) >> 1) + superpixels[i].color;
+				smooth_tag(SMOOTH_SUPERPIXEL, i, 0);
+				draw_superpixel(VGAScreen, superpixels[i].x, superpixels[i].y, superpixels[i].z, superpixels[i].color);
 			}
 
 			superpixels[i].z--;
 		}
 	}
+	smooth_untag();
 }

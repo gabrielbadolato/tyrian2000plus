@@ -20,7 +20,10 @@ change is in this repository's git log.
 - **Smooth Motion, slow scrolling**: where a level scrolls slowly (a layer
   moves one pixel every few frames, as in the rocky part of level 1), the
   background and the enemies on the ground now glide at an even speed instead
-  of stopping and jumping.
+  of stopping and jumping. The same when the ship moves sideways: the layers
+  and the enemies on them slide by a fraction of its movement, which was
+  rounded to 1, 2, 1, 2 pixels; now they slide evenly. An enemy that flashes
+  when hit no longer skips its in-between pictures.
 
 ## v1.4 (2026-10-21)
 

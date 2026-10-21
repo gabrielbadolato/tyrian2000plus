@@ -53,12 +53,16 @@ typedef struct
 // A busy frame draws about a thousand things (each 2x2 sprite counts four).
 #define MAX_ENTRIES 16384
 
+// What a lead is for: background layers 1-3 and the enemies that move with them.
+enum { LEAD_NONE, LEAD_LAYER1, LEAD_LAYER2, LEAD_LAYER3, LEAD_GROUND, LEAD_SKY, LEAD_TOP, LEADS };
+
 typedef struct
 {
 	Entry entries[MAX_ENTRIES];
 	unsigned int count;
 	bool incomplete;  // something was drawn that the list cannot redraw
-	Sint32 lead[4];   // how far each background layer (0: the ground enemies) is between its steps
+	// how far things are drawn from where they are, in 1/65536 pixels (LEAD_*)
+	Sint32 leadX[LEADS], leadY[LEADS];
 } List;
 
 static List lists[2];
@@ -253,48 +257,81 @@ static int floorDiv(int a, int b)
 static int phasedLead(int from, int to, Sint32 leadFrom, Sint32 leadTo, Uint32 alpha, int phase)
 {
 	// in 1/65536 of a fine pixel
-	const Sint64 fineFrom = ((Sint64)from << 16) * fineScale + (Sint64)leadFrom * fineScale;
-	const Sint64 fineTo = ((Sint64)to << 16) * fineScale + (Sint64)leadTo * fineScale;
+	const Sint64 fineFrom = ((Sint64)from * 65536 + leadFrom) * fineScale;
+	const Sint64 fineTo = ((Sint64)to * 65536 + leadTo) * fineScale;
 	const Sint64 at = fineFrom + (((fineTo - fineFrom) * alpha) >> 16);
 	const int fine = (int)((at + 32768) >> 16);
 	return floorDiv(fine - phase + fineScale - 1, fineScale);
 }
 
-static int phased(int from, int to, Uint32 alpha, int phase)
-{
-	return phasedLead(from, to, 0, 0, alpha, phase);
-}
-
 // A layer that steps a pixel every few frames (map1YDelayMax, map2YDelayMax)
 // would stand still and then jump; drawn `lead` pixels (/65536) from where it
 // is, it moves the same amount each frame.  Its ground enemies step with it.
-static Sint32 leadOf(const List *list, const Entry *e)
+// The layers also slide sideways by a fraction of the ship's movement
+// (parallax), rounded down to whole pixels: the fraction is a lead too.
+static unsigned int leadIndex(const Entry *e)
 {
-	if (e->tag == SMOOTH_BACKGROUND && e->id < 4)
-		return list->lead[e->id];
-	if (e->tag == SMOOTH_ENEMY && ((e->id >= 25 && e->id < 50) || (e->id >= 75 && e->id < 100)))
-		return list->lead[0];  // the ground enemies (JE_drawEnemy(50) and (100))
-	return 0;
+	if (e->tag == SMOOTH_BACKGROUND && e->id >= 1 && e->id <= 3)
+		return LEAD_LAYER1 + e->id - 1;
+	if (e->tag == SMOOTH_ENEMY && e->id < 100)
+		return e->id < 25 ? LEAD_SKY : (e->id >= 50 && e->id < 75) ? LEAD_TOP : LEAD_GROUND;  // JE_drawEnemy's slots
+	return LEAD_NONE;
 }
 
-void smooth_layer_lead(unsigned int layer, int delay, int delayMax, int move)
+static Sint32 leadXOf(const List *list, const Entry *e)
 {
-	if (!smooth_recording || layer >= 4)
+	return list->leadX[leadIndex(e)];
+}
+
+static Sint32 leadOf(const List *list, const Entry *e)
+{
+	return list->leadY[leadIndex(e)];
+}
+
+// the sideways leads of layers 1-3, as of the ship's last movement and the one before
+static Sint32 parallax[4], parallaxBefore[4];
+
+void smooth_parallax(float exact, int ofs1, int ofs2, int ofs3, bool layer3AsLayer1)
+{
+	memcpy(parallaxBefore, parallax, sizeof parallax);
+	const float exacts[4] = { 0, exact / 3, exact * 2 / 3, exact };
+	const int ofs[4] = { 0, ofs1, ofs2, ofs3 };
+	for (int i = 1; i <= 3; ++i)
+	{
+		const float lead = exacts[i] - ofs[i];
+		parallax[i] = lead > -2 && lead < 2 ? (Sint32)(lead * 65536) : 0;  // not at the edges, where it wraps
+	}
+	if (layer3AsLayer1)
+		parallax[3] = parallax[1];
+}
+
+void smooth_enemies_layer(int enemyOffset, int layer, bool before)
+{
+	if (!smooth_recording || layer < 1 || layer > 3)
 		return;
+	const unsigned int index = enemyOffset == 25 ? LEAD_SKY : enemyOffset == 75 ? LEAD_TOP : LEAD_GROUND;
+	cur->leadX[index] = (before ? parallaxBefore : parallax)[layer];
+}
+
+void smooth_layer_lead(unsigned int layer, unsigned int xLayer, int delay, int delayMax, int move)
+{
+	if (!smooth_recording || layer < 1 || layer > 3 || xLayer < 1 || xLayer > 3)
+		return;
+	cur->leadX[LEAD_LAYER1 + layer - 1] = parallax[xLayer];
 	if (delayMax <= 1)
 	{
-		cur->lead[layer] = 0;
+		cur->leadY[LEAD_LAYER1 + layer - 1] = 0;
 		if (layer == 1)
-			cur->lead[0] = 0;
+			cur->leadY[LEAD_GROUND] = 0;
 		return;
 	}
 	// `steps` frames since the layer last moved, centered on where it is drawn
 	const int steps = delayMax - delay;
 	const int pixels = move >= 2 ? move : 1;
-	cur->lead[layer] = (Sint32)((Sint64)(2 * steps - (delayMax - 1)) * pixels * 65536 / (2 * delayMax));
+	cur->leadY[LEAD_LAYER1 + layer - 1] = (Sint32)((Sint64)(2 * steps - (delayMax - 1)) * pixels * 65536 / (2 * delayMax));
 	// the ground enemies step a frame before the layer (when delay is 1)
 	if (layer == 1)
-		cur->lead[0] = (Sint32)((Sint64)(2 * ((steps + 1) % delayMax) - (delayMax - 1)) * pixels * 65536 / (2 * delayMax));
+		cur->leadY[LEAD_GROUND] = (Sint32)((Sint64)(2 * ((steps + 1) % delayMax) - (delayMax - 1)) * pixels * 65536 / (2 * delayMax));
 }
 
 static void drawEntry(const Entry *e, int x, int y, intptr_t b, intptr_t c)
@@ -406,6 +443,19 @@ static void drawEntry(const Entry *e, int x, int y, intptr_t b, intptr_t c)
 	}
 }
 
+// How far a background layer's tiles moved down and right since the last
+// frame, if it is the same layer a little further on.
+static bool backgroundMoved(const Entry *e, const Entry *p, int *dx, int *dy)
+{
+	const intptr_t stride = e->d;
+	const ptrdiff_t rows = (Uint8 **)p->b - (Uint8 **)e->b;  // the map scrolls by moving back
+	if (p->d != stride || p->a != e->a || rows % stride != 0)
+		return false;
+	*dy = (e->y - p->y) + 28 * (int)(rows / stride);
+	*dx = (e->x - 24 * (int)e->c) - (p->x - 24 * (int)p->c);
+	return abs(*dy) <= 2 * 28 && abs(*dx) <= 2 * 24;
+}
+
 // A background layer at `alpha` of the way from its last frame to this one.
 // Its position is the tile row (b, a pointer into the map, `stride` tiles per
 // row), the tile column (c) and the offset in pixels inside the tile (x, y).
@@ -414,45 +464,49 @@ static void drawBackgroundBetween(const Entry *e, const Entry *p, Uint32 alpha)
 	Uint8 **row = (Uint8 **)e->b;
 	intptr_t column = e->c;
 	int x = e->x, y = e->y;
-
 	const intptr_t stride = e->d;
-	const ptrdiff_t rows = (Uint8 **)p->b - row;  // the map scrolls by moving back
-	if (p->d == stride && p->a == e->a && rows % stride == 0)
+
+	int dx, dy;
+	if (backgroundMoved(e, p, &dx, &dy))
 	{
-		// how far the tiles moved down and right since the last frame
-		const int dy = (e->y - p->y) + 28 * (int)(rows / stride);
-		const int dx = (e->x - 24 * (int)e->c) - (p->x - 24 * (int)p->c);
+		y = phasedLead(y - dy, y, leadOf(prev, p), leadOf(cur, e), alpha, phaseY);
+		x = phasedLead(x - dx, x, leadXOf(prev, p), leadXOf(cur, e), alpha, phaseX);
 
-		if (abs(dy) <= 2 * 28 && abs(dx) <= 2 * 24)
+		// back into a tile, between the two frames' tiles
+		while (y < 0)
 		{
-			y = phasedLead(y - dy, y, leadOf(prev, p), leadOf(cur, e), alpha, phaseY);
-			x = phased(x - dx, x, alpha, phaseX);
-
-			// back into a tile, between the two frames' tiles
-			while (y < 0)
-			{
-				y += 28;
-				row += stride;
-			}
-			while (y >= 28)
-			{
-				y -= 28;
-				row -= stride;
-			}
-			while (x < 0)
-			{
-				x += 24;
-				column += 1;
-			}
-			while (x >= 24)
-			{
-				x -= 24;
-				column -= 1;
-			}
+			y += 28;
+			row += stride;
+		}
+		while (y >= 28)
+		{
+			y -= 28;
+			row -= stride;
+		}
+		while (x < 0)
+		{
+			x += 24;
+			column += 1;
+		}
+		while (x >= 24)
+		{
+			x -= 24;
+			column -= 1;
 		}
 	}
 
 	draw_background_layer(scratch[e->dst], e->a, row, column, x, y, stride);
+}
+
+// Whether p (last frame) and e (this one) can be drawn in between: the same
+// kind of drawing, or two sprites drawn differently (an enemy flashes when it
+// is hit: blit_sprite2 one frame, blit_sprite2_filter the next).
+static bool sameKind(const Entry *p, const Entry *e)
+{
+	if (p->op == e->op)
+		return true;
+	const bool sprite = e->op <= SMOOTH_OP_SPRITE2_FILTER_CLIP, spriteBefore = p->op <= SMOOTH_OP_SPRITE2_FILTER_CLIP;
+	return sprite && spriteBefore;
 }
 
 // Redraws the frame being drawn (cur) from the snapshot, with everything that
@@ -475,7 +529,7 @@ static void redrawPhase(Uint32 alpha, int scale, int x, int y)
 		const Entry *e = &cur->entries[i];
 		const Entry *p = (alpha < 65536 && e->tag != SMOOTH_NONE) ? findPrev(e) : NULL;
 
-		if (p == NULL || p->op != e->op)
+		if (p == NULL || !sameKind(p, e))
 		{
 			drawEntry(e, e->x, e->y, e->b, e->c);
 		}
@@ -489,7 +543,7 @@ static void redrawPhase(Uint32 alpha, int scale, int x, int y)
 		}
 		else
 		{
-			drawEntry(e, phased(p->x, e->x, alpha, phaseX), phasedLead(p->y, e->y, leadOf(prev, p), leadOf(cur, e), alpha, phaseY), e->b, e->c);
+			drawEntry(e, phasedLead(p->x, e->x, leadXOf(prev, p), leadXOf(cur, e), alpha, phaseX), phasedLead(p->y, e->y, leadOf(prev, p), leadOf(cur, e), alpha, phaseY), e->b, e->c);
 		}
 	}
 
@@ -546,7 +600,8 @@ void smooth_level_begin(void)
 
 	cur->count = 0;
 	cur->incomplete = false;
-	memset(cur->lead, 0, sizeof(cur->lead));
+	memset(cur->leadX, 0, sizeof(cur->leadX));
+	memset(cur->leadY, 0, sizeof(cur->leadY));
 	prev->count = 0;
 	prevUsable = false;
 	haveSnapshot = false;
@@ -566,8 +621,11 @@ void smooth_level_begin(void)
 	}
 }
 
+static void judderLevelEnd(void);
+
 void smooth_level_end(void)
 {
+	judderLevelEnd();
 	smooth_recording = false;
 	prevUsable = false;
 	haveSnapshot = false;
@@ -868,6 +926,126 @@ static void dumpPictures(int view)
 	}
 }
 
+// The tests also look for things whose speed zigzags: a thing that moves 1
+// pixel on one frame and 0 or 2 on the next, again and again (such as a layer
+// that steps every few frames), still judders in the pictures in between.
+// Each thing seen in consecutive frames is followed; at the end of the level,
+// those that zigzagged in a quarter of a second or more of frames are logged.
+#define TRACKS 8192
+typedef struct
+{
+	Uint64 key;  // 0: free
+	unsigned long lastFrame;
+	Sint32 lastDx, lastDy, lastAx, lastAy;
+	unsigned int frames, stopGo, moving;
+	Uint16 enemyType;
+} Track;
+static Track tracks[TRACKS];
+static unsigned long judderTotal[16];
+static Uint32 judderThings[24];  // logged in this level
+static unsigned int judderLogged = 0;
+
+static const char *const tagNames[] = {
+	"none", "background", "enemy", "player", "sidekick", "player shot", "enemy shot",
+	"explosion", "rep explosion", "star", "superpixel",
+};
+
+static void judderReport(Track *t)
+{
+	// at least half the frames moving, and zigzagging speed in a quarter of them
+	if (t->frames >= 35 && t->moving * 2 >= t->frames && t->stopGo * 4 >= t->frames)
+	{
+		const unsigned int tag = (unsigned int)(t->key >> 48);
+		++judderTotal[tag & 15];
+		const Uint32 thing = (Uint32)(t->key >> 32);  // the tag and id, whatever the part
+		bool logged = false;
+		for (unsigned int i = 0; i < judderLogged && i < COUNTOF(judderThings); ++i)
+			logged = logged || judderThings[i] == thing;
+		const bool fresh = !logged && judderLogged < COUNTOF(judderThings);
+		if (fresh)
+			judderThings[judderLogged++] = thing;
+		if (fresh && tag != SMOOTH_PLAYER)  // the tests' pilot moves the ship in fits and starts
+			logInfo("Smooth motion test: %s: %s %u (part %u, type %u) speed zigzags in %u of %u frames",
+			        levelName, tag < COUNTOF(tagNames) ? tagNames[tag] : "?", (unsigned int)(t->key >> 32) & 0xffff,
+			        (unsigned int)t->key & 0xffff, t->enemyType, t->stopGo, t->frames);
+	}
+	t->frames = t->stopGo = t->moving = 0;
+}
+
+static void judderFrame(void)
+{
+	for (unsigned int i = 0; i < cur->count; ++i)
+	{
+		const Entry *e = &cur->entries[i];
+		if (e->tag == SMOOTH_NONE || e->occurrence != 0)
+			continue;
+		const Entry *p = findPrev(e);
+		if (p == NULL || !sameKind(p, e))
+			continue;
+
+		int dx, dy;
+		if (e->op == SMOOTH_OP_BACKGROUND)
+		{
+			if (!backgroundMoved(e, p, &dx, &dy))
+				continue;
+		}
+		else
+		{
+			dx = e->x - p->x;
+			dy = e->y - p->y;
+			if (abs(dx) > MAX_SLIDE || abs(dy) > MAX_SLIDE)
+				continue;
+		}
+		// in 1/65536 pixels, as the pictures in between draw it
+		const Sint32 fx = dx * 65536 + leadXOf(cur, e) - leadXOf(prev, p), fy = dy * 65536 + leadOf(cur, e) - leadOf(prev, p);
+
+		const Uint64 key = (Uint64)e->tag << 48 | (Uint64)e->id << 32 | e->part;
+		Uint32 h = (Uint32)((key * 0x9E3779B97F4A7C15ull) >> 51) & (TRACKS - 1);
+		while (tracks[h].key != 0 && tracks[h].key != key)
+			h = (h + 1) & (TRACKS - 1);
+		Track *t = &tracks[h];
+		if (t->key == 0)
+			t->key = key;
+		else if (t->lastFrame + 1 != testFrames)
+			judderReport(t);  // a new thing in the slot
+
+		if (t->frames > 0)
+		{
+			// speeding up and slowing down by turns (1, 2, 1, 2 or 1, 0, 1, 0 pixels)
+			const Sint32 ax = fx - t->lastDx, ay = fy - t->lastDy;
+			if (t->frames > 1 && (((Sint64)ax * t->lastAx < 0 && abs(ax) >= 32768 && abs(t->lastAx) >= 32768) ||
+			                      ((Sint64)ay * t->lastAy < 0 && abs(ay) >= 32768 && abs(t->lastAy) >= 32768)))
+				++t->stopGo;
+			t->lastAx = ax;
+			t->lastAy = ay;
+		}
+		t->moving += fx != 0 || fy != 0;
+		++t->frames;
+		t->lastDx = fx;
+		t->lastDy = fy;
+		t->lastFrame = testFrames;
+		t->enemyType = e->tag == SMOOTH_ENEMY && e->id < COUNTOF(enemy) ? enemy[e->id].enemytype : 0;
+	}
+}
+
+static void judderLevelEnd(void)
+{
+	if (!testEnabled)
+		return;
+	for (unsigned int i = 0; i < TRACKS; ++i)
+	{
+		if (tracks[i].key != 0)
+			judderReport(&tracks[i]);
+		tracks[i].key = 0;
+	}
+	judderLogged = 0;
+}
+
+void smooth_test_judder(unsigned long counts[16])
+{
+	memcpy(counts, judderTotal, sizeof judderTotal);
+}
+
 bool smooth_frame_due(int view)
 {
 	if (!smooth_recording)
@@ -889,6 +1067,8 @@ bool smooth_frame_due(int view)
 			redraw(testAlpha);  // the pictures in between must draw too
 			dumpPictures(view);
 			drawFine(testAlpha, view, 3);  // and the finer ones
+
+			judderFrame();
 
 			// all the way to this frame, every phase of the finer picture is the frame
 			if (testFrames++ % 35 == 0 && drawFine(65536, view, 2))
@@ -951,7 +1131,8 @@ void smooth_frame_shown(void)
 	cur = t;
 	cur->count = 0;
 	cur->incomplete = false;
-	memset(cur->lead, 0, sizeof(cur->lead));
+	memset(cur->leadX, 0, sizeof(cur->leadX));
+	memset(cur->leadY, 0, sizeof(cur->leadY));
 	prevUsable = prev->count > 0;
 	if (prevUsable)
 		indexPrev();
@@ -1030,7 +1211,8 @@ void smooth_sim_begin(void)
 	cur = t;
 	cur->count = 0;
 	cur->incomplete = false;
-	memset(cur->lead, 0, sizeof(cur->lead));
+	memset(cur->leadX, 0, sizeof(cur->leadX));
+	memset(cur->leadY, 0, sizeof(cur->leadY));
 	prevUsable = goingOn && simRedraws && prev->count > 0;
 	if (prevUsable)
 		indexPrev();

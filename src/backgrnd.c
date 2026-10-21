@@ -317,7 +317,7 @@ void draw_background_layer(SDL_Surface *surface, int kind, Uint8 **rows, intptr_
 
 void draw_background_1(SDL_Surface *surface)
 {
-	smooth_layer_lead(1, map1YDelay, map1YDelayMax, backMove);
+	smooth_layer_lead(1, 1, map1YDelay, map1YDelayMax, backMove);
 	smooth_tag(SMOOTH_BACKGROUND, 1, 0);
 	draw_background_layer(surface, BACKGROUND_OPAQUE, (Uint8 **)mapYPos, mapXbpPos, mapXPos, backPos, 14);
 	smooth_untag();
@@ -331,7 +331,7 @@ void draw_background_2(SDL_Surface *surface)
 
 	if (map2YDelayMax > 1 && backMove2 < 2)
 		backMove2 = (map2YDelay == 1) ? 1 : 0;
-	smooth_layer_lead(2, map2YDelay, map2YDelayMax, backMove2);
+	smooth_layer_lead(2, smoothies[1] ? 1 : 2, map2YDelay, map2YDelayMax, backMove2);
 	
 	if (background2 != 0)
 	{
@@ -367,7 +367,7 @@ void draw_background_2_blend(SDL_Surface *surface)
 
 	if (map2YDelayMax > 1 && backMove2 < 2)
 		backMove2 = (map2YDelay == 1) ? 1 : 0;
-	smooth_layer_lead(2, map2YDelay, map2YDelayMax, backMove2);
+	smooth_layer_lead(2, 2, map2YDelay, map2YDelayMax, backMove2);
 	
 	smooth_tag(SMOOTH_BACKGROUND, 2, 0);
 	draw_background_layer(surface, BACKGROUND_BLEND, (Uint8 **)mapY2Pos, mapX2bpPos, mapX2Pos, backPos2, 14);
@@ -405,6 +405,7 @@ void draw_background_3(SDL_Surface *surface)
 		mapY3Pos -= 15;   /*Map Width*/
 	}
 	
+	smooth_layer_lead(3, 3, 1, 1, backMove3);
 	smooth_tag(SMOOTH_BACKGROUND, 3, 0);
 	draw_background_layer(surface, BACKGROUND_TRANSPARENT, (Uint8 **)mapY3Pos, mapX3bpPos, mapX3Pos, backPos3, 15);
 	smooth_untag();

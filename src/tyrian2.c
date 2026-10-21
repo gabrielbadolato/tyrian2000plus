@@ -1289,6 +1289,8 @@ level_loop:
 
 	tempMapXOfs = mapXOfs;
 	tempBackMove = backMove;
+	smooth_enemies_layer(50, 1, false);
+	smooth_enemies_layer(100, 1, false);
 	JE_drawEnemy(50);
 	JE_drawEnemy(100);
 
@@ -1360,6 +1362,7 @@ level_loop:
 
 		tempMapXOfs = mapX2Ofs;
 		tempBackMove = 0;
+		smooth_enemies_layer(25, 2, false);
 		JE_drawEnemy(25);
 
 		if (enemyOnScreen == lastEnemyOnScreen)
@@ -1377,6 +1380,7 @@ level_loop:
 	{
 		tempMapXOfs = (background3x1 == 0) ? oldMapX3Ofs : mapXOfs;
 		tempBackMove = backMove3;
+		smooth_enemies_layer(75, background3x1 == 0 ? 3 : 1, false);
 		JE_drawEnemy(75);
 	}
 
@@ -1824,6 +1828,7 @@ draw_player_shot_loop_end:
 	{
 		tempMapXOfs = (background3x1 == 0) ? oldMapX3Ofs : oldMapXOfs;
 		tempBackMove = backMove3;
+		smooth_enemies_layer(75, background3x1 == 0 ? 3 : 1, true);
 		JE_drawEnemy(75);
 	}
 
@@ -1834,6 +1839,7 @@ draw_player_shot_loop_end:
 
 		tempMapXOfs = mapX2Ofs;
 		tempBackMove = 0;
+		smooth_enemies_layer(25, 2, false);
 		JE_drawEnemy(25);
 
 		if (enemyOnScreen == lastEnemyOnScreen)

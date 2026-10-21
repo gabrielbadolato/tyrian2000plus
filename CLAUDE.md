@@ -462,11 +462,21 @@ software) faz as próximas começarem cedo o bastante para não atrasar o
 quadro; vai pela metade a cada quadro sem imagem. O teste confere que em
 alpha=65536 toda fase é o próprio quadro. `SMOOTH_DUMP_FINE=<s>` com
 SMOOTH_DUMP salva também as imagens finas. Menus/fades seguem em 1x.
-Camada que anda 1 pixel a cada N quadros (map1YDelayMax/map2YDelayMax, ex.:
-trecho das pedras da fase Tyrian, N=3 e 2) pararia e pularia: `draw_background_1/2`
-chamam `smooth_layer_lead()`, que guarda quanto a camada está entre um passo e
-outro (centrado), e as imagens do meio somam isso ao fundo e aos inimigos do
-chão (slots 25-49 e 75-99, que dão o passo um quadro antes do fundo).
+"Lead" (fração de pixel somada nas imagens do meio, `leadX`/`leadY` por
+camada e por grupo de inimigos, `leadIndex()`): camada que anda 1 pixel a
+cada N quadros (map1YDelayMax/map2YDelayMax, ex.: trecho das pedras da fase
+Tyrian, N=3 e 2) pararia e pularia, então `draw_background_1/2/3` chamam
+`smooth_layer_lead()` com quanto a camada está entre um passo e outro
+(centrado); os inimigos do chão (slots 25-49 e 75-99) dão o passo um quadro
+antes do fundo. O deslize lateral das camadas (parallax, 1/3, 2/3 e 1 de uma
+fração do x da nave, arredondado; `smooth_parallax()` no fim de
+`JE_mainGamePlayerFunctions`) também vira lead, e os inimigos pegam o da
+camada que somam ao x (`smooth_enemies_layer()` antes de cada
+`JE_drawEnemy`, "before" quando usam o valor de antes do movimento da nave).
+Sprites de tipos diferentes entre um quadro e outro (inimigo que pisca ao
+levar tiro) também deslizam (`sameKind()`). Os testes (`test_autoplay`)
+contam e logam coisas cuja velocidade vai e volta ("speed zigzags"); o que
+sobra é o movimento da nave do piloto e o próprio movimento dos inimigos.
 Fora das fases: `smooth_show_until_due(frames, show, data)` faz o mesmo
 ritmo (uma imagem por atualização até o quadro vencer) chamando `show(alpha)`;
 usado nos fades (`fade_steps()` em `src/palette.c`, paleta no meio do caminho

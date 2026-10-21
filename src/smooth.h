@@ -111,8 +111,15 @@ typedef enum
 void smooth_tag(SmoothTag tag, unsigned int id, unsigned int part);
 void smooth_untag(void);
 
-// A background layer steps every delayMax frames (delay: frames until it moves).
-void smooth_layer_lead(unsigned int layer, int delay, int delayMax, int move);
+// A background layer is drawn sideways where layer xLayer is, and steps every
+// delayMax frames (delay: frames until it moves).
+void smooth_layer_lead(unsigned int layer, unsigned int xLayer, int delay, int delayMax, int move);
+// The ship moved: the layers slide sideways to `exact` (layer 3; 2/3 and 1/3 of
+// it for layers 2 and 1), drawn at the whole pixels ofs1-3.
+void smooth_parallax(float exact, int ofs1, int ofs2, int ofs3, bool layer3AsLayer1);
+// The enemies JE_drawEnemy(enemyOffset) draws slide with `layer`, as it was
+// before the ship last moved if `before`.
+void smooth_enemies_layer(int enemyOffset, int layer, bool before);
 
 // The hook: what a primitive drew (dst, and src for the filters that read
 // another surface), where, and with what.
@@ -167,5 +174,6 @@ bool smooth_sim_show(int frames);
 // did not.
 void smooth_test_enable(bool enable, Uint32 alpha);
 void smooth_test_counts(unsigned long *same, unsigned long *different, unsigned long *skipped);
+void smooth_test_judder(unsigned long counts[16]);  // things whose speed zigzags, by SmoothTag
 
 #endif // SMOOTH_H

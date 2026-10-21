@@ -4998,7 +4998,8 @@ void JE_mainGamePlayerFunctions(void)
 	else
 		tempX = player[0].x;
 
-	tempW = floorf((float)(260 - (tempX - 36)) / (260 - 36) * (24 * 3) - 1);
+	const float parallaxExact = (float)(260 - (tempX - 36)) / (260 - 36) * (24 * 3) - 1;
+	tempW = floorf(parallaxExact);
 	mapX3Ofs   = tempW;
 	mapX3Pos   = mapX3Ofs % 24;
 	mapX3bpPos = 1 - (mapX3Ofs / 24);
@@ -5018,6 +5019,8 @@ void JE_mainGamePlayerFunctions(void)
 		mapX3Pos = mapXPos;
 		mapX3bpPos = mapXbpPos - 1;
 	}
+
+	smooth_parallax(parallaxExact, (Sint16)mapXOfs, (Sint16)mapX2Ofs, (Sint16)(background3x1 ? mapXOfs : (JE_word)tempW), background3x1);
 }
 
 const char *JE_getName(JE_byte pnum)

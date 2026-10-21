@@ -20,6 +20,7 @@
 
 #include "episodes.h"
 #include "player.h"
+#include "smooth.h"
 #include "sprite.h"
 #include "video.h"
 #include "varz.h"
@@ -102,10 +103,12 @@ void simulate_player_shots(void)
 				{
 					if (anim_frame > 1000)
 						anim_frame = anim_frame % 1000;
+					smooth_tag(SMOOTH_PLAYER_SHOT, z, 0);
 					if (anim_frame > 500)
 						blit_sprite2(VGAScreen, tempShotX+1, tempShotY, spriteSheet12, anim_frame - 500);
 					else
 						blit_sprite2(VGAScreen, tempShotX+1, tempShotY, spriteSheet8, anim_frame);
+					smooth_untag();
 				}
 			}
 

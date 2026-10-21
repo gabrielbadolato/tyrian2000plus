@@ -412,6 +412,20 @@ efeito); objeto novo que se mova precisa de `smooth_tag`. Testes:
 iguais/diferentes; tem de dar 0 diferentes) e `SMOOTH_DUMP=<pasta>:<quadro>:<n>`
 salva BMPs das imagens intermediárias. `TYRIAN_SMOOTH_STATS=1` escreve no log
 quantas imagens por segundo; `TYRIAN_SMOOTH_HZ` força a taxa do monitor.
+Fora das fases: `smooth_show_until_due(frames, show, data)` faz o mesmo
+ritmo (uma imagem por atualização até o quadro vencer) chamando `show(alpha)`;
+usado nos fades (`fade_steps()` em `src/palette.c`, paleta no meio do caminho
+entre um passo e outro, o passo final é mostrado no fim) e no logo da tela de
+título (`show_logo_picture` em `src/tyrian2.c`). A prévia de armas do menu da
+nave (`JE_weaponViewFrame`) grava estrelas e tiros na tela (`smooth_sim_begin`
+/`smooth_sim_drawn`, mesma conferência) e `smooth_sim_show(3)` troca o
+JE_showVGA: dentro do retângulo 8,8-143,182, o pixel que nada desenhou por
+cima depois (moldura, nave, texto) vem da imagem intermediária, e o ponteiro
+do mouse é tirado (`mouse_pointer_remove`) e redesenhado onde o mouse está.
+Ponteiro nos menus: `JE_mouseReplace` marca que a tela foi mostrada com ele
+(`vga_shows` conta os JE_showVGA) e `waitUntilElapsed` chama
+`mouse_pointer_between()`, que mostra a tela (já sem ponteiro) com o ponteiro
+na posição atual quando o mouse se move, no ritmo de `smooth_picture_wait()`.
 
 Steam Deck: o modo "Integer" já dá o encaixe exato 4x (1280x800, pixels
 quadrados), então não há opção nova para isso. O jogo não muda a taxa da tela

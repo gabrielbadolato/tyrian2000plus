@@ -19,8 +19,11 @@
 #include "mouse.h"
 
 #include "keyboard.h"
+#include "smooth.h"
 #include "sprite.h"
 #include "video.h"
+
+#include <string.h>
 
 #if defined(TARGET_GP2X) || defined(TARGET_DINGUX)
 bool has_mouse = false;
@@ -34,18 +37,25 @@ JE_byte mouseCursor;
 static JE_word mouseGrabX, mouseGrabY;
 static JE_byte mouseGrabShape[24 * 28];
 
-static void JE_drawShapeTypeOne(JE_word x, JE_word y, JE_byte *shape)
+// Smooth motion: the pointer as the last frame showed it.
+static bool pointerShown = false;
+static unsigned int pointerShows = 0;
+static Sint32 pointerX, pointerY;
+static int pointerFilter = -1;
+static SDL_Surface *pointerScreen = NULL;
+
+static void JE_drawShapeTypeOne(SDL_Surface *surface, JE_word x, JE_word y, JE_byte *shape)
 {
 	JE_word xloop = 0, yloop = 0;
 	JE_byte *p = shape; /* shape pointer */
 	Uint8 *s;   /* screen pointer, 8-bit specific */
 	Uint8 *s_limit; /* buffer boundary */
 
-	s = (Uint8 *)VGAScreen->pixels;
-	s += y * VGAScreen->pitch + x;
+	s = (Uint8 *)surface->pixels;
+	s += y * surface->pitch + x;
 
-	s_limit = (Uint8 *)VGAScreen->pixels;
-	s_limit += VGAScreen->h * VGAScreen->pitch;
+	s_limit = (Uint8 *)surface->pixels;
+	s_limit += surface->h * surface->pitch;
 
 	for (yloop = 0; yloop < 28; yloop++)
 	{
@@ -57,7 +67,7 @@ static void JE_drawShapeTypeOne(JE_word x, JE_word y, JE_byte *shape)
 			s++; p++;
 		}
 		s -= 24;
-		s += VGAScreen->pitch;
+		s += surface->pitch;
 	}
 }
 
@@ -126,6 +136,12 @@ void JE_mouseStart(void)  // FKA NewShape.mouseStart
 		const Sint32 y = mouseY - spriteInfo->y - spriteInfo->fy;
 		blit_sprite2x2_clip(VGAScreen, x, y, shopSpriteSheet, spriteInfo->index);
 	}
+
+	pointerShows = vga_shows;
+	pointerShown = false;
+	pointerX = mouseX;
+	pointerY = mouseY;
+	pointerFilter = -1;
 }
 
 void JE_mouseStartFilter(Uint8 filter)
@@ -146,6 +162,12 @@ void JE_mouseStartFilter(Uint8 filter)
 		const Sint32 y = mouseY - spriteInfo->y - spriteInfo->fy;
 		blit_sprite2x2_filter_clip(VGAScreen, x, y, shopSpriteSheet, spriteInfo->index, filter);
 	}
+
+	pointerShows = vga_shows;
+	pointerShown = false;
+	pointerX = mouseX;
+	pointerY = mouseY;
+	pointerFilter = filter;
 }
 
 void JE_mouseReplace(void)  // FKA NewShape.MouseReplace
@@ -153,5 +175,64 @@ void JE_mouseReplace(void)  // FKA NewShape.MouseReplace
 	if (!has_mouse)
 		return;
 
-	JE_drawShapeTypeOne(mouseGrabX, mouseGrabY, mouseGrabShape);
+	JE_drawShapeTypeOne(VGAScreen, mouseGrabX, mouseGrabY, mouseGrabShape);
+
+	// the screen was shown with the pointer: until the next frame, it can be
+	// shown again with the pointer where the mouse is
+	pointerShown = !mouseInactive && vga_shows != pointerShows;
+}
+
+void mouse_pointer_forget(void)
+{
+	pointerShown = false;
+}
+
+void mouse_pointer_remove(SDL_Surface *copy)
+{
+	if (has_mouse)
+		JE_drawShapeTypeOne(copy, mouseGrabX, mouseGrabY, mouseGrabShape);
+}
+
+void mouse_pointer_draw_now(SDL_Surface *copy)
+{
+	if (!has_mouse || mouseInactive)
+		return;
+
+	const MousePointerSpriteInfo *spriteInfo = &mousePointerSprites[mouseCursor];
+	const Sint32 x = mouseX - spriteInfo->x - spriteInfo->fx;
+	const Sint32 y = mouseY - spriteInfo->y - spriteInfo->fy;
+	if (pointerFilter >= 0)
+		blit_sprite2x2_filter_clip(copy, x, y, shopSpriteSheet, spriteInfo->index, pointerFilter);
+	else
+		blit_sprite2x2_clip(copy, x, y, shopSpriteSheet, spriteInfo->index);
+}
+
+Uint32 mouse_pointer_between(void)
+{
+	if (!pointerShown || !has_mouse || mouseInactive)
+		return UINT32_MAX;
+	const Uint32 wait = smooth_picture_wait();
+	if (wait == UINT32_MAX || wait > 0)
+		return wait;
+	if (mouseX == pointerX && mouseY == pointerY)
+		return 2;  // look again soon
+
+	if (pointerScreen == NULL || pointerScreen->w != VGAScreen->w || pointerScreen->h != VGAScreen->h)
+	{
+		SDL_FreeSurface(pointerScreen);
+		pointerScreen = SDL_CreateRGBSurface(0, VGAScreen->w, VGAScreen->h, 8, 0, 0, 0, 0);
+		if (pointerScreen == NULL)
+			return UINT32_MAX;
+	}
+
+	// the screen is as it was shown, without the pointer
+	memcpy(pointerScreen->pixels, VGAScreen->pixels, (size_t)VGAScreen->pitch * VGAScreen->h);
+	mouse_pointer_draw_now(pointerScreen);
+	video_present(pointerScreen);
+
+	smooth_picture_shown();
+
+	pointerX = mouseX;
+	pointerY = mouseY;
+	return 1;
 }

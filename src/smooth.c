@@ -20,7 +20,9 @@
 
 #include "backgrnd.h"
 #include "levelrec.h"
+#include "keyboard.h"
 #include "logging.h"
+#include "mouse.h"
 #include "network.h"
 #include "palette.h"
 #include "nortsong.h"
@@ -36,7 +38,7 @@
 bool smooth_motion = false;
 bool smooth_recording = false;
 
-// A draw of the frame.  dst and src are surfaces: 0 game_screen, 1 VGAScreen2.
+// A draw of the frame.  dst and src are surfaces: 0 and 1 of targets[].
 typedef struct
 {
 	Uint8 op;
@@ -76,6 +78,16 @@ static bool haveSnapshot = false;
 static SDL_Surface *scratch[2] = { NULL, NULL };
 static SDL_Surface *compose = NULL;
 
+// The surfaces that are recorded: in a level game_screen and VGAScreen2, in
+// the weapon simulator of the ship menu the screen.
+static SDL_Surface *targets[2] = { NULL, NULL };
+
+// The weapon simulator: whether the frame being shown redraws, and the screen
+// as the moving part of it was drawn.
+static bool simFrame = false;
+static bool simRedraws = false;
+static Uint32 simLast = 0;
+
 static SmoothTag curTag = SMOOTH_NONE;
 static Uint16 curId = 0, curPart = 0, curOccurrence = 0;
 
@@ -113,9 +125,11 @@ void smooth_untag(void)
 
 static int surfaceIndex(const SDL_Surface *surface)
 {
-	if (surface == game_screen)
+	if (surface == NULL)
+		return -1;
+	if (surface == targets[0])
 		return 0;
-	if (surface == VGAScreen2)
+	if (surface == targets[1])
 		return 1;
 	return -1;
 }
@@ -448,6 +462,9 @@ void smooth_level_begin(void)
 	prev->count = 0;
 	prevUsable = false;
 	haveSnapshot = false;
+	simFrame = false;
+	targets[0] = game_screen;
+	targets[1] = VGAScreen2;
 	smooth_untag();
 	smooth_recording = wanted() && ensureBuffers();
 }
@@ -500,6 +517,80 @@ static void showBetween(Uint32 alpha, int view)
 	else
 		showNormal(compose, scratch[0]);
 	video_present(compose);
+}
+
+// Until the frame that lasts `period` is due, a picture per refresh of the
+// display, each drawn and shown by show(alpha): never faster, even without
+// VSync, and never one that would show after the frame is due, so the game
+// keeps its own timing.  With VSync, showing a picture waits for the display,
+// which says when the next one is due.
+static bool showUntilDue(Sint32 period, Sint32 refresh, void (*show)(Uint32 alpha, const void *data), const void *data)
+{
+	bool shown = false;
+
+	for (;;)
+	{
+		const Uint32 now = SDL_GetTicks() << 10;
+		const Uint32 due = now + frame_time_left();
+
+		// lost track (a pause, a slow frame, a new level)?
+		if ((Sint32)(now - nextPicture) > 4 * refresh || (Sint32)(nextPicture - now) > 4 * refresh)
+			nextPicture = now;
+		while ((Sint32)(nextPicture - now) < 0)
+			nextPicture += refresh;
+
+		if (period <= 0 || (Sint32)(due - nextPicture) < 0)
+			break;  // it would show after the frame is due
+
+		if (!presentWaits)
+		{
+			const Sint32 early = nextPicture - now;
+			if (early >= 1024)
+				SDL_Delay((Uint32)early >> 10);
+		}
+
+		// how far the game is from the last frame to this one when it shows
+		const Sint32 since = period - (Sint32)(due - nextPicture);
+		const Uint32 alpha = since <= 0 ? 0 : since >= period ? 65536 : (Uint32)(((Sint64)since << 16) / period);
+
+		const Uint64 before = SDL_GetPerformanceCounter();
+		show(alpha, data);
+		const Uint64 took = SDL_GetPerformanceCounter() - before;
+		shown = true;
+		++picturesShown;
+
+		// a picture that took more than half a millisecond waited for the display
+		presentWaits = vsync_enabled && took * 2000 > SDL_GetPerformanceFrequency();
+		if (presentWaits)
+			nextPicture = (SDL_GetTicks() << 10) + refresh;
+		else
+			nextPicture += refresh;
+	}
+
+	return shown;
+}
+
+// TYRIAN_SMOOTH_STATS: a frame was due.
+static void countFrame(Sint32 refresh)
+{
+	statsEnabled = statsEnabled || getenv("TYRIAN_SMOOTH_STATS") != NULL;
+	if (!statsEnabled)
+		return;
+
+	++framesDue;
+	const Uint32 now = SDL_GetTicks();
+	if (now - statsSince >= 5000)
+	{
+		logInfo("Smooth motion: %lu pictures and %lu frames in %u ms (display: %d Hz)",
+		        picturesShown, framesDue, now - statsSince, (int)((1000 << 10) / refresh));
+		picturesShown = framesDue = 0;
+		statsSince = now;
+	}
+}
+
+static void showLevelPicture(Uint32 alpha, const void *data)
+{
+	showBetween(alpha, *(const int *)data);
 }
 
 // SMOOTH_DUMP=<dir>:<first>:<count>: the tests save the pictures between frame
@@ -581,65 +672,10 @@ bool smooth_frame_due(int view)
 	if (!same || !prevUsable)
 		return false;
 
-	// Until the frame is due, a picture per refresh of the display: never
-	// faster, even without VSync, and never one that would show after the
-	// frame is due, so the game keeps its own timing.  With VSync, showing a
-	// picture waits for the display, which says when the next one is due.
-	const Sint32 period = frame_period() * frameCountMax;
 	const Sint32 refresh = refreshPeriod();
-	bool shown = false;
+	const bool shown = showUntilDue(frame_period() * frameCountMax, refresh, showLevelPicture, &view);
 
-	for (;;)
-	{
-		const Uint32 now = SDL_GetTicks() << 10;
-		const Uint32 due = now + frame_time_left();
-
-		// lost track (a pause, a slow frame, a new level)?
-		if ((Sint32)(now - nextPicture) > 4 * refresh || (Sint32)(nextPicture - now) > 4 * refresh)
-			nextPicture = now;
-		while ((Sint32)(nextPicture - now) < 0)
-			nextPicture += refresh;
-
-		if (period <= 0 || (Sint32)(due - nextPicture) < 0)
-			break;  // it would show after the frame is due
-
-		if (!presentWaits)
-		{
-			const Sint32 early = nextPicture - now;
-			if (early >= 1024)
-				SDL_Delay((Uint32)early >> 10);
-		}
-
-		// how far the game is from the last frame to this one when it shows
-		const Sint32 since = period - (Sint32)(due - nextPicture);
-		const Uint32 alpha = since <= 0 ? 0 : since >= period ? 65536 : (Uint32)(((Sint64)since << 16) / period);
-
-		const Uint64 before = SDL_GetPerformanceCounter();
-		showBetween(alpha, view);
-		const Uint64 took = SDL_GetPerformanceCounter() - before;
-		shown = true;
-		++picturesShown;
-
-		// a picture that took more than half a millisecond waited for the display
-		presentWaits = vsync_enabled && took * 2000 > SDL_GetPerformanceFrequency();
-		if (presentWaits)
-			nextPicture = (SDL_GetTicks() << 10) + refresh;
-		else
-			nextPicture += refresh;
-	}
-
-	if (statsEnabled)
-	{
-		++framesDue;
-		const Uint32 now = SDL_GetTicks();
-		if (now - statsSince >= 5000)
-		{
-			logInfo("Smooth motion: %lu pictures and %lu frames in %u ms (display: %d Hz)",
-			        picturesShown, framesDue, now - statsSince, (int)((1000 << 10) / refresh));
-			picturesShown = framesDue = 0;
-			statsSince = now;
-		}
-	}
+	countFrame(refresh);
 
 	return shown;
 }
@@ -673,6 +709,142 @@ void smooth_frame_shown(void)
 		indexPrev();
 
 	smooth_untag();
+}
+
+// Outside the levels.
+static bool menuWanted(void)
+{
+	return smooth_motion && !isNetworkGame && !levelrec_fast();
+}
+
+bool smooth_show_until_due(int frames, void (*show)(Uint32 alpha, const void *data), const void *data)
+{
+	if (!menuWanted())
+		return false;
+
+	const Sint32 refresh = refreshPeriod();
+	const bool shown = showUntilDue(frames * frame_period(), refresh, show, data);
+	countFrame(refresh);
+	return shown;
+}
+
+Uint32 smooth_picture_wait(void)
+{
+	if (!menuWanted())
+		return UINT32_MAX;
+
+	const Sint32 refresh = refreshPeriod();
+	const Uint32 now = SDL_GetTicks() << 10;
+	if ((Sint32)(now - nextPicture) > 4 * refresh || (Sint32)(nextPicture - now) > 4 * refresh)
+		nextPicture = now;
+
+	const Sint32 early = nextPicture - now;
+	return early <= 0 ? 0 : ((Uint32)early + 1023) >> 10;
+}
+
+void smooth_picture_shown(void)
+{
+	const Sint32 refresh = refreshPeriod();
+	const Uint32 now = SDL_GetTicks() << 10;
+	nextPicture += refresh;
+	while ((Sint32)(nextPicture - now) < 0)
+		nextPicture += refresh;
+	++picturesShown;
+}
+
+// The weapon simulator draws inside the frame of the upgrade interface, at the
+// left of the ship menu (fill_rectangle_xy in JE_weaponViewFrame).
+#define SIM_X1 8
+#define SIM_Y1 8
+#define SIM_X2 143
+#define SIM_Y2 182
+
+void smooth_sim_begin(void)
+{
+	// a frame of the simulator shortly after the last one goes on from it
+	const Uint32 now = SDL_GetTicks();
+	const bool goingOn = simFrame && now - simLast < 250;
+	simLast = now;
+
+	simFrame = menuWanted() && ensureBuffers() &&
+	           (size_t)VGAScreen->pitch * VGAScreen->h == snapshotSize &&
+	           (size_t)compose->pitch * compose->h == snapshotSize;
+	if (!simFrame)
+		return;
+
+	List *const t = prev;
+	prev = cur;
+	cur = t;
+	cur->count = 0;
+	cur->incomplete = false;
+	prevUsable = goingOn && simRedraws && prev->count > 0;
+	if (prevUsable)
+		indexPrev();
+
+	// the list of this frame starts from the screen as it is
+	targets[0] = VGAScreen;
+	targets[1] = NULL;
+	memcpy(snapshot[0], VGAScreen->pixels, snapshotSize);
+	haveSnapshot = true;
+	simRedraws = false;
+
+	smooth_untag();
+	smooth_recording = true;
+}
+
+void smooth_sim_drawn(void)
+{
+	if (!simFrame)
+		return;
+
+	smooth_recording = false;
+	smooth_untag();
+
+	memcpy(snapshot[1], VGAScreen->pixels, snapshotSize);
+	if (cur->incomplete)
+		return;
+
+	redraw(65536);
+	simRedraws = memcmp(scratch[0]->pixels, snapshot[1], snapshotSize) == 0;
+}
+
+static void showSimPicture(Uint32 alpha, const void *data)
+{
+	(void)data;
+
+	redraw(alpha);
+
+	// what was drawn over the simulator after it (the interface, the ship)
+	// stays as it is; the mouse pointer goes where the mouse is now
+	const Uint8 *const drawn = snapshot[1];
+	const Uint8 *const between = scratch[0]->pixels;
+	Uint8 *const out = compose->pixels;
+	memcpy(out, VGAScreen->pixels, snapshotSize);
+	mouse_pointer_remove(compose);
+	for (int y = SIM_Y1; y <= SIM_Y2; ++y)
+	{
+		for (int x = SIM_X1; x <= SIM_X2; ++x)
+		{
+			const size_t i = (size_t)y * compose->pitch + x;
+			if (out[i] == drawn[i])
+				out[i] = between[i];
+		}
+	}
+	handleSdlEvents();
+	mouse_pointer_draw_now(compose);
+
+	video_present(compose);
+}
+
+bool smooth_sim_show(int frames)
+{
+	if (!simFrame || !simRedraws || !prevUsable || !menuWanted())
+		return false;
+
+	const Sint32 refresh = refreshPeriod();
+	const bool shown = showUntilDue(frames * frame_period(), refresh, showSimPicture, NULL);
+	countFrame(refresh);
+	return shown;
 }
 
 void smooth_test_enable(bool enable, Uint32 alpha)

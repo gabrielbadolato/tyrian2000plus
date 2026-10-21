@@ -3367,6 +3367,23 @@ static int continueSaveSlot(void)
 	return 0;
 }
 
+static void draw_logo(int yLogo, int y2K)
+{
+	memcpy(VGAScreen->pixels, VGAScreen2->pixels, VGAScreen->pitch * VGAScreen->h);
+	blit_sprite(VGAScreenSeg, 11, yLogo, PLANET_SHAPES, 146); // tyrian logo
+	blit_sprite(VGAScreenSeg, 155, y2K, PLANET_SHAPES, 151); // 2000(tm)
+}
+
+// The logo part of the way (alpha) from where it was (slide[0], slide[1]) to
+// where it is (slide[2], slide[3]).
+static void show_logo_picture(Uint32 alpha, const void *data)
+{
+	const int *const slide = data;
+	draw_logo(slide[0] + (int)(((slide[2] - slide[0]) * (Sint64)alpha + 32768) >> 16),
+	          slide[1] + (int)(((slide[3] - slide[1]) * (Sint64)alpha + 32768) >> 16));
+	JE_showVGA();
+}
+
 bool titleScreen(void)
 {
 	enum MenuItemIndex
@@ -3441,16 +3458,32 @@ bool titleScreen(void)
 				blit_sprite(VGAScreenSeg, 155, 41, PLANET_SHAPES, 151); // 2000(tm)
 				fade_palette(colors, 10, 0, 255 - 16);
 
+				bool smoothed = false;
+				int yLogoWas = 62, y2KWas = 41;
 				for (int yLogo = 60, y2K = 45; yLogo >= 4; yLogo -= 2, ++y2K)
 				{
 					setFrameCount(2);
 
-					memcpy(VGAScreen->pixels, VGAScreen2->pixels, VGAScreen->pitch * VGAScreen->h);
-					blit_sprite(VGAScreenSeg, 11, yLogo, PLANET_SHAPES, 146); // tyrian logo
-					blit_sprite(VGAScreenSeg, 155, y2K, PLANET_SHAPES, 151); // 2000(tm)
-					JE_showVGA();
+					// with smooth motion, the logo slides at the display's refresh rate
+					const int logoSlide[4] = { yLogoWas, y2KWas, yLogo, y2K };
+					yLogoWas = yLogo;
+					y2KWas = y2K;
+					if (smooth_show_until_due(2, show_logo_picture, logoSlide))
+					{
+						smoothed = true;
+					}
+					else
+					{
+						draw_logo(yLogo, y2K);
+						JE_showVGA();
+					}
 
 					waitUntilElapsed();
+				}
+				if (smoothed)
+				{
+					draw_logo(4, 73);
+					JE_showVGA();
 				}
 				moveTyrianLogoUp = false;
 			}

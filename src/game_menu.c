@@ -40,6 +40,7 @@
 #include "player.h"
 #include "shopstats.h"
 #include "shots.h"
+#include "smooth.h"
 #include "sprite.h"
 #include "tyrian2.h"
 #include "varz.h"
@@ -1006,7 +1007,9 @@ void JE_itemScreen(void)
 							paletteChanged = false;
 						}
 
-						JE_showVGA(); /* SYN: This is where it updates the screen for the weapon sim */
+						// with smooth motion, the stars and the shots go at the display's refresh rate
+						if (backFromHelp || !smooth_sim_show(3))
+							JE_showVGA(); /* SYN: This is where it updates the screen for the weapon sim */
 
 						if (backFromHelp)
 						{
@@ -3318,6 +3321,8 @@ void JE_weaponSimUpdate(void)
 
 void JE_weaponViewFrame(void)
 {
+	smooth_sim_begin();
+
 	fill_rectangle_xy(VGAScreen, 8, 8, 143, 182, 0);
 
 	/* JE: (* Port Configuration Display *)
@@ -3389,6 +3394,8 @@ void JE_weaponViewFrame(void)
 	}
 
 	simulate_player_shots();
+
+	smooth_sim_drawn();
 
 	blit_sprite(VGAScreenSeg, 0, 0, OPTION_SHAPES, 12); // upgrade interface
 

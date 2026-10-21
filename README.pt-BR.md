@@ -66,7 +66,8 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - Movimento suave (Setup > Graphics > Smooth Motion, desligado por padrão): o
   jogo continua rodando a 35 quadros por segundo, igual ao original, mas a
   tela mostra o movimento entre um quadro e outro na taxa do seu monitor (60,
-  120, 144, 240 Hz...).
+  120, 144, 240 Hz...), nas fases, nos escurecimentos entre telas e na prévia
+  das armas do menu da nave.
 - Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
 - Tela About com a história do projeto e os créditos.

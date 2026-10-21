@@ -127,6 +127,28 @@ bool smooth_frame_due(int view);
 // JE_starShowVGA, after the frame was shown (or not): start the next one.
 void smooth_frame_shown(void);
 
+// Outside the levels.  Until the frame started with setFrameCount(frames) is
+// due, shows a picture per refresh of the display, each drawn and shown by
+// show(alpha, data) with alpha (0..65536) how far the frame has gone when it
+// shows.  Returns false (and shows nothing) if smooth motion is off or no
+// picture fits before the frame is due; then show the frame as before.
+bool smooth_show_until_due(int frames, void (*show)(Uint32 alpha, const void *data), const void *data);
+
+// The weapon simulator of the ship menu (JE_weaponViewFrame): the stars and the
+// shots are recorded like a level, on the screen, and the pictures in between
+// keep what is drawn over them after.  begin: the simulator starts drawing a
+// frame; drawn: it finished drawing what moves; show: instead of JE_showVGA,
+// returns false to show the frame as before.
+// The mouse pointer outside the levels (mouse_pointer_between): how long until
+// a picture can be shown (ms; UINT32_MAX: smooth motion is off), and a picture
+// was shown.
+Uint32 smooth_picture_wait(void);
+void smooth_picture_shown(void);
+
+void smooth_sim_begin(void);
+void smooth_sim_drawn(void);
+bool smooth_sim_show(int frames);
+
 // For the tests: record and check every frame even with smooth motion off,
 // and draw one picture in between at `alpha` (0..65536) each frame, without
 // showing it.  Returns the counts of frames that came out the same and that

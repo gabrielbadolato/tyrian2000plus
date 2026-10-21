@@ -476,8 +476,11 @@ void JE_clr256(SDL_Surface *screen)
 	SDL_FillRect(screen, NULL, 0);
 }
 
+unsigned int vga_shows = 0;
+
 void JE_showVGA(void)
 {
+	++vga_shows;
 	scale_and_flip(VGAScreen);
 }
 

@@ -73,6 +73,9 @@ void deinit_video(void);
 void JE_clr256(SDL_Surface *);
 // Shows `surface` instead of VGAScreen (smooth motion's pictures in between).
 void video_present(SDL_Surface *surface);
+// How many times JE_showVGA was called (the mouse pointer of smooth motion).
+extern unsigned int vga_shows;
+
 void JE_showVGA(void);
 
 void mapScreenPointToWindow(Sint32 *inout_x, Sint32 *inout_y);

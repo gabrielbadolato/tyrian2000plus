@@ -64,7 +64,8 @@ the open-source port of Tyrian. What this version adds:
   filter.
 - Smooth Motion (Setup > Graphics, off by default): the game still runs at
   35 frames per second, exactly as before, but the screen shows the movement
-  in between at your monitor's refresh rate (60, 120, 144, 240 Hz...).
+  in between at your monitor's refresh rate (60, 120, 144, 240 Hz...), in the
+  levels, the fades between screens and the weapon preview of the ship menu.
 - Menus, help and item names in Portuguese (Brazilian).
 - Ready-to-play builds for Windows, Linux and the Steam Deck.
 - An About screen with the story of the project and the credits.

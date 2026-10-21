@@ -24,6 +24,13 @@ change is in this repository's git log.
   and the enemies on them slide by a fraction of its movement, which was
   rounded to 1, 2, 1, 2 pixels; now they slide evenly. An enemy that flashes
   when hit no longer skips its in-between pictures.
+- **Browser: the mouse stays in the game**: during a level, once the mouse is
+  used (a click, or a key after moving it), the page holds the pointer, so the
+  ship keeps following the mouse instead of stopping when the pointer reaches
+  the edge of the page. Esc still pauses with the first press; menus,
+  keyboard and touch work as before.
+- Fixed a rare case, from the original game, where a level could never end
+  after a boss was destroyed very quickly.
 
 ## v1.4 (2026-10-21)
 

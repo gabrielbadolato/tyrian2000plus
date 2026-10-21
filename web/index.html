@@ -395,6 +395,68 @@
   }
   full.addEventListener("click", fullscreen);
 
+  // ---- The mouse during a level ----
+  // The ship follows the mouse's movement, which stops once the pointer
+  // reaches the edge of the page, unless the page holds a pointer lock.  The
+  // game asks for it during a level (mouseSetRelative in src/keyboard.c);
+  // the browser gives it only at a click or key press, so take it then, when
+  // the mouse is in use (keyboard and touch players keep their pointer).
+  // While locked the browser keeps Esc for itself (it releases the lock), so
+  // losing the lock in a level is the player's Esc: pass it to the game, which
+  // pauses with the first press.
+  var lockWanted = false, lockReleasing = false;
+  var mouseMovedAt = -1e9, escapeAt = -1e9;
+  function mouseLocked() { return document.pointerLockElement === canvas; }
+  window.tyrianMouseLock = function (on) {
+    lockWanted = !!on;
+    if (!lockWanted && mouseLocked()) {
+      lockReleasing = true;
+      document.exitPointerLock();
+    }
+    // A level started or resumed with a click or a key a moment ago still
+    // counts as one, so a mouse player is not left without it; not after
+    // Esc, which the browser would take back along with the lock.
+    if (lockWanted && performance.now() - mouseMovedAt < 30000 &&
+        performance.now() - escapeAt > 1500 &&
+        (!navigator.userActivation || navigator.userActivation.isActive))
+      takeMouseLock();
+  };
+  function takeMouseLock() {
+    if (!lockWanted || mouseLocked() || !running || saves.classList.contains("open")) return;
+    try {
+      var p = canvas.requestPointerLock();
+      if (p && p.catch) p.catch(function () {});  // refused: again at the next click or key
+    } catch (e) {}
+  }
+  canvas.addEventListener("pointermove", function (e) {
+    if (e.pointerType === "mouse") mouseMovedAt = performance.now();
+  });
+  canvas.addEventListener("pointerdown", function (e) {
+    if (e.pointerType === "mouse") takeMouseLock();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") escapeAt = performance.now();
+    else if (performance.now() - mouseMovedAt < 5000) takeMouseLock();
+  }, true);
+  document.addEventListener("pointerlockchange", function () {
+    if (mouseLocked()) return;
+    var released = lockReleasing;
+    lockReleasing = false;
+    // not when the game let it go, nor when the player left the tab or the
+    // window, nor when the Esc itself reached the game
+    if (released || !lockWanted || document.hidden || !document.hasFocus() ||
+        performance.now() - escapeAt < 500)
+      return;
+    // (a keyup first: the browser may have kept the one of an earlier Esc,
+    // and the game would take this one for the same key still held)
+    ["keyup", "keydown", "keyup"].forEach(function (type) {
+      var e = new KeyboardEvent(type, { key: "Escape", code: "Escape", bubbles: true, cancelable: true });
+      Object.defineProperty(e, "keyCode", { value: 27 });
+      Object.defineProperty(e, "which", { value: 27 });
+      window.dispatchEvent(e);
+    });
+  });
+
   overlay.addEventListener("click", start);
   document.addEventListener("keydown", function (e) {
     if (saves.classList.contains("open")) {

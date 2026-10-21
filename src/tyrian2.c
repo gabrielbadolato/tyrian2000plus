@@ -597,6 +597,65 @@ draw_enemy_end:
 	player[0].x += 25;
 }
 
+/* A boss fight whose last enemy can never be shot.  Some levels stop the map
+ * for a boss and keep it stopped until the screen is clear, with an invisible
+ * enemy above the screen, linked to the boss, holding the stop: when the boss
+ * dies, its link group dies with it, the invisible one too, and the level goes
+ * on.  In HARVEST (episode 4) the invisible one only appears when the map
+ * stops; a strong weapon that destroys the boss while it is still coming down
+ * leaves it alone, out of reach of any shot, and the level never ends (a
+ * problem of the original game).  So an enemy that holds a stopped map, has
+ * no living enemy linked to it and stays above the screen for a few seconds
+ * is taken away, as its group's death would have done. */
+#define LONE_LINKED_ENEMY_REACH_Y (-60)  // shots go up to y -15; the largest enemies reach some 30 pixels below their y
+#define LONE_LINKED_ENEMY_WAIT (5 * 35)  // frames
+
+static unsigned int loneLinkedEnemyFrames[100];
+
+static bool linked_enemy_is_alone(unsigned int i)
+{
+	const JE_byte link = enemy[i].linknum;
+
+	for (unsigned int j = 0; j < COUNTOF(enemy); ++j)
+	{
+		if (j == i || enemyAvail[j] == 1)
+			continue;
+
+		const JE_byte other = enemy[j].linknum;
+		if (other == link || (link > 40 && other > 40 && other / 20 == link / 20))
+			return false;
+	}
+	return true;
+}
+
+static void remove_lone_linked_enemies(void)
+{
+	const bool mapStopped = stopBackgroundNum == 1 && backMove == 0 && !forceEvents;
+
+	// the slots JE_drawEnemy(50) and JE_drawEnemy(100) count to release the stop
+	for (unsigned int i = 0; i < COUNTOF(enemy); ++i)
+	{
+		const bool holdsStop = (i >= 25 && i < 50) || i >= 75;
+
+		if (!mapStopped || !holdsStop || enemyAvail[i] != 0 ||
+		    enemy[i].linknum == 0 || enemy[i].linknum == 254 ||
+		    enemy[i].ey > LONE_LINKED_ENEMY_REACH_Y || !linked_enemy_is_alone(i))
+		{
+			loneLinkedEnemyFrames[i] = 0;
+			continue;
+		}
+
+		if (++loneLinkedEnemyFrames[i] >= LONE_LINKED_ENEMY_WAIT)
+		{
+			logInfo("Removed enemy %u (link %u) left alone above the screen while the map was stopped in %s.",
+			        enemy[i].enemytype, enemy[i].linknum, levelName);
+			enemyAvail[i] = 1;
+			loneLinkedEnemyFrames[i] = 0;
+		}
+	}
+}
+
+
 void JE_main(void)
 {
 	char buffer[256];
@@ -834,6 +893,7 @@ start_level_first:
 	}
 	stopBackgrounds = false;
 	stopBackgroundNum = 0;
+	memset(loneLinkedEnemyFrames, 0, sizeof(loneLinkedEnemyFrames));
 	background3x1   = false;
 	background3x1b  = false;
 	background3over = 0;
@@ -1285,6 +1345,8 @@ level_loop:
 	}
 
 	/*-----------------------Ground Enemy------------------------*/
+	remove_lone_linked_enemies();
+
 	lastEnemyOnScreen = enemyOnScreen;
 
 	tempMapXOfs = mapXOfs;

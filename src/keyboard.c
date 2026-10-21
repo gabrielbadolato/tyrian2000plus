@@ -30,6 +30,10 @@
 
 #include "SDL.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #define SDL_POLL_INTERVAL 10
 
 JE_boolean ESCPressed;
@@ -172,10 +176,14 @@ void mouseSetRelative(bool enable)
 #ifndef __EMSCRIPTEN__
 	SDL_SetRelativeMouseMode(enable && windowHasFocus);
 #else
-	// In the browser relative mode is a pointer lock: the browser takes it
-	// at the next key press after a level resumes, and then keeps the next
-	// Esc for itself (to release the mouse) instead of passing it to the
-	// game.  Mouse movement still reaches the ship without it.
+	// In the browser relative mode is a pointer lock, which keeps the next
+	// Esc for the browser (to release the mouse) instead of passing it to
+	// the game.  The page takes the lock itself during a level, when the
+	// mouse is being used, and turns that Esc into the game's pause
+	// (tyrianMouseLock in web/index.html); SDL's motion follows the lock.
+	emscripten_run_script(enable && windowHasFocus
+		? "if (window.tyrianMouseLock) window.tyrianMouseLock(true);"
+		: "if (window.tyrianMouseLock) window.tyrianMouseLock(false);");
 #endif
 
 	mouseRelativeEnabled = enable;

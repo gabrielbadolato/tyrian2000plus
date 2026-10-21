@@ -123,6 +123,11 @@ pequenas e podem seguir as regras acima normalmente.
   de jogo; Quit volta ao título). Rodar depois de mudanças grandes ou antes de
   release grande. A primeira rodada (2026-10-20) achou a leitura além de
   `mainMenuHelp` em `JE_drawMainMenuHelpText` (herdada do upstream).
+- Fase sem fim (defeito do jogo original): na HARVEST (episódio 4), destruir
+  o chefe enquanto ele desce deixa sozinho o inimigo invisível acima da tela
+  que segura o mapa parado. `remove_lone_linked_enemies()` (`src/tyrian2.c`)
+  tira, depois de 5 s, um inimigo que segura o mapa parado, sem nenhum outro
+  do seu grupo (linknum) vivo e fora do alcance dos tiros.
 - Pastas do usuário: portátil (ao lado do exe) se existir `opentyrian.cfg` lá;
   senão `%APPDATA%/Tyrian2000Plus` ou `~/.config/tyrian2000plus` (desde o PR
   #24; antes era a pasta do OpenTyrian2000). `migrateUserDir()` em

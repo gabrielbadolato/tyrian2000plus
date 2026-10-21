@@ -264,6 +264,12 @@ static int recordTest(void)
 	for (int i = 0; i < 100; ++i)
 		enemyAvail[i] = 1;
 
+	// items with a picture (the data also has some without, never shown)
+	weaponPort[1].itemgraphic = weaponPort[4].itemgraphic = 7;
+	shields[3].itemgraphic = 129;
+	special[3].itemgraphic = 275;
+	weaponPort[16].itemgraphic = 0;
+
 	gallery_load();
 	check(gallery_seen_count(GALLERY_ENEMIES) == 0, "nothing seen at first");
 
@@ -280,11 +286,11 @@ static int recordTest(void)
 	memset(itemAvail, 0, sizeof(itemAvail));
 	memset(itemAvailMax, 0, sizeof(itemAvailMax));
 	itemAvail[0][0] = 1; itemAvail[0][1] = 2; itemAvailMax[0] = 2;
-	itemAvail[1][0] = 1; itemAvail[1][1] = 4; itemAvailMax[1] = 2;
+	itemAvail[1][0] = 1; itemAvail[1][1] = 4; itemAvail[1][2] = 16; itemAvailMax[1] = 3;
 	itemAvail[8][0] = 3; itemAvailMax[8] = 1;
 	gallery_shop_items();
 	check(gallery_seen_count(GALLERY_SHIPS) == 2, "the menu's ships are seen");
-	check(gallery_seen_count(GALLERY_WEAPONS) == 2, "the menu's weapons are seen");
+	check(gallery_seen_count(GALLERY_WEAPONS) == 2, "the menu's weapons are seen, not one without a picture");
 	check(gallery_seen_count(GALLERY_OTHER) == 2, "the menu's shield is seen");
 
 	// two enemies that look the same; recorded when they are gone

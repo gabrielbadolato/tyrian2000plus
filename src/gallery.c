@@ -1026,12 +1026,36 @@ static void addEntry(EntryKind kind, unsigned int id, bool seen)
 	foundCount += seen;
 }
 
+// Whether an item of the data is a real one: the data also has items
+// without a picture, "None" and "Test" ones, which no player gets.
+static bool realItem(EntryKind kind, unsigned int id)
+{
+	const char *name;
+	unsigned int graphic;
+	switch (kind)
+	{
+	case KIND_WEAPON:    name = weaponPort[id].name; graphic = weaponPort[id].itemgraphic; break;
+	case KIND_SIDEKICK:  name = options[id].name;    graphic = options[id].itemgraphic; break;
+	case KIND_SHIELD:    name = shields[id].name;    graphic = shields[id].itemgraphic; break;
+	case KIND_GENERATOR: name = powerSys[id].name;   graphic = powerSys[id].itemgraphic; break;
+	case KIND_SPECIAL:   name = special[id].name;    graphic = special[id].itemgraphic; break;
+	default:
+		return true;
+	}
+	if (graphic == 0 || strncmp(name, "Test", 4) == 0)
+		return false;
+
+	const char *const none = tr("None");
+	return !(strncmp(name, "None", 4) == 0 && (name[4] == ' ' || name[4] == '\0')) &&
+	       !(strncmp(name, none, strlen(none)) == 0 && (name[strlen(none)] == ' ' || name[strlen(none)] == '\0'));
+}
+
 static void addItems(EntryKind kind, const bool *inShop, const bool *inShop2, const bool *seen, size_t count)
 {
 	for (size_t id = 1; id < count; ++id)
 	{
 		const bool offered = (inShop != NULL && inShop[id]) || (inShop2 != NULL && inShop2[id]);
-		if (offered || seen[id])
+		if ((offered || seen[id]) && realItem(kind, (unsigned int)id))
 			addEntry(kind, (unsigned int)id, seen[id]);
 	}
 }
@@ -1160,8 +1184,9 @@ static void drawEntryPicture(const Entry *entry)
 }
 
 // The canvas fit into a box, centered, at most `maxScale` times bigger;
-// `silhouette`: only its shape, in one color.
-static void showCanvas(SDL_Surface *surface, int bx, int by, int bw, int bh, int maxScale, bool silhouette)
+// `crop`: a long one only fits its width and is cut; `silhouette`: only its
+// shape, in one color.
+static void showCanvas(SDL_Surface *surface, int bx, int by, int bw, int bh, int maxScale, bool crop, bool silhouette)
 {
 	if (canvas.x2 <= canvas.x1)
 		return;
@@ -1180,6 +1205,12 @@ static void showCanvas(SDL_Surface *surface, int bx, int by, int bw, int bh, int
 		// shrink: the larger of the two ratios, rounded so it fits
 		num = MIN(bw * 64 / w, bh * 64 / h);
 		den = 64;
+
+		// a long row or column would be a thin line: fit its width and show
+		// its middle (crop)
+		if (crop && num * 2 < den)
+			num = MIN(den, MAX(bw * 64 / w, bh * 64 / h));
+
 		if (num < 1)
 			num = 1;
 	}
@@ -1192,13 +1223,13 @@ static void showCanvas(SDL_Surface *surface, int bx, int by, int bw, int bh, int
 	{
 		const int sy = canvas.y1 + v * den / num;
 		const int y = oy + v;
-		if (y < 0 || y >= surface->h)
+		if (y < 0 || y >= surface->h || y < by || y >= by + bh)
 			continue;
 		for (int u = 0; u < ow; ++u)
 		{
 			const int sx = canvas.x1 + u * den / num;
 			const int x = ox + u;
-			if (x < 0 || x >= surface->w)
+			if (x < 0 || x >= surface->w || x < bx || x >= bx + bw)
 				continue;
 			const size_t at = (size_t)sy * CANVAS_W + sx;
 			if (!canvas.set[at])
@@ -1332,7 +1363,7 @@ static void drawDetails(const Entry *entry)
 	// the picture
 	const int picY = y, picH = 84;
 	drawEntryPicture(entry);
-	showCanvas(VGAScreen, PANEL_X + 2, picY, PANEL_W - 4, picH, entry->kind == KIND_ENEMY ? 3 : 3, !entry->seen);
+	showCanvas(VGAScreen, PANEL_X + 2, picY, PANEL_W - 4, picH, 3, false, !entry->seen);
 	y = picY + picH + 3;
 
 	if (!entry->seen)
@@ -1441,7 +1472,8 @@ static void drawGrid(int top, int cursor)
 		}
 
 		drawEntryPicture(&entries[index]);
-		showCanvas(VGAScreen, x + 1, y + 1, CELL_W - 4, CELL_H - 4, 1, !entries[index].seen);
+		// a tiny enemy twice as big
+		showCanvas(VGAScreen, x + 1, y + 1, CELL_W - 4, CELL_H - 4, entries[index].kind == KIND_ENEMY ? 2 : 1, true, !entries[index].seen);
 	}
 
 	// more above or below

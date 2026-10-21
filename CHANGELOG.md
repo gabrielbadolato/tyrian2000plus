@@ -10,6 +10,16 @@ change is in this repository's git log.
 
 ## Next version
 
+- **What's New**: Setup > "What's New..." (also at the top of About) shows
+  what changed in each version, newest first, in English or Portuguese. When a
+  newer version is out, its notes come first, so even an old version shows
+  what the new one brings before you update. The notes come from the GitHub
+  releases, with the same request the update check already made, and are
+  kept in release-notes.txt in your user folder for when there is no
+  internet; the notes of the versions up to this one are also built into the
+  game (in English). After an update, the title screen says "New in vX! See
+  About." until the screen is opened.
+
 - **Sharp pixels by default**: Setup > Graphics > "Scaler" now starts at
   "None" instead of "Scale2x", so the game looks like the original, with no
   smoothing of the edges. If you never changed the scaler, it switches to

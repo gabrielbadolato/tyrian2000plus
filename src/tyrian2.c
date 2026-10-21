@@ -49,6 +49,7 @@
 #include "picload.h"
 #include "shots.h"
 #include "update_check.h"
+#include "whatsnew.h"
 #include "sprite.h"
 #include "stats.h"
 #include "vga256d.h"
@@ -3299,8 +3300,22 @@ void networkStartScreen(void)
 }
 #endif /* WITH_NETWORK */
 
-// bottom right of the title screen, when a newer release is out; false if none
-static bool drawUpdateNotice(SDL_Surface *surface)
+// bottom right of the title screen, after the game was updated, until What's
+// New is seen; false if not
+static bool drawWhatsNewNotice(SDL_Surface *surface)
+{
+	const char *version = whatsnew_notice_version();
+	if (version == NULL)
+		return false;
+
+	char text[64];
+	snprintf(text, sizeof(text), tr("New in %s! See About."), version);
+	drawFontHvFullShadowAligned(surface, 318, 192, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, true, 1);
+	return true;
+}
+
+// bottom right of the title screen (y), when a newer release is out; false if none
+static bool drawUpdateNotice(SDL_Surface *surface, int y)
 {
 	const char *version = update_check_newer_version();
 	if (version == NULL)
@@ -3308,7 +3323,8 @@ static bool drawUpdateNotice(SDL_Surface *surface)
 
 	char text[64];
 	snprintf(text, sizeof(text), tr("%s is out! See About."), version);
-	drawFontHvFullShadowAligned(surface, 318, 192, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, true, 1);  // black outline: readable on the light and dark parts
+
+	drawFontHvFullShadowAligned(surface, 318, y, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, true, 1);  // black outline: readable on the light and dark parts
 	return true;
 }
 
@@ -3347,6 +3363,7 @@ bool titleScreen(void)
 
 	bool restart = true;
 	bool updateNoticeShown = false;
+	bool whatsNewNoticeShown = false;
 
 	int continueSlot = continueSaveSlot();
 	// Continue is hidden without a saved game, Replay without a recorded level
@@ -3388,7 +3405,8 @@ bool titleScreen(void)
 			JE_loadPic(VGAScreen, 4, false);
 
 			drawFontHvShadow(VGAScreen, 2, 192, opentyrian_version, FONT_SMALL, 15, 0, false, 1);
-			updateNoticeShown = drawUpdateNotice(VGAScreen);
+			updateNoticeShown = drawUpdateNotice(VGAScreen, 192);
+			whatsNewNoticeShown = !updateNoticeShown && drawWhatsNewNotice(VGAScreen);
 
 			if (moveTyrianLogoUp)
 			{
@@ -3464,7 +3482,7 @@ bool titleScreen(void)
 			// The update check answered after the screen was drawn.
 			if (!updateNoticeShown && update_check_newer_version() != NULL)
 			{
-				updateNoticeShown = drawUpdateNotice(VGAScreen2);
+				updateNoticeShown = drawUpdateNotice(VGAScreen2, whatsNewNoticeShown ? 182 : 192);
 				redraw = true;
 				break;
 			}

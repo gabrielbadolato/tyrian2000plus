@@ -20,10 +20,14 @@ fi
 CFLAGS="-std=iso9899:1999 -O1 -g -DTARGET_UNIX $(pkg-config --cflags sdl2)"
 LIBS="$(pkg-config --static --libs sdl2) -lm"
 
+# CHANGELOG.md as the Makefile builds it into the program (What's New)
+sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/?/\\?/g' -e 's/\r$//' -e 's/^/"/' -e 's/$/",/' CHANGELOG.md > "$OUT/changelog.inc"
+
 for f in src/*.c; do
     o="$OUT/obj/$(basename "${f%.c}").o"
     extra=""
     [ "$f" = src/opentyr.c ] && extra="-Dmain=opentyrian_main"
+    [ "$f" = src/whatsnew.c ] && extra="-DEMBEDDED_CHANGELOG -I$OUT"
     cc $CFLAGS $extra -Isrc -c -o "$o" "$f"
 done
 
@@ -31,6 +35,7 @@ cc $CFLAGS -Isrc -o "$OUT/test_gamepad" tests/test_gamepad.c "$OUT"/obj/*.o $LIB
 cc $CFLAGS -Isrc -o "$OUT/test_saves" tests/test_saves.c "$OUT"/obj/*.o $LIBS
 cc $CFLAGS -Isrc -o "$OUT/test_migrate" tests/test_migrate.c "$OUT"/obj/*.o $LIBS
 cc $CFLAGS -Isrc -o "$OUT/test_stats" tests/test_stats.c "$OUT"/obj/*.o $LIBS
+cc $CFLAGS -Isrc -o "$OUT/test_whatsnew" tests/test_whatsnew.c "$OUT"/obj/*.o $LIBS
 
 echo "== test_gamepad"
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$OUT/test_gamepad"
@@ -44,6 +49,9 @@ rmdir "$tmp/opentyrian2000/tyrian.cfg"
 printf 'old cfg' > "$tmp/opentyrian2000/tyrian.cfg"
 XDG_CONFIG_HOME="$tmp" "$OUT/test_migrate" "$tmp" ok
 rm -rf "$tmp"
+
+echo "== test_whatsnew"
+"$OUT/test_whatsnew"
 
 echo "== test_stats"
 tmp=$(mktemp -d)

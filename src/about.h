@@ -23,4 +23,7 @@
 // credits, with links that open in the browser; until Esc, B or a right click
 void aboutScreen(void);
 
+// the same for the notes of each version (whatsnew.c)
+void whatsNewScreen(void);
+
 #endif /* ABOUT_H */

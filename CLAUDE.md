@@ -295,6 +295,24 @@ Setup > "Check Updates" (`check` na seção "updates", ligada por padrão).
 Build sem tag de versão não consulta. Para testar o aviso, compile com
 `VCS_IDREV='echo v1.0.1'`.
 
+Novidades (What's New): Setup > "What's New..." e o primeiro link do About
+abrem `whatsNewScreen()` (`src/about.c`, mesma tela rolável do About, título
+"Version History" porque a fonte grande não tem apóstrofo). O texto vem de
+`whatsnew_build()` (`src/whatsnew.c`): as notas das Releases do GitHub (a
+mesma consulta do aviso de atualização, agora `/releases?per_page=10`,
+`update_check_releases()`), guardadas em `release-notes.txt` na pasta do
+usuário para uso offline, e o `CHANGELOG.md` embutido no programa pelo
+Makefile (`obj/changelog.inc`, um texto por linha; `tests/run_tests.sh` gera
+o mesmo). Das notas da Release mostra a parte "**English**" ou
+"**Português**" conforme o idioma (o que vem antes de qualquer título conta
+como inglês): AO COLAR O PT NAS NOTAS DE UMA RELEASE, pôr o título
+"**Português**" antes dele. Versão mais nova que a instalada aparece primeiro
+("vX - new"), então até uma versão antiga mostra o que a nova traz. A fonte
+pequena não tem ">" (vira "/"). Depois de atualizar, a tela de título mostra
+"New in vX! See About." até abrir a tela (`notes_seen` na seção "updates";
+sem opentyrian.cfg conta como já visto). Teste: `tests/test_whatsnew.c`
+(aceita um JSON salvo da API como argumento).
+
 Log: o jogo grava `opentyrian.log` na pasta do usuário; peça esse arquivo
 ao investigar problemas no PC do Gabriel.
 

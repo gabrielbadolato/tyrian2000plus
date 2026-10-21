@@ -65,7 +65,7 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
   OPL3, próximo de uma placa Sound Blaster de 1995 de verdade (o som clássico
   continua sendo o padrão).
 - Mais opções de vídeo, inclusive na pausa, e o filtro Sharp Bilinear.
-- Movimento suave (Setup > Graphics > Smooth Motion, desligado por padrão): o
+- Movimento suave (Setup > Graphics > Smooth Motion, ligado por padrão): o
   jogo continua rodando a 35 quadros por segundo, igual ao original, mas a
   tela mostra o movimento entre um quadro e outro na taxa do seu monitor (60,
   120, 144, 240 Hz...), nas fases, nos escurecimentos entre telas e na prévia
@@ -165,7 +165,7 @@ instalou pelo app do itch.io não precisa do script: o app atualiza sozinho.
 **Tela do Deck:** o padrão é "Fit 4:3", fiel aos monitores de 1995. Para tela
 cheia com pixels nítidos, use Setup > Graphics > Scaling Mode > "Integer". O
 jogo roda a 35 quadros por segundo; o movimento suave (Smooth Motion, ligado
-por padrão no Deck) mostra o movimento na taxa da tela, então qualquer taxa
+por padrão) mostra o movimento na taxa da tela, então qualquer taxa
 serve. Se desligá-lo, ponha o Deck OLED em 70 Hz (perfil por jogo) e deixe o
 Deck LCD em 60 Hz. Não ligue o limite de quadros da Steam.
 

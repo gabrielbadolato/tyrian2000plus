@@ -35,7 +35,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-bool smooth_motion = false;
+bool smooth_motion = true;
+bool smooth_motion_chosen = false;
 bool smooth_fine = true;
 bool smooth_recording = false;
 
@@ -822,7 +823,14 @@ static bool showUntilDue(Sint32 period, Sint32 refresh, void (*show)(Uint32 alph
 		// a picture that took more than half a millisecond waited for the display
 		presentWaits = vsync_enabled && took * 2000 > SDL_GetPerformanceFrequency();
 		if (presentWaits)
-			nextPicture = (SDL_GetTicks() << 10) + refresh;
+		{
+			// a refresh after the display showed it, and never sooner than
+			// one after the last (so this ends even if the clock stood still)
+			const Uint32 after = (SDL_GetTicks() << 10) + refresh;
+			nextPicture += refresh;
+			if ((Sint32)(after - nextPicture) > 0)
+				nextPicture = after;
+		}
 		else
 			nextPicture += refresh;
 	}

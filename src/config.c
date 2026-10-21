@@ -317,7 +317,11 @@ static void loadOpenTyrianConfig(void)
 		if (config_get_bool_option(section, "sharp_bilinear", &sharpBilinear))
 			sharp_bilinear_enabled = sharpBilinear;
 
-		config_get_bool_option(section, "smooth_motion", &smooth_motion);
+		// On by default since v1.5: a saved "off" counts only if it was picked in a menu.
+		config_get_bool_option(section, "smooth_motion_chosen", &smooth_motion_chosen);
+		bool smoothMotion;
+		if (config_get_bool_option(section, "smooth_motion", &smoothMotion) && (smooth_motion_chosen || smoothMotion))
+			smooth_motion = smoothMotion;
 		config_get_bool_option(section, "smooth_fine", &smooth_fine);
 
 		int w, h;
@@ -456,6 +460,7 @@ static void saveOpenTyrianConfig(void)
 	config_set_bool_option(section, "sharp_bilinear", sharp_bilinear_enabled, OFF_ON);
 
 	config_set_bool_option(section, "smooth_motion", smooth_motion, OFF_ON);
+	config_set_bool_option(section, "smooth_motion_chosen", smooth_motion_chosen, NO_YES);
 	config_set_bool_option(section, "smooth_fine", smooth_fine, OFF_ON);
 
 	if (window_geometry.w > 0)

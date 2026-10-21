@@ -1566,6 +1566,7 @@ void setupMenuPage(SetupPage page)
 				case MENU_ITEM_SMOOTH_MOTION:
 				{
 					smooth_motion = pickerSelectedIndex == 1;
+					smooth_motion_chosen = true;
 					break;
 				}
 				case MENU_ITEM_BRIGHTNESS:

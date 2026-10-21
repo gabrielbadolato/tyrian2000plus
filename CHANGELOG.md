@@ -10,6 +10,9 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Smooth Motion is on by default.** If you turn it off in Setup > Graphics,
+  it stays off. (Version 1.4 saved "off" for everyone, so that saved setting
+  no longer counts unless it was picked in the menu.)
 - **Smooth Motion, finer**: in the levels, the pictures in between are now
   drawn at up to 4x the game's resolution (1280x800), chosen by the size of
   the window, so things that move less than a pixel per frame glide too. The

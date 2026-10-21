@@ -17,6 +17,19 @@ change is in this repository's git log.
   game's items (plus Continue) and spacing, so the lines no longer touch.
   "Replay" is now "Replay Last Level" in Setup, and About is only in Setup
   (it was in both places); the update notes in the corner say "See Setup."
+- **Bigger window the first time**: the game used to open in a small 640x400
+  window; now, the first time (or if the window was never resized), it opens
+  as big as fits well on the screen (1067x800 on a 1080p monitor).
+- **Sharp Bilinear on by default**: with "Fit 4:3" the picture is almost never
+  enlarged by a whole number, so some columns and rows of pixels came out wider
+  than others; now they are all the same size, on every computer (it was
+  already on for the Steam Deck). Whoever picked "Off" in the menu keeps it.
+- **All the effects of the levels, always**: the "Detail Level" option is
+  gone from Setup > Graphics and from the pause menu. Its levels were for the
+  computers of 1995 and changed only the looks; the game now always uses the
+  highest one ("Pentium"), which also shows the second background layer of
+  the levels with water or lava (left out with "High", the old default), the
+  see-through clouds and the colour filters.
 - **Smooth Motion, finer**: in the levels, the pictures in between are now
   drawn at up to 4x the game's resolution (1280x800), chosen by the size of
   the window, so things that move less than a pixel per frame glide too. The

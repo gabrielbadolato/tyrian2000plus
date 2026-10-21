@@ -193,8 +193,11 @@ Keyboard do menu de arcade) abrem as telas do Setup com
 nave; as telas antigas (MENU_JOYSTICK_CONFIG etc. em `src/game_menu.c`)
 ficaram no código, sem acesso, para não atrapalhar merges do upstream.
 Setup > Controls > Shortcuts lista Alt+Enter, Esc, P, F1 e F11 (a fonte grande
-não tem "+", por isso a tela mostra "Alt-Enter"). Setup tem "Game Speed" e
-Graphics tem "Detail Level" (mesmos `gameSpeed`/`processorType` da pausa).
+não tem "+", por isso a tela mostra "Alt-Enter"). Setup tem "Game Speed" (mesmo `gameSpeed`
+da pausa). "Detail Level" saiu do Setup e da pausa na v1.5 (decisão do Gabriel
+em 2026-10-21): `loadConfiguration` sempre põe `processorType` = 4 (Pentium,
+todos os efeitos; o "High" antigo deixava de desenhar a 2ª camada nas fases com
+água ou lava). Gravações do levelrec continuam com o valor que tinham.
 Options tem "Setup..." (antes do Done), que abre o mesmo
 `setupMenu()` da tela de título e volta com `returnToItemScreen()`
 (`src/game_menu.c`). O texto do item é inserido em `menuInt[3]` ao carregar
@@ -400,7 +403,9 @@ Emery. Estudo: `/mnt/project-files/analises/traducao-pt-br.md`.
 
 Padrão: Scaling Mode "Fit 4:3" (fiel ao monitor 4:3 de 1995). A opção
 "Sharp Bilinear" em Setup > Graphics (`sharp_bilinear` na seção "video",
-desligada por padrão) amplia primeiro por um número inteiro (pixels nítidos)
+ligada por padrão desde a v1.5, porque o Fit 4:3 quase nunca dá ampliação
+inteira; o valor salvo só vale com `sharp_bilinear_chosen = yes`, gravado ao
+escolher no menu, porque até a v1.4 todos gravavam "off") amplia primeiro por um número inteiro (pixels nítidos)
 e depois encaixa na janela com filtro bilinear, para os pixels ficarem do
 mesmo tamanho quando a ampliação não é inteira (`sharp_bilinear_prescale()`
 em `src/video.c`). Em múltiplos exatos nada muda.
@@ -417,8 +422,11 @@ igualado medindo as 41 músicas (fator 6/5).
 Scaler: o padrão é "None" desde a v1.4 (antes Scale2x; pedido do Gabriel em
 2026-10-21). Como o cfg sempre grava o scaler, "Scale2x" salvo só vale com
 `scaler_chosen = yes` (gravado quando o jogador escolhe no menu); outro scaler
-salvo é escolha e fica. A janela nunca abre menor que 640x400
-(`window_set_scaler_size()` em `src/video.c`), porque o None é só 320x200.
+salvo é escolha e fica. A janela nunca abre menor que um tamanho
+confortável para a tela (`window_set_scaler_size()` em `src/video.c`, porque o
+None é só 320x200): a maior altura múltipla de 200 em 85% da área livre, largura
+em 4:3 (1067x800 em 1080p), no mínimo 640x400. Janela salva com 640x400 (o
+tamanho de antes da v1.5, nunca mexido) conta como não salva.
 
 Brilho: Setup > Graphics > Brightness é o mesmo `gammaCorrection` da tecla
 F11 (salvo no tyrian.cfg); só vale dentro das fases.
@@ -428,7 +436,7 @@ Análise de usabilidade dos menus (o que falta, como "vídeo na pausa"):
 
 Primeira vez no Steam Deck (sem opentyrian.cfg; SteamDeck=1 ou placa "Valve"
 em /sys/devices/virtual/dmi/id/board_vendor, `running_on_steam_deck()` em
-`src/config.c`): tela cheia + Sharp Bilinear + Smooth Motion, mantendo Fit 4:3
+`src/config.c`): tela cheia + Smooth Motion (Sharp Bilinear já é padrão), mantendo Fit 4:3
 (decisão do Gabriel em 2026-10-21). Quem já tem cfg não muda.
 
 Movimento suave (`src/smooth.c`, Setup > Graphics > "Smooth Motion" e na

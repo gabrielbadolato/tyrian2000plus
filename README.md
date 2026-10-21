@@ -193,7 +193,8 @@ Controls > Shortcuts):
 | F1        | Help, in a level or in the ship menu            |
 | F11       | Brightness, during a level                      |
 
-In a window, the game opens where it was last time, with the same size.
+In a window, the game opens where it was last time, with the same size (the
+first time, as big as fits well on the screen).
 
 **Touch screen** (phone or tablet, in the browser): touch the screen and a
 stick and buttons show up beside the game (below it with the phone upright):
@@ -205,7 +206,7 @@ controls again.
 
 ## Where each option is
 
-- **Title screen > Setup:** Graphics (with the detail level), Sound,
+- **Title screen > Setup:** Graphics, Sound,
   Controls, game speed, Language, Check Updates, Saved Games, Jukebox,
   Replay Last Level, Statistics, What's New and About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
@@ -236,7 +237,7 @@ controls again.
 - **Ship menu (between levels) > Options > Setup...:** the same Setup. The
   Joystick, Keyboard and Mouse items there open the same screens as Setup >
   Controls.
-- **During a level, Start or Esc:** volume, detail level, game speed, Auto
+- **During a level, Start or Esc:** volume, game speed, Auto
   Fire, Controls... (the same Setup > Controls) and Graphics... (full screen,
   scaling, Sharp Bilinear, VSync, Smooth Motion and brightness, applied right
   away).

@@ -198,7 +198,8 @@ Setup > Controls > Shortcuts):
 | F1        | Ajuda, na fase ou no menu da nave                |
 | F11       | Brilho, durante a fase                           |
 
-Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
+Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho (na
+primeira vez, do maior tamanho que cabe bem na tela).
 
 **Tela de toque** (celular ou tablet, no navegador): toque na tela e aparecem
 um direcional e botões ao lado do jogo (embaixo dele com o celular em pé): o
@@ -210,7 +211,7 @@ os controles de toque sumirem de novo.
 
 ## Onde fica cada opção
 
-- **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
+- **Tela de título > Setup:** vídeo (Graphics), som
   (Sound), controles (Controls), velocidade do jogo (Game Speed), idioma
   (Language), aviso de versão (Check Updates), jogos salvos (Saved Games),
   Jukebox, rever a
@@ -245,7 +246,7 @@ os controles de toque sumirem de novo.
 - **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup. Os
   itens Joystick, Keyboard e Mouse de lá abrem as mesmas telas de
   Setup > Controls.
-- **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire,
+- **Durante a fase, Start ou Esc:** volume, velocidade, Auto Fire,
   Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
   Sharp Bilinear, VSync, movimento suave e brilho, aplicados na hora).
 - **Setup > Statistics (Estatísticas):** os totais de todos os seus jogos

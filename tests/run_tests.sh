@@ -3,7 +3,7 @@
 #
 #   tests/run_tests.sh [game-dir]
 #
-# test_gamepad always runs.  test_saves needs the real game: a directory with
+# test_gamepad (and the other tests without game data) always run.  test_saves needs the real game: a directory with
 # data/, tyrian.sav and tyrian.cfg (none of them are in the repository), so it
 # only runs when given one.
 set -euo pipefail
@@ -31,6 +31,8 @@ cc $CFLAGS -Isrc -o "$OUT/test_gamepad" tests/test_gamepad.c "$OUT"/obj/*.o $LIB
 cc $CFLAGS -Isrc -o "$OUT/test_saves" tests/test_saves.c "$OUT"/obj/*.o $LIBS
 cc $CFLAGS -Isrc -o "$OUT/test_migrate" tests/test_migrate.c "$OUT"/obj/*.o $LIBS
 cc $CFLAGS -Isrc -o "$OUT/test_stats" tests/test_stats.c "$OUT"/obj/*.o $LIBS
+cc $CFLAGS -Isrc -o "$OUT/test_touch" tests/test_touch.c "$OUT"/obj/*.o $LIBS
+cc $CFLAGS -Isrc -o "$OUT/test_savefile" tests/test_savefile.c "$OUT"/obj/*.o $LIBS
 
 echo "== test_gamepad"
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$OUT/test_gamepad"
@@ -49,6 +51,14 @@ echo "== test_stats"
 tmp=$(mktemp -d)
 XDG_CONFIG_HOME="$tmp" "$OUT/test_stats"
 rm -rf "$tmp"
+
+echo "== test_savefile"
+tmp=$(mktemp -d)
+XDG_CONFIG_HOME="$tmp" "$OUT/test_savefile"
+rm -rf "$tmp"
+
+echo "== test_touch"
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$OUT/test_touch"
 
 if [ "$#" -ge 1 ]; then
     echo "== test_saves"

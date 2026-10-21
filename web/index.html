@@ -13,7 +13,9 @@
     and when the game quits;
   - loads the game data (data/tyrian2000.tar) into the folder the game
     looks for it in (/data, next to the "executable");
-  - waits for a click or a key: browsers only allow sound after one.
+  - waits for a click or a key: browsers only allow sound after one;
+  - takes tyrian.sav (the saved games) to and from the computer, from the
+    first screen or from the game's Setup > Saved Games (window.tyrianSaves).
 -->
 <html lang="en">
 <head>
@@ -47,6 +49,24 @@
   #full:hover { opacity: 1; }
   body.playing #full { display: block; }
   body.playing:fullscreen #full, body.playing:has(:fullscreen) #full { display: none; }
+  /* no page scrolling or zooming while playing by touch */
+  #canvas { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #savesLink { display: none; font: inherit; font-size: 14px; background: none; border: none;
+    color: var(--fg); text-decoration: underline; cursor: pointer; padding: 4px; }
+  #overlay.ready #savesLink { display: inline-block; }
+  #saves { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.75); padding: 16px; box-sizing: border-box; z-index: 10; }
+  #saves.open { display: flex; }
+  #saves .box { max-width: 30em; width: 100%; max-height: 100%; overflow: auto; box-sizing: border-box;
+    background: #1c1608; border: 2px solid var(--accent); border-radius: 8px; padding: 18px 20px; }
+  #saves h2 { margin: 0 0 8px; font-size: 20px; color: var(--accent); }
+  #saves p { margin: 8px 0; font-size: 14px; }
+  #saves .small { color: var(--dim); font-size: 13px; }
+  #saves .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
+  #saves button { font: inherit; font-size: 15px; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+    border: 2px solid var(--accent); background: transparent; color: var(--accent); }
+  #saves button:hover, #saves button:focus-visible { background: var(--accent); color: var(--bg); outline: none; }
+  #savesMsg { min-height: 1.4em; color: var(--accent); }
 </style>
 </head>
 <body>
@@ -58,6 +78,21 @@
   <div id="status"></div>
   <button id="play" type="button"></button>
   <div id="hint"></div>
+  <button id="savesLink" type="button"></button>
+</div>
+<div id="saves" role="dialog" aria-modal="true" aria-labelledby="savesTitle">
+  <div class="box">
+    <h2 id="savesTitle"></h2>
+    <p id="savesText"></p>
+    <div class="buttons">
+      <button id="savesExport" type="button"></button>
+      <button id="savesImport" type="button"></button>
+      <button id="savesClose" type="button"></button>
+    </div>
+    <p id="savesMsg" aria-live="polite"></p>
+    <p class="small" id="savesHelp"></p>
+  </div>
+  <input id="savesFile" type="file" hidden>
 </div>
 <script>
 "use strict";
@@ -67,16 +102,46 @@
     loading: "Carregando...", data: "Carregando os dados do jogo... ",
     saves: "Abrindo os saves...", play: "Jogar",
     hint: "Os saves ficam guardados neste navegador. Tela cheia: botão no canto ou Alt-Enter. " +
-          "Controles Xbox e PlayStation funcionam (aperte um botão depois de começar).",
+          "Controles Xbox e PlayStation funcionam (aperte um botão depois de começar). " +
+          "No celular ou tablet, toque na tela para aparecerem os controles.",
     full: "Tela cheia", nodata: "Esta versão não tem os dados do jogo.",
-    error: "Não foi possível abrir o jogo: ", closed: "O jogo foi fechado.", again: "Jogar de novo"
+    error: "Não foi possível abrir o jogo: ", closed: "O jogo foi fechado.", again: "Jogar de novo",
+    savesLink: "Jogos salvos: levar para o computador ou trazer de lá",
+    savesTitle: "Jogos salvos",
+    savesText: "Seus jogos salvos e recordes ficam no arquivo tyrian.sav. O mesmo arquivo serve aqui no navegador " +
+               "e nas versões para Windows e Linux (Steam Deck).",
+    savesExport: "Baixar o tyrian.sav", savesImport: "Carregar um tyrian.sav...", savesClose: "Fechar",
+    savesHelp: "No computador: no jogo, Configurações > Jogos salvos... abre a pasta do tyrian.sav. " +
+               "Ponha o arquivo baixado lá com o jogo na tela de título (ou fechado). " +
+               "Para trazer de lá, carregue aqui o tyrian.sav dessa pasta.",
+    savesNone: "Ainda não há jogos salvos neste navegador.",
+    savesBad: "Este arquivo não parece um tyrian.sav do Tyrian 2000.",
+    savesConfirm: "Trocar os jogos salvos deste navegador pelos deste arquivo? " +
+                  "Os atuais ficam guardados como tyrian-antes-de-carregar.sav.",
+    savesDone: "Pronto: os jogos salvos foram carregados.", savesRestart: "Pronto. Reabrindo o jogo...",
+    savesFailed: "Não deu certo: "
   } : {
     loading: "Loading...", data: "Loading the game data... ",
     saves: "Opening the saves...", play: "Play",
     hint: "Your saves are kept in this browser. Full screen: the button in the corner or Alt-Enter. " +
-          "Xbox and PlayStation controllers work (press a button after the game starts).",
+          "Xbox and PlayStation controllers work (press a button after the game starts). " +
+          "On a phone or tablet, touch the screen for the controls.",
     full: "Full screen", nodata: "This build has no game data.",
-    error: "The game could not start: ", closed: "The game was closed.", again: "Play again"
+    error: "The game could not start: ", closed: "The game was closed.", again: "Play again",
+    savesLink: "Saved games: take them to a computer or bring them here",
+    savesTitle: "Saved games",
+    savesText: "Your saved games and high scores are in the file tyrian.sav. The same file works here in the " +
+               "browser and in the Windows and Linux (Steam Deck) versions.",
+    savesExport: "Download tyrian.sav", savesImport: "Load a tyrian.sav...", savesClose: "Close",
+    savesHelp: "On the computer: in the game, Setup > Saved Games... opens the folder of tyrian.sav. " +
+               "Put the downloaded file there with the game at the title screen (or closed). " +
+               "To bring it here, load the tyrian.sav from that folder.",
+    savesNone: "There are no saved games in this browser yet.",
+    savesBad: "This file does not look like a Tyrian 2000 tyrian.sav.",
+    savesConfirm: "Replace the saved games in this browser with the ones in this file? " +
+                  "The current ones are kept as tyrian-before-loading.sav.",
+    savesDone: "Done: the saved games were loaded.", savesRestart: "Done. Opening the game again...",
+    savesFailed: "That did not work: "
   };
   document.documentElement.lang = pt ? "pt-BR" : "en";
 
@@ -88,10 +153,15 @@
   play.textContent = T.play;
   full.textContent = T.full;
   document.getElementById("hint").textContent = T.hint;
+  ["savesLink", "savesTitle", "savesText", "savesExport", "savesImport", "savesClose", "savesHelp"].forEach(function (id) {
+    document.getElementById(id).textContent = T[id];
+  });
   status.textContent = T.loading;
 
-  // The game's user folder (see determineUserDirPath in src/file.c).
+  // The game's user folder (see determineUserDirPath in src/file.c), kept in
+  // IndexedDB, and the game's own folder inside it.
   var USER_DIR = "/home/web_user/.config";
+  var GAME_DIR = USER_DIR + "/tyrian2000plus";
   var syncing = false, syncAgain = false, syncTimer = 0;
 
   function fail(message) {
@@ -186,9 +256,83 @@
     });
   }
 
+  // ---- saved games: tyrian.sav to and from the computer ----
+  var saves = document.getElementById("saves");
+  var savesMsg = document.getElementById("savesMsg");
+  var savesFile = document.getElementById("savesFile");
+  var running = false;
+  // tyrian.sav: 22 save slots (2502 bytes), then Tyrian 2000's high scores (2220)
+  var SAV_MIN = 2502, SAV_MAX = 2502 + 2220;
+
+  function readSav(name) {
+    try { return Module.FS.readFile(GAME_DIR + "/" + name); } catch (e) { return null; }
+  }
+
+  function openSaves() {
+    savesMsg.textContent = "";
+    saves.classList.add("open");
+    document.getElementById("savesExport").focus();
+  }
+  function closeSaves() {
+    saves.classList.remove("open");
+    (running ? canvas : play).focus();
+  }
+
+  function exportSav() {
+    var data = readSav("tyrian.sav");
+    if (!data) { savesMsg.textContent = T.savesNone; return; }
+    var url = URL.createObjectURL(new Blob([data], { type: "application/octet-stream" }));
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "tyrian.sav";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+
+  function importSav(file) {
+    if (!file) return;
+    file.arrayBuffer().then(function (buf) {
+      var data = new Uint8Array(buf);
+      if (data.length < SAV_MIN || data.length > SAV_MAX) { savesMsg.textContent = T.savesBad; return; }
+      if (!confirm(T.savesConfirm)) return;
+      var FS = Module.FS;
+      FS.mkdirTree(GAME_DIR);
+      var old = readSav("tyrian.sav");
+      if (old) FS.writeFile(GAME_DIR + "/" + (pt ? "tyrian-antes-de-carregar.sav" : "tyrian-before-loading.sav"), old);
+      FS.writeFile(GAME_DIR + "/tyrian.sav", data);
+      // The running game keeps its saves in memory: open it again, so it
+      // reads the new file (and cannot write the old ones over it).
+      savesMsg.textContent = running ? T.savesRestart : T.savesDone;
+      FS.syncfs(false, function (err) {
+        if (err) { savesMsg.textContent = T.savesFailed + err; return; }
+        if (running) location.reload();
+      });
+    }).catch(function (e) {
+      savesMsg.textContent = T.savesFailed + e.message;
+    });
+  }
+
+  document.getElementById("savesLink").addEventListener("click", function (e) {
+    e.stopPropagation();  // not a click on the overlay (that starts the game)
+    openSaves();
+  });
+  document.getElementById("savesExport").addEventListener("click", exportSav);
+  document.getElementById("savesImport").addEventListener("click", function () { savesFile.click(); });
+  document.getElementById("savesClose").addEventListener("click", closeSaves);
+  savesFile.addEventListener("change", function () {
+    importSav(savesFile.files[0]);
+    savesFile.value = "";
+  });
+  saves.addEventListener("click", function (e) { if (e.target === saves) closeSaves(); });
+  // the game's Setup > Saved Games
+  window.tyrianSaves = { open: openSaves };
+
   function start() {
     if (!overlay.classList.contains("ready")) return;
     overlay.style.display = "none";
+    running = true;
     document.body.classList.add("playing");
     canvas.focus();
     // The level in progress is recorded as it is played (lastlevel.rec, for
@@ -211,6 +355,12 @@
 
   overlay.addEventListener("click", start);
   document.addEventListener("keydown", function (e) {
+    if (saves.classList.contains("open")) {
+      // the window's own keys, not the game's
+      e.stopPropagation();
+      if (e.key === "Escape") { e.preventDefault(); closeSaves(); }
+      return;
+    }
     if (overlay.style.display !== "none" && (e.key === "Enter" || e.key === " ")) {
       e.preventDefault();
       start();

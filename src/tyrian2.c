@@ -3366,6 +3366,7 @@ bool titleScreen(void)
 
 		if (restart)
 		{
+			reloadSavesIfReplaced();  // tyrian.sav copied in from another computer
 			continueSlot = continueSaveSlot();
 			int rows = 0;
 			for (size_t i = 0; i < COUNTOF(menuText); ++i)

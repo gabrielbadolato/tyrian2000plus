@@ -459,7 +459,7 @@ void JE_tyrianHalt(JE_byte code)
 		free(soundSamples[i]);
 
 	saveConfiguration();
-	saveSaves();
+	saveSavesUnlessReplaced();  // saves copied in from another computer stay
 
 	if (code == 5)
 		code = 0;

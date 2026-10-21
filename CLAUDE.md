@@ -314,6 +314,28 @@ do texto. `joystick_button_icon()`, `joystick_action_icons()` e
 as versões `*_label`/`*_to_string` continuam em texto (testes, logs). Família
 sem ícone para um botão cai no nome em texto.
 
+Tela de toque (`src/touch.c`, 2026-10): direcional flutuante à esquerda e
+botões TIRO, SIDEKICKS, MODO e MENU à direita, nas faixas ao lado do jogo
+(em pé, o jogo sobe e os controles ficam embaixo, `touch_adjust_game_rect`);
+desenhados com o renderer do SDL em `present()` (`src/video.c`), com a fonte
+do jogo. Aparecem no primeiro SDL_FINGERDOWN e somem com tecla real (sym != 0)
+ou controle (`poll_joystick`). O toque-vira-mouse do SDL fica desligado; dedo
+sobre o jogo vira mouse (SDL_TOUCH_MOUSEID, sem ponteiro): toque = clique nos
+menus, arrastar move a nave. Na fase entra em `JE_playerMovement` como
+analógico (antes da gravação do levelrec); nos menus vira setas/Enter/Esc em
+`push_joysticks_as_keyboard`. Mesmo código serve para um Android no futuro.
+Teste: `tests/test_touch.c`.
+
+Jogos salvos entre PC e navegador: Setup > "Saved Games..." abre a pasta do
+usuário no gerenciador de arquivos (`userDirOpenInFileManager()`,
+`src/file.c`); no navegador abre a janela da página (`window.tyrianSaves`,
+`web/index.html`) que baixa/carrega o tyrian.sav (guarda o anterior como
+tyrian-antes-de-carregar.sav / tyrian-before-loading.sav e recarrega a
+página). O tyrian.sav é o mesmo em todas as versões. `config.c` lembra o
+hash do arquivo: se outro tyrian.sav for posto na pasta com o jogo aberto,
+a tela de título relê (`reloadSavesIfReplaced`) e o fechamento não grava por
+cima (`saveSavesUnlessReplaced`). Teste: `tests/test_savefile.c`.
+
 ## Tradução
 
 Idiomas: Setup > "Language" (`lang_setting`; seção "language", `language` =

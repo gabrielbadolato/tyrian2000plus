@@ -14,7 +14,9 @@ original freeware release, unchanged.
 Free, with the original game data included: Windows installer or .zip,
 and Linux / Steam Deck. How to install is [below](#installation).
 Or play it right in the browser on the itch.io page, with nothing to
-install (your saves stay in that browser).
+install, also on a phone or tablet (on-screen controls). Your saves stay in
+that browser, and you can take them to the computer or back (see
+[Saved games](#saved-games-between-computers-and-the-browser)).
 
 <table>
   <tr>
@@ -183,13 +185,21 @@ Controls > Shortcuts):
 
 In a window, the game opens where it was last time, with the same size.
 
+**Touch screen** (phone or tablet, in the browser): touch the screen and a
+stick and buttons show up beside the game (below it with the phone upright):
+the stick moves, FIRE fires, SIDEKICKS fires both sidekicks, MODE changes the
+rear weapon and MENU opens the game menu. You can also drag a finger on the
+game itself: the ship follows it, firing. In menus, tap an item, or use the
+stick and FIRE (OK) / MENU (back). A key or a controller hides the touch
+controls again.
+
 ## Where each option is
 
 - **Title screen > About:** what the game is, where it came from, the credits
   and the links (Enter or A opens a link in your browser).
 - **Title screen > Setup:** Graphics (with the detail level), Sound,
-  Controls, game speed, Jukebox, Language, Check Updates, Statistics and
-  About.
+  Controls, game speed, Jukebox, Language, Check Updates, Saved Games,
+  Statistics and About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
   game also saves "LAST LEVEL" when you arrive at the ship after a level and
   when a level starts). Shown when there is one. If the game closed in the
@@ -224,6 +234,9 @@ In a window, the game opens where it was last time, with the same size.
   levels completed, enemies destroyed, deaths, secret levels, datacubes,
   highest score) and the records of each level: best score, fastest time and
   most enemies destroyed. Kept in statistics.cfg, next to the saves.
+- **Setup > Saved Games:** on Windows and Linux, opens the folder with
+  tyrian.sav (your saved games); in the browser, downloads or loads it. See
+  below.
 - **Setup > About:** the same About screen, to see it in the middle of a
   saved game.
 - **Setup > Language:** English or Portuguese (Brazilian) menus, help and
@@ -233,6 +246,26 @@ In a window, the game opens where it was last time, with the same size.
   published version. If there is a newer one, a note shows in the corner of
   the title screen, and About has the links to download it (itch.io and GitHub). None of your data
   is sent; without internet, nothing shows. Set it to "Off" to turn it off.
+
+## Saved games between computers and the browser
+
+All your saved games and high scores are in one file, `tyrian.sav`, the same
+in every version (it is even the original game's format).
+
+- **From the browser to the computer:** in the browser, Setup > Saved
+  Games... (or "Saved games" on the first screen, before Play) > "Download
+  tyrian.sav". On the computer, with the game at the title screen (or
+  closed), Setup > Saved Games... opens the game's folder: put the
+  downloaded `tyrian.sav` there, replacing the one in it.
+- **From the computer to the browser:** on the computer, Setup > Saved
+  Games... opens the folder with `tyrian.sav`. In the browser, Setup > Saved
+  Games... > "Load a tyrian.sav..." and pick that file. The browser keeps
+  its previous saves as `tyrian-before-loading.sav` and opens the game again.
+
+The game folder is `%APPDATA%\Tyrian2000Plus` on Windows and
+`~/.config/tyrian2000plus` on Linux and the Steam Deck. A `tyrian.sav`
+copied there while the game is open is read when you go back to the title
+screen, and the game does not write over it when it closes.
 
 ## Steam Controller tips
 

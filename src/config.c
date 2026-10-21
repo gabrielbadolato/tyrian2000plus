@@ -1017,6 +1017,54 @@ static void backUpInvalidSaves(void)
 	fileClose(&backup);
 }
 
+// What tyrian.sav held when the game last read or wrote it.  If it changes
+// on its own, someone put another one there (saves brought from another
+// computer or from the browser): it is read again at the title screen and
+// not overwritten when the game closes.
+static bool savesFileKnown = false;
+static Uint32 savesFileHash;
+
+static bool hashSavesFile(Uint32 *out_hash)
+{
+	File file = userFileOpen(tyrianSaveFilename, "rb");
+	if (file.error)
+		return false;
+
+	static Uint8 data[64 * 1024];  // tyrian.sav is about 4 KB
+	const size_t size = fileReadAtMost(&file, data, sizeof data);
+	const bool ok = !file.error;
+	fileClose(&file);
+
+	Uint32 hash = 2166136261u;  // FNV-1a
+	for (size_t i = 0; i < size; ++i)
+		hash = (hash ^ data[i]) * 16777619u;
+	*out_hash = hash ^ (Uint32)size;
+	return ok;
+}
+
+static bool savesReplaced(void)
+{
+	Uint32 hash;
+	return savesFileKnown && hashSavesFile(&hash) && hash != savesFileHash;
+}
+
+void reloadSavesIfReplaced(void)
+{
+	if (!savesLoaded || !savesReplaced())
+		return;
+
+	logInfo("'%s' was replaced; loading it again.", tyrianSaveFilename);
+	loadSaves();
+}
+
+void saveSavesUnlessReplaced(void)
+{
+	if (savesReplaced())
+		logInfo("'%s' was replaced; keeping the new one.", tyrianSaveFilename);
+	else
+		saveSaves();
+}
+
 void loadSaves(void)
 {
 	bool invalid = false;
@@ -1132,6 +1180,7 @@ void loadSaves(void)
 	}
 
 	savesLoaded = true;
+	savesFileKnown = !invalid && hashSavesFile(&savesFileHash);
 }
 
 static void encryptSaveData(Uint8 *data);
@@ -1202,6 +1251,8 @@ void saveSaves(void)
 
 		fileClose(&file);
 	}
+
+	savesFileKnown = hashSavesFile(&savesFileHash);
 }
 
 void encryptSaveData(Uint8 *data)

@@ -31,7 +31,7 @@ mkdir -p "$OUT/obj" "$RUNS"
 if [ -f build/sdl/lib/pkgconfig/sdl2.pc ]; then
     export PKG_CONFIG_PATH="$PWD/build/sdl/lib/pkgconfig"
 fi
-CFLAGS="-std=iso9899:1999 -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -DTARGET_UNIX $(pkg-config --cflags sdl2)"
+CFLAGS="${EXTRA_CFLAGS:-} -std=iso9899:1999 -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -DTARGET_UNIX $(pkg-config --cflags sdl2)"
 LIBS="$(pkg-config --static --libs sdl2) -lm"
 
 # SKIP_BUILD=1: use the program built by the last run

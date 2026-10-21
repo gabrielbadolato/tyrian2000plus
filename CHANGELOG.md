@@ -20,6 +20,8 @@ change is in this repository's git log.
   you are taken back to the ship, to start the level again.
 - **Replay**: a new title screen item, "Replay", shows the last level you
   played again, from its recording. Any key or button stops it.
+- Fixed a special weapon fired next to another one reading past the end of
+  its weapon data (from the original game) (#41).
 
 ## v1.2 (2026-10-20)
 

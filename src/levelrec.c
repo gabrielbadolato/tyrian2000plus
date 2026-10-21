@@ -105,6 +105,7 @@ typedef struct
 	Sint8 flareColChg, specialWeaponFilter, specialWeaponFreq, levelFilterNew;
 	Uint8 doIced;
 	Sint16 explosionFollowAmountX, explosionFollowAmountY;
+	float optionSatelliteRotate;  // where orbiting sidekicks are
 } StartState;
 
 typedef struct
@@ -398,6 +399,7 @@ static void captureStart(StartState *start)
 	start->doIced = doIced;
 	start->explosionFollowAmountX = explosionFollowAmountX;
 	start->explosionFollowAmountY = explosionFollowAmountY;
+	start->optionSatelliteRotate = optionSatelliteRotate;
 }
 
 static bool sameLevel(const StartState *a, const StartState *b)
@@ -460,6 +462,7 @@ static void restoreStart(const StartState *start)
 	doIced = start->doIced;
 	explosionFollowAmountX = start->explosionFollowAmountX;
 	explosionFollowAmountY = start->explosionFollowAmountY;
+	optionSatelliteRotate = start->optionSatelliteRotate;
 }
 
 // the parts of a save that matter for playing (not the name or high score)
@@ -503,6 +506,12 @@ static Uint32 stateChecksum(void)
 	for (unsigned int i = 0; i < COUNTOF(enemy); ++i)
 		if (enemyAvail[i] != 1)
 			logInfo("  e%u av%u %d,%d ar%u", i, enemyAvail[i], enemy[i].ex, enemy[i].ey, enemy[i].armorleft);
+	for (unsigned int i = 0; i < MAX_PWEAPON; ++i)
+		if (shotAvail[i] != 0)
+			logInfo("  s%u %d,%d av%u", i, playerShotData[i].shotX, playerShotData[i].shotY, shotAvail[i]);
+	logInfo("  pow %u %u rep %u %u %u %u %u %u %u %u %u %u %u multi %u %u %u %u %u %u %u %u %u %u %u",
+	        power, lastPower, shotRepeat[0], shotRepeat[1], shotRepeat[2], shotRepeat[3], shotRepeat[4], shotRepeat[5], shotRepeat[6], shotRepeat[7], shotRepeat[8], shotRepeat[9], shotRepeat[10],
+	        shotMultiPos[0], shotMultiPos[1], shotMultiPos[2], shotMultiPos[3], shotMultiPos[4], shotMultiPos[5], shotMultiPos[6], shotMultiPos[7], shotMultiPos[8], shotMultiPos[9], shotMultiPos[10]);
 #endif
 
 	hash = mix(hash, mt_state_checksum());
@@ -841,6 +850,15 @@ void levelrec_level_begin(void)
 
 void levelrec_frame(void)
 {
+#ifdef LEVELREC_DEBUG
+	if (mode != MODE_OFF && frame < 36)
+		for (unsigned int i = 0; i < MAX_PWEAPON; ++i)
+			if (shotAvail[i] != 0)
+				logInfo("F%u s%u %d,%d m%d,%d c%d,%d dev%d,%d cx%d aim%u gr%u p%u dx%d", frame, i, playerShotData[i].shotX, playerShotData[i].shotY,
+				        playerShotData[i].shotXM, playerShotData[i].shotYM, playerShotData[i].shotXC, playerShotData[i].shotYC,
+				        playerShotData[i].shotDevX, playerShotData[i].shotDevY, playerShotData[i].shotComplicated, playerShotData[i].aimAtEnemy,
+				        playerShotData[i].shotGr, playerShotData[i].playerNumber, player[0].delta_x_shot_move);
+#endif
 	if (pausePending)
 	{
 		pausePending = false;

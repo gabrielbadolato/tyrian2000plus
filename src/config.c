@@ -32,6 +32,7 @@
 #include "opentyr.h"
 #include "player.h"
 #include "update_check.h"
+#include "whatsnew.h"
 #include "varz.h"
 #include "video.h"
 #include "video_scale.h"
@@ -339,12 +340,19 @@ static void loadOpenTyrianConfig(void)
 		}
 	}
 
+	// a player from before What's New had its notice to see
+	SDL_strlcpy(whatsnew_seen, "v0", sizeof(whatsnew_seen));
+
 	section = config_find_section(config, "updates", NULL);
 	if (section != NULL)
 	{
 		bool check;
 		if (config_get_bool_option(section, "check", &check))
 			update_check_enabled = check;
+
+		const char *seen;
+		if (config_get_string_option(section, "notes_seen", &seen))
+			SDL_strlcpy(whatsnew_seen, seen, sizeof(whatsnew_seen));
 	}
 
 	section = config_find_section(config, "keyboard", NULL);
@@ -442,6 +450,8 @@ static void saveOpenTyrianConfig(void)
 		exit(EXIT_FAILURE);  // out of memory
 
 	config_set_bool_option(section, "check", update_check_enabled, OFF_ON);
+	if (whatsnew_seen[0] != '\0')
+		config_set_string_option(section, "notes_seen", whatsnew_seen);
 
 	section = config_find_or_add_section(config, "keyboard", NULL);
 	if (section == NULL)

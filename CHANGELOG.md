@@ -8,6 +8,18 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **What's New**: Setup > "What's New..." (also at the top of About) shows
+  what changed in each version, newest first, in English or Portuguese. When a
+  newer version is out, its notes come first, so even an old version shows
+  what the new one brings before you update. The notes come from the GitHub
+  releases, with the same request the update check already made, and are
+  kept in release-notes.txt in your user folder for when there is no
+  internet; the notes of the versions up to this one are also built into the
+  game (in English). After an update, the title screen says "New in vX! See
+  About." until the screen is opened.
+
 ## v1.3 (2026-10-20)
 
 - **Classic music by default**: the music sounds as it always did in

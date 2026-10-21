@@ -148,6 +148,12 @@ void lang_from_utf8(char *dst, size_t size, const char *utf8)
 		{ 0xD5, ACCENT_O_TILDE },
 		{ 0xDA, ACCENT_U_ACUTE },
 		{ 0x25A0, 254 },  // ■, a separator in the help texts
+		{ 0x2013, '-' },  // dashes and curly quotes, common in pasted notes
+		{ 0x2014, '-' },
+		{ 0x2018, '\'' },
+		{ 0x2019, '\'' },
+		{ 0x201C, '"' },
+		{ 0x201D, '"' },
 	};
 
 	if (size == 0)

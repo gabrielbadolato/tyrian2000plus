@@ -20,6 +20,8 @@
  * About: what Tyrian 2000+ is, where it came from and who made it.  The
  * original game's credits are read from tyrian.cdt, so they are the game's
  * own.  Link lines open in the browser with Enter (A on a controller).
+ *
+ * What's New (whatsnew.c gives its text) is shown the same way.
  */
 #include "about.h"
 
@@ -40,6 +42,7 @@
 #include "update_check.h"
 #include "vga256d.h"
 #include "video.h"
+#include "whatsnew.h"
 
 #include "SDL.h"
 
@@ -53,6 +56,7 @@ typedef enum
 	STYLE_TEXT,
 	STYLE_NAME,
 	STYLE_LINK,
+	STYLE_SUBHEADING,
 	STYLE_CREDITS,  // not a line: where the original game's credits go
 } AboutStyle;
 
@@ -124,11 +128,15 @@ static const AboutEntry aboutEntries[] =
 typedef struct
 {
 	AboutStyle style;
+	int indent;   // pixels
+	bool bullet;  // the first line of a list item
 	char text[80];
-	const char *url;
+	char url[192];  // "" if not a link; WHATS_NEW_LINK opens What's New
 } AboutLine;
 
-#define MAX_LINES 256
+#define WHATS_NEW_LINK "#whatsnew"
+
+#define MAX_LINES 1024
 
 static AboutLine lines[MAX_LINES];
 static int lineCount;
@@ -158,16 +166,20 @@ static void addLine(AboutStyle style, const char *text, size_t len, const char *
 
 	AboutLine *line = &lines[lineCount++];
 	line->style = style;
+	line->indent = 0;
+	line->bullet = false;
 	len = MIN(len, sizeof(line->text) - 1);
 	memcpy(line->text, text, len);
 	line->text[len] = '\0';
-	line->url = url;
+	SDL_strlcpy(line->url, url != NULL ? url : "", sizeof(line->url));
 }
 
-// breaks text into lines that fit TEXT_WIDTH
-static void addWrapped(AboutStyle style, const char *text)
+// breaks text into lines that fit TEXT_WIDTH, the ones after the first
+// indented (a list item has a dash before its first line)
+static void addWrappedIndented(AboutStyle style, const char *text, int indent, bool bullet)
 {
 	const Font font = lineFont(style);
+	const int width = TEXT_WIDTH - indent;
 
 	while (*text != '\0')
 	{
@@ -184,7 +196,7 @@ static void addWrapped(AboutStyle style, const char *text)
 				break;
 			memcpy(buffer, text, len);
 			buffer[len] = '\0';
-			if (fit > 0 && JE_textWidth(buffer, font) > TEXT_WIDTH)
+			if (fit > 0 && JE_textWidth(buffer, font) > width)
 				break;
 
 			fit = len;
@@ -196,12 +208,24 @@ static void addWrapped(AboutStyle style, const char *text)
 		if (fit == 0)  // a single word too long for a line
 			fit = MIN(len, sizeof(buffer) - 1);
 
+		const int first = lineCount;
 		addLine(style, text, fit, NULL);
+		if (lineCount > first)
+		{
+			lines[first].indent = indent;
+			lines[first].bullet = bullet;
+		}
+		bullet = false;
 
 		text += fit;
 		while (*text == ' ')
 			++text;
 	}
+}
+
+static void addWrapped(AboutStyle style, const char *text)
+{
+	addWrappedIndented(style, text, 0, false);
 }
 
 // the original game's credits, from tyrian.cdt: a name, then what they did
@@ -261,10 +285,10 @@ static void addOriginalCredits(void)
 	}
 }
 
-static void buildLines(void)
+// when a newer release is out: what it is and where to get it (and, in
+// About, a link to its notes); false if none
+static bool addNewerVersion(bool notesLink)
 {
-	lineCount = 0;
-
 	const char *newerVersion = update_check_newer_version();
 	if (newerVersion != NULL)
 	{
@@ -272,8 +296,25 @@ static void buildLines(void)
 		addWrapped(STYLE_HEADING, tr("New version available"));
 		snprintf(text, sizeof(text), tr("Tyrian 2000+ %s is out (this is %s). Download it from one of the links below. On the Steam Deck, run atualizar-tyrian.sh again."), newerVersion, opentyrian_version);
 		addWrapped(STYLE_TEXT, text);
+		if (notesLink)
+		{
+			snprintf(text, sizeof(text), tr("What's new in %s..."), newerVersion);
+			addLine(STYLE_LINK, text, strlen(text), WHATS_NEW_LINK);
+		}
 		addLine(STYLE_LINK, tr("Download on itch.io"), strlen(tr("Download on itch.io")), UPDATE_CHECK_ITCH_URL);
 		addLine(STYLE_LINK, tr("Download on GitHub"), strlen(tr("Download on GitHub")), UPDATE_CHECK_RELEASES_URL);
+		addLine(STYLE_BLANK, "", 0, NULL);
+	}
+	return newerVersion != NULL;
+}
+
+static void buildAboutLines(void)
+{
+	lineCount = 0;
+
+	if (!addNewerVersion(true))
+	{
+		addLine(STYLE_LINK, tr("What's New..."), strlen(tr("What's New...")), WHATS_NEW_LINK);
 		addLine(STYLE_BLANK, "", 0, NULL);
 	}
 
@@ -297,6 +338,43 @@ static void buildLines(void)
 			break;
 		}
 	}
+}
+
+static void addNotesLine(NotesStyle style, const char *text, const char *url)
+{
+	switch (style)
+	{
+	case NOTES_BLANK:
+		addLine(STYLE_BLANK, "", 0, NULL);
+		break;
+	case NOTES_HEADING:
+		addWrapped(STYLE_HEADING, text);
+		break;
+	case NOTES_SUBHEADING:
+		addWrapped(STYLE_SUBHEADING, text);
+		break;
+	case NOTES_BULLET:
+		addWrappedIndented(STYLE_TEXT, text, 8, true);
+		break;
+	case NOTES_SUBBULLET:
+		addWrappedIndented(STYLE_TEXT, text, 16, true);
+		break;
+	case NOTES_LINK:
+		addLine(STYLE_LINK, text, strlen(text), url);
+		break;
+	default:
+		addWrapped(STYLE_TEXT, text);
+		break;
+	}
+}
+
+static void buildWhatsNewLines(void)
+{
+	lineCount = 0;
+
+	addNewerVersion(false);
+
+	whatsnew_build(addNotesLine);
 }
 
 static void drawLines(int top, int cursor)
@@ -345,13 +423,16 @@ static void drawLines(int top, int cursor)
 			break;
 		}
 		case STYLE_NAME:
+		case STYLE_SUBHEADING:
 			drawFontHvShadow(VGAScreen, TEXT_X, y, line->text, FONT_SMALL, 15, 6, false, 1);
 			break;
 		case STYLE_LINK:
 			drawFontHvShadow(VGAScreen, TEXT_X + 8, y, line->text, FONT_SMALL, 13, selected ? 6 : 2, false, 1);
 			break;
 		default:
-			drawFontHvShadow(VGAScreen, TEXT_X, y, line->text, FONT_SMALL, 15, selected ? 4 : 2, false, 1);
+			if (line->bullet)
+				drawFontHvShadow(VGAScreen, TEXT_X + line->indent - 7, y, "-", FONT_SMALL, 15, selected ? 4 : 2, false, 1);
+			drawFontHvShadow(VGAScreen, TEXT_X + line->indent, y, line->text, FONT_SMALL, 15, selected ? 4 : 2, false, 1);
 			break;
 		}
 	}
@@ -369,7 +450,7 @@ static void drawLines(int top, int cursor)
 
 static bool openLink(const AboutLine *line)
 {
-	if (line->url == NULL)
+	if (line->url[0] == '\0')
 		return false;
 
 	if (SDL_OpenURL(line->url) != 0)
@@ -382,7 +463,8 @@ static bool openLink(const AboutLine *line)
 	return true;
 }
 
-void aboutScreen(void)
+// a page of lines that scrolls, until Esc, B or a right click
+static void scrollScreen(const char *title, void (*buildLines)(void))
 {
 	JE_loadPic(VGAScreen2, 2, false);
 	fill_rectangle_wh(VGAScreen2, 0, 192, 320, 8, 0);
@@ -405,7 +487,7 @@ void aboutScreen(void)
 
 		memcpy(VGAScreen->pixels, VGAScreen2->pixels, (size_t)VGAScreen->pitch * VGAScreen->h);
 
-		drawFontHvShadowAligned(VGAScreen, 160, 4, tr("About"), FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
+		drawFontHvShadowAligned(VGAScreen, 160, 4, tr(title), FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
 
 		drawLines(top, cursor);
 
@@ -413,6 +495,8 @@ void aboutScreen(void)
 		char help[128];
 		if (status != NULL)
 			snprintf(help, sizeof(help), "%s", tr(status));
+		else if (strcmp(lines[cursor].url, WHATS_NEW_LINK) == 0)
+			snprintf(help, sizeof(help), tr("Enter (%s): see what changed in each version."), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A));
 		else if (lines[cursor].style == STYLE_LINK)
 			snprintf(help, sizeof(help), tr("Enter (%s): open this link in your browser."), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A));
 		else
@@ -433,6 +517,7 @@ void aboutScreen(void)
 
 		const int oldCursor = cursor;
 		bool done = false;
+		int activate = -1;  // the link chosen
 
 		KeyboardInput keyboardInput;
 		while (keyboardGetInput(&keyboardInput))
@@ -461,11 +546,8 @@ void aboutScreen(void)
 				break;
 			case SDL_SCANCODE_RETURN:
 			case SDL_SCANCODE_SPACE:
-				if (lines[cursor].url != NULL)
-				{
-					JE_playSampleNum(S_SELECT);
-					status = openLink(&lines[cursor]) ? "Opening the link in your browser..." : "Could not open the browser. The link is shown above.";
-				}
+				if (lines[cursor].url[0] != '\0')
+					activate = cursor;
 				break;
 			case SDL_SCANCODE_ESCAPE:
 				done = true;
@@ -488,13 +570,29 @@ void aboutScreen(void)
 				if (mouseInput.y >= LIST_Y && i < lineCount && i < top + VISIBLE_LINES)
 				{
 					cursor = i;
-					if (lines[i].url != NULL)
-					{
-						JE_playSampleNum(S_SELECT);
-						status = openLink(&lines[i]) ? "Opening the link in your browser..." : "Could not open the browser. The link is shown above.";
-					}
+					if (lines[i].url[0] != '\0')
+						activate = i;
 				}
 			}
+		}
+
+		if (activate >= 0 && strcmp(lines[activate].url, WHATS_NEW_LINK) == 0)
+		{
+			JE_playSampleNum(S_SELECT);
+			fade_black(10);
+
+			whatsNewScreen();
+
+			fade_black(10);
+			JE_loadPic(VGAScreen2, 2, false);
+			fill_rectangle_wh(VGAScreen2, 0, 192, 320, 8, 0);
+			buildLines();
+			fadeIn = true;
+		}
+		else if (activate >= 0)
+		{
+			JE_playSampleNum(S_SELECT);
+			status = openLink(&lines[activate]) ? "Opening the link in your browser..." : "Could not open the browser. The link is shown above.";
 		}
 
 		cursor = MAX(0, MIN(cursor, lineCount - 1));
@@ -510,4 +608,16 @@ void aboutScreen(void)
 			return;
 		}
 	}
+}
+
+void aboutScreen(void)
+{
+	scrollScreen("About", buildAboutLines);
+}
+
+void whatsNewScreen(void)
+{
+	whatsnew_mark_seen();
+
+	scrollScreen("Version History", buildWhatsNewLines);  // the large font has no "'"
 }

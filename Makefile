@@ -175,6 +175,7 @@ clean :
 	rm -f $(OBJS)
 	rm -f $(DEPS)
 	rm -f $(RES)
+	rm -f obj/changelog.inc
 	rm -f $(TARGET)
 
 $(TARGET) : $(OBJS) $(RES)
@@ -185,6 +186,14 @@ $(TARGET) : $(OBJS) $(RES)
 obj/%.o : src/%.c
 	@mkdir -p "$(dir $@)"
 	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c -o $@ $<
+
+# CHANGELOG.md inside the program, one C string per line, for What's New
+obj/changelog.inc : CHANGELOG.md
+	@mkdir -p "$(dir $@)"
+	sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/?/\\?/g' -e 's/\r$$//' -e 's/^/"/' -e 's/$$/",/' $< > $@
+
+obj/whatsnew.o : obj/changelog.inc
+obj/whatsnew.o : EXTRA_CPPFLAGS += -DEMBEDDED_CHANGELOG -Iobj
 
 # v1.2.3-4-gabcdef -> 1,2,3,0 for the exe's version info (nothing if no tag)
 RC_VERSION_NUM := $(shell echo '$(OPENTYRIAN_VERSION)' | \

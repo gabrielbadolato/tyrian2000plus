@@ -222,11 +222,31 @@ static Uint8 dosKeySettings[8] = { 0 };  // FKA keySettings
 
 static const char *const opentyrianConfigFilename = "opentyrian.cfg";
 
+// SteamOS sets SteamDeck=1 for what Steam starts; the board name covers the Desktop Mode terminal
+static bool running_on_steam_deck(void)
+{
+	const char *deck = SDL_getenv("SteamDeck");
+	if (deck != NULL && SDL_strcmp(deck, "1") == 0)
+		return true;
+
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+	FILE *f = fopen("/sys/devices/virtual/dmi/id/board_vendor", "r");
+	if (f == NULL)
+		return false;
+	char vendor[16] = "";
+	const bool read = fgets(vendor, sizeof(vendor), f) != NULL;
+	fclose(f);
+	return read && strncmp(vendor, "Valve", 5) == 0;
+#else
+	return false;
+#endif
+}
+
 static void loadOpenTyrianConfig(void)
 {
 	// defaults
 	fullscreen_display = -1;
-	set_scaler_by_name("Scale2x");
+	set_scaler_by_name("None");
 	memcpy(keySettings, defaultKeySettings, sizeof(keySettings));
 	memcpy(mouseSettings, defaultMouseSettings, sizeof(mouseSettings));
 	
@@ -236,6 +256,15 @@ static void loadOpenTyrianConfig(void)
 	if (file.error)
 	{
 		logWarn("Failed to open '%s': %s", opentyrianConfigFilename, fileGetError(&file));
+
+		// First start on a Steam Deck: full screen, and the 4:3 picture with even pixels
+		// (1280x800 enlarges 320x200 by 4 down but 3.33 across in Fit 4:3).
+		if (running_on_steam_deck())
+		{
+			logInfo("Steam Deck: starting in full screen with Sharp Bilinear.");
+			fullscreen_display = 0;
+			sharp_bilinear_enabled = true;
+		}
 
 		return;
 	}
@@ -260,9 +289,17 @@ static void loadOpenTyrianConfig(void)
 	{
 		config_get_int_option(section, "fullscreen", &fullscreen_display);
 		
+		// Scale2x was the default up to v1.3 and was saved for everyone, so it only counts
+		// when the player picked it in a menu; any other saved scaler was a choice.
+		config_get_bool_option(section, "scaler_chosen", &scaler_chosen);
+
 		const char *scaler;
-		if (config_get_string_option(section, "scaler", &scaler))
+		if (config_get_string_option(section, "scaler", &scaler) &&
+		    (scaler_chosen || strcmp(scaler, "Scale2x") != 0))
+		{
 			set_scaler_by_name(scaler);
+			scaler_chosen = scaler_chosen || strcmp(scaler, "None") != 0;
+		}
 		
 		const char *scaling_mode;
 		if (config_get_string_option(section, "scaling_mode", &scaling_mode))
@@ -396,6 +433,7 @@ static void saveOpenTyrianConfig(void)
 	config_set_int_option(section, "fullscreen", fullscreen_display);
 	
 	config_set_string_option(section, "scaler", scalers[scaler].name);
+	config_set_bool_option(section, "scaler_chosen", scaler_chosen, NO_YES);
 	
 	config_set_string_option(section, "scaling_mode", scaling_mode_names[scaling_mode]);
 

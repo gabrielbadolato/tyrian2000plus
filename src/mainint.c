@@ -2067,6 +2067,7 @@ JE_boolean JE_inGameSetup(void)
 			{
 				JE_playSampleNum(S_CURSOR);
 
+				scaler_chosen = true;
 				const int oldScaler = scaler;
 				if (!init_scaler((scaler + scalers_count + step) % scalers_count) &&  // try new scaler
 				    !init_scaler(oldScaler))                                        // revert on fail

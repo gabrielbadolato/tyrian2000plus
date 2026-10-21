@@ -40,6 +40,7 @@ void hq3x_32(SDL_Surface *src_surface, SDL_Texture *dst_texture);
 void hq4x_32(SDL_Surface *src_surface, SDL_Texture *dst_texture);
 
 uint scaler;
+bool scaler_chosen = false;  // picked in a menu (v1.3 and older always saved the old default)
 
 const struct Scalers scalers[] =
 {

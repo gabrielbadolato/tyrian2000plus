@@ -36,6 +36,7 @@
 #include <string.h>
 
 bool smooth_motion = false;
+bool smooth_fine = true;
 bool smooth_recording = false;
 
 // A draw of the frame.  dst and src are surfaces: 0 and 1 of targets[].
@@ -109,6 +110,7 @@ static Sint32 levelFramePeriod = 0;
 
 static bool testEnabled = false;
 static Uint32 testAlpha = 0;
+static unsigned long testFrames = 0, testFineDifferent = 0;  // finer pictures checked, and wrong
 static unsigned long testSame = 0, testDifferent = 0, testSkipped = 0;
 
 // A thing that moved more than this between two frames jumped (it is a new
@@ -229,10 +231,28 @@ static const Entry *findPrev(const Entry *e)
 	return NULL;
 }
 
-// The point at `alpha` (0..65536) of the way from `from` to `to`.
-static int between(int from, int to, Uint32 alpha)
+// Finer pictures: the picture in between is drawn `fineScale` times bigger
+// than the game's screen, so a thing can stand a fraction of a pixel of the
+// game away from where it was (the farthest background moves one pixel per
+// frame: without this it would not move in between at all).  Each pixel of
+// the game becomes fineScale x fineScale pixels; the pixels at the same place
+// (phase) in each of them make a picture the size of the game's screen, and
+// in it a thing a fraction of a pixel to the right shows either where it is or
+// one pixel to the right.  So the big picture is the list redrawn once per
+// phase with the game's own drawing, and the phases woven together.
+static int fineScale = 1, phaseX = 0, phaseY = 0;
+
+static int floorDiv(int a, int b)
 {
-	return from + (int)(((Sint64)(to - from) * alpha + 32768) >> 16);
+	return a >= 0 ? a / b : -((-a + b - 1) / b);
+}
+
+// Where to draw, in the phase being drawn, a thing `alpha` of the way from
+// `from` to `to`.
+static int phased(int from, int to, Uint32 alpha, int phase)
+{
+	const int fine = from * fineScale + (int)(((Sint64)(to - from) * fineScale * alpha + 32768) >> 16);
+	return floorDiv(fine - phase + fineScale - 1, fineScale);
 }
 
 static void drawEntry(const Entry *e, int x, int y, intptr_t b, intptr_t c)
@@ -363,8 +383,8 @@ static void drawBackgroundBetween(const Entry *e, const Entry *p, Uint32 alpha)
 
 		if (abs(dy) <= 2 * 28 && abs(dx) <= 2 * 24)
 		{
-			y -= dy - between(0, dy, alpha);
-			x -= dx - between(0, dx, alpha);
+			y = phased(y - dy, y, alpha, phaseY);
+			x = phased(x - dx, x, alpha, phaseX);
 
 			// back into a tile, between the two frames' tiles
 			while (y < 0)
@@ -394,9 +414,14 @@ static void drawBackgroundBetween(const Entry *e, const Entry *p, Uint32 alpha)
 }
 
 // Redraws the frame being drawn (cur) from the snapshot, with everything that
-// moved at `alpha` of the way from the last frame (65536: where it is now).
-static void redraw(Uint32 alpha)
+// moved at `alpha` of the way from the last frame (65536: where it is now), in
+// the phase (x, y) of a picture `scale` times bigger (1: the game's size).
+static void redrawPhase(Uint32 alpha, int scale, int x, int y)
 {
+	fineScale = scale;
+	phaseX = x;
+	phaseY = y;
+
 	memcpy(scratch[0]->pixels, snapshot[0], snapshotSize);
 	memcpy(scratch[1]->pixels, snapshot[1], snapshotSize);
 
@@ -422,11 +447,16 @@ static void redraw(Uint32 alpha)
 		}
 		else
 		{
-			drawEntry(e, between(p->x, e->x, alpha), between(p->y, e->y, alpha), e->b, e->c);
+			drawEntry(e, phased(p->x, e->x, alpha, phaseX), phased(p->y, e->y, alpha, phaseY), e->b, e->c);
 		}
 	}
 
 	smooth_recording = wasRecording;
+}
+
+static void redraw(Uint32 alpha)
+{
+	redrawPhase(alpha, 1, 0, 0);
 }
 
 static bool ensureBuffers(void)
@@ -529,10 +559,9 @@ static Sint32 refreshPeriod(void)
 	return (1000 << 10) / hz;
 }
 
-static void showBetween(Uint32 alpha, int view)
+// The screen (the HUD, and the playfield redrawn in scratch[0]) in compose.
+static void composeScreen(int view)
 {
-	redraw(alpha);
-
 	memcpy(compose->pixels, VGAScreenSeg->pixels, (size_t)compose->pitch * compose->h);
 	if (view == 1)
 		showFlipped(compose, scratch[0]);
@@ -540,7 +569,103 @@ static void showBetween(Uint32 alpha, int view)
 		showHeadlight(compose, scratch[0], player[0].x, player[0].y);
 	else
 		showNormal(compose, scratch[0]);
-	video_present(compose);
+}
+
+// The finer picture (fineScale x the screen), and the scale it was made at.
+static Uint8 *fine = NULL;
+static size_t fineSize = 0;
+static int fineLimit = SMOOTH_FINE_MAX;  // lowered when the pictures take too long
+static Uint64 renderTook = 0;  // how long the last picture took to draw (not to show)
+static Uint64 renderSum = 0;
+static unsigned int renderCount = 0;
+static Uint64 statsRender = 0, statsShow = 0;  // TYRIAN_SMOOTH_STATS: time drawing and showing
+static int statsScale = 1;
+
+// How much finer the pictures in between are drawn (1: as the game).
+static int pictureScale(void)
+{
+	if (!smooth_fine)
+		return 1;
+	const int scale = video_fine_scale();
+	return scale < fineLimit ? scale : fineLimit;
+}
+
+// The picture `alpha` of the way from the last frame, `scale` times finer, in
+// fine (its pixels as the game's).
+static bool drawFine(Uint32 alpha, int view, int scale)
+{
+	const int w = compose->w * scale, h = compose->h * scale;
+	if (fineSize < (size_t)w * h)
+	{
+		free(fine);
+		fine = malloc((size_t)w * h);
+		fineSize = fine != NULL ? (size_t)w * h : 0;
+		if (fine == NULL)
+			return false;
+	}
+
+	for (int y = 0; y < scale; ++y)
+	{
+		for (int x = 0; x < scale; ++x)
+		{
+			redrawPhase(alpha, scale, x, y);
+			composeScreen(view);
+
+			// woven into the finer picture
+			const Uint8 *src = compose->pixels;
+			Uint8 *dst = fine + (size_t)y * w + x;
+			for (int row = 0; row < compose->h; ++row)
+			{
+				for (int col = 0; col < compose->w; ++col)
+					dst[col * scale] = src[col];
+				src += compose->pitch;
+				dst += (size_t)w * scale;
+			}
+		}
+	}
+	return true;
+}
+
+static void showBetween(Uint32 alpha, int view)
+{
+	const Uint64 before = SDL_GetPerformanceCounter();
+	const int scale = pictureScale();
+
+	if (scale > 1 && drawFine(alpha, view, scale))
+	{
+		renderTook = SDL_GetPerformanceCounter() - before;
+		video_present_fine(fine, compose->w * scale, scale);
+	}
+	else
+	{
+		redraw(alpha);
+		composeScreen(view);
+		renderTook = SDL_GetPerformanceCounter() - before;
+		video_present(compose);
+	}
+	statsRender += renderTook;
+	statsShow += SDL_GetPerformanceCounter() - before - renderTook;
+	statsScale = scale;
+
+	if (scale > 1)
+	{
+		// too slow for the display: one step coarser (16 phases to 9, to 4)
+		renderSum += renderTook;
+		if (++renderCount == 64)
+		{
+			const Uint64 average = renderSum / renderCount;
+			const Uint64 budget = (Uint64)refreshPeriod() * SDL_GetPerformanceFrequency() / (1000 << 10);
+			if (average * 2 > budget)
+			{
+				fineLimit = scale - 1;
+				logInfo("Smooth motion: pictures %dx finer took %.1f ms of %.1f; now %dx.",
+				        scale, average * 1000.0 / SDL_GetPerformanceFrequency(),
+				        budget * 1000.0 / SDL_GetPerformanceFrequency(), fineLimit);
+			}
+			renderSum = 0;
+			renderCount = 0;
+		}
+	}
 }
 
 // Until the frame that lasts `period` is due, a picture per refresh of the
@@ -578,8 +703,9 @@ static bool showUntilDue(Sint32 period, Sint32 refresh, void (*show)(Uint32 alph
 		const Uint32 alpha = since <= 0 ? 0 : since >= period ? 65536 : (Uint32)(((Sint64)since << 16) / period);
 
 		const Uint64 before = SDL_GetPerformanceCounter();
+		renderTook = 0;
 		show(alpha, data);
-		const Uint64 took = SDL_GetPerformanceCounter() - before;
+		const Uint64 took = SDL_GetPerformanceCounter() - before - renderTook;
 		shown = true;
 		++picturesShown;
 
@@ -605,8 +731,11 @@ static void countFrame(Sint32 refresh)
 	const Uint32 now = SDL_GetTicks();
 	if (now - statsSince >= 5000)
 	{
-		logInfo("Smooth motion: %lu pictures and %lu frames in %u ms (display: %d Hz)",
-		        picturesShown, framesDue, now - statsSince, (int)((1000 << 10) / refresh));
+		const double ms = picturesShown > 0 ? 1000.0 / SDL_GetPerformanceFrequency() / picturesShown : 0;
+		logInfo("Smooth motion: %lu pictures and %lu frames in %u ms (display: %d Hz); %dx, %.2f ms drawing and %.2f ms showing each",
+		        picturesShown, framesDue, now - statsSince, (int)((1000 << 10) / refresh),
+		        statsScale, statsRender * ms, statsShow * ms);
+		statsRender = statsShow = 0;
 		picturesShown = framesDue = 0;
 		statsSince = now;
 	}
@@ -666,6 +795,21 @@ static void dumpPictures(int view)
 		char path[600];
 		snprintf(path, sizeof path, "%s/frame%05ld-%u.bmp", dir, frame, quarter);
 		SDL_SaveBMP(compose, path);
+
+		// SMOOTH_DUMP_FINE=<scale>: the finer pictures too
+		const char *fineDump = getenv("SMOOTH_DUMP_FINE");
+		const int scale = fineDump != NULL ? atoi(fineDump) : 0;
+		if (scale > 1 && scale <= SMOOTH_FINE_MAX && drawFine(quarter * 16384, view, scale))
+		{
+			SDL_Surface *big = SDL_CreateRGBSurfaceFrom(fine, compose->w * scale, compose->h * scale, 8, compose->w * scale, 0, 0, 0, 0);
+			if (big != NULL)
+			{
+				SDL_SetPaletteColors(big->format->palette, palette, 0, 256);
+				snprintf(path, sizeof path, "%s/frame%05ld-%u-fine.bmp", dir, frame, quarter);
+				SDL_SaveBMP(big, path);
+				SDL_FreeSurface(big);
+			}
+		}
 	}
 }
 
@@ -689,6 +833,27 @@ bool smooth_frame_due(int view)
 		{
 			redraw(testAlpha);  // the pictures in between must draw too
 			dumpPictures(view);
+			drawFine(testAlpha, view, 3);  // and the finer ones
+
+			// all the way to this frame, every phase of the finer picture is the frame
+			if (testFrames++ % 35 == 0 && drawFine(65536, view, 2))
+			{
+				redraw(65536);
+				composeScreen(view);
+				for (int y = 0; y < compose->h * 2; ++y)
+				{
+					const Uint8 *row = (const Uint8 *)compose->pixels + (size_t)(y / 2) * compose->pitch;
+					for (int x = 0; x < compose->w * 2; ++x)
+					{
+						if (fine[(size_t)y * compose->w * 2 + x] != row[x / 2])
+						{
+							++testFineDifferent;
+							y = compose->h * 2;
+							break;
+						}
+					}
+				}
+			}
 		}
 		return false;
 	}
@@ -884,11 +1049,12 @@ void smooth_test_enable(bool enable, Uint32 alpha)
 	testEnabled = enable;
 	testAlpha = alpha;
 	testSame = testDifferent = testSkipped = 0;
+	testFrames = testFineDifferent = 0;
 }
 
 void smooth_test_counts(unsigned long *same, unsigned long *different, unsigned long *skipped)
 {
 	*same = testSame;
-	*different = testDifferent;
+	*different = testDifferent + testFineDifferent;  // a finer picture that is wrong counts too
 	*skipped = testSkipped;
 }

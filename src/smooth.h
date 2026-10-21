@@ -47,6 +47,13 @@
 // "video" section).
 extern bool smooth_motion;
 
+// Finer pictures in between (Setup > Graphics > "Fine Motion"; "smooth_fine"
+// in the "video" section): drawn up to SMOOTH_FINE_MAX times bigger than the
+// game's screen, as the window allows, so things also move by fractions of a
+// pixel of the game.  Only with the "None" scaler.
+extern bool smooth_fine;
+#define SMOOTH_FINE_MAX 4
+
 // Whether the drawing primitives record (checked inline, so the hooks cost
 // nothing when smooth motion is off).
 extern bool smooth_recording;

@@ -8,6 +8,16 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Smooth Motion, finer**: in the levels, the pictures in between are now
+  drawn at up to 4x the game's resolution (1280x800), chosen by the size of
+  the window, so things that move less than a pixel per frame glide too. The
+  far background of many levels scrolls one pixel per frame and used to jump
+  from frame to frame even with Smooth Motion on; now it moves in quarter
+  pixels. It turns on and off with Smooth Motion and needs the "None" scaler
+  (the default); if a computer is too slow for it, the game uses 3x or 2x.
+
 ## v1.4 (2026-10-21)
 
 - **What's New**: Setup > "What's New..." (also at the top of About) shows

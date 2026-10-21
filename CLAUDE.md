@@ -446,6 +446,18 @@ efeito); objeto novo que se mova precisa de `smooth_tag`. Testes:
 iguais/diferentes; tem de dar 0 diferentes) e `SMOOTH_DUMP=<pasta>:<quadro>:<n>`
 salva BMPs das imagens intermediárias. `TYRIAN_SMOOTH_STATS=1` escreve no log
 quantas imagens por segundo; `TYRIAN_SMOOTH_HZ` força a taxa do monitor.
+Imagens finas (v1.5): nas fases cada imagem do meio sai até 4x maior
+(`video_fine_scale()` = quanto cabe inteiro em 320x200 no retângulo da
+janela, 1..4, só com scaler None; `smooth_fine` na seção "video", sem item no
+menu: liga junto do Smooth Motion, decisão do Gabriel). Escala s: s×s fases,
+cada uma um redesenho 1x da lista com as primitivas de sempre; na fase (i,j)
+uma posição fina P = de*s + round((para-de)*s*alpha) vira
+`floorDiv(P - i + s - 1, s)` (`phased()`), e `drawFine()` entrelaça as
+fases (fine[(y*s+j)*W + x*s+i]). `video_present_fine()` mostra numa textura
+própria (Sharp Bilinear junto). Se desenhar levar mais que meia atualização
+do monitor (média de 64), cai para s-1 e o log avisa. O teste confere que em
+alpha=65536 toda fase é o próprio quadro. `SMOOTH_DUMP_FINE=<s>` com
+SMOOTH_DUMP salva também as imagens finas. Menus/fades seguem em 1x.
 Fora das fases: `smooth_show_until_due(frames, show, data)` faz o mesmo
 ritmo (uma imagem por atualização até o quadro vencer) chamando `show(alpha)`;
 usado nos fades (`fade_steps()` em `src/palette.c`, paleta no meio do caminho

@@ -15,6 +15,8 @@ change is in this repository's git log.
   ship keeps following the mouse instead of stopping when the pointer reaches
   the edge of the page. Esc still pauses with the first press; menus,
   keyboard and touch work as before.
+- Fixed a rare case, from the original game, where a level could never end
+  after a boss was destroyed very quickly.
 
 ## v1.4 (2026-10-21)
 

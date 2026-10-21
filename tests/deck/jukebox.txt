@@ -1,0 +1,25 @@
+# Title > Setup > Jukebox: X stops, LB/RB sound effects, Y hides the text, right next song, B back to Setup
+6000 press down
+400 press down
+400 press down
+400 press down
+400 press a
+2500 press down
+400 press down
+400 press down
+400 press down
+400 press a
+2500 shot 03-jukebox
+300 press x
+600 shot 04-jukebox-parada
+300 press rb
+300 press rb
+600 shot 05-jukebox-efeito
+300 press y
+600 shot 06-jukebox-sem-texto
+300 press y
+300 press right
+600 shot 07-jukebox-proxima
+300 press b
+2500 shot 08-voltou-setup
+200 quit

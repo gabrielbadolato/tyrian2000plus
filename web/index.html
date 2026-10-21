@@ -9,7 +9,8 @@
   What the page does, before the game starts:
   - keeps the game's user folder (settings, saves, statistics) in the
     browser's IndexedDB, loaded before the game and written back a moment
-    after the game changes it, when the tab is hidden and when the game quits;
+    after the game closes a file, every few seconds, when the tab is hidden
+    and when the game quits;
   - loads the game data (data/tyrian2000.tar) into the folder the game
     looks for it in (/data, next to the "executable");
   - waits for a click or a key: browsers only allow sound after one.
@@ -190,6 +191,10 @@
     overlay.style.display = "none";
     document.body.classList.add("playing");
     canvas.focus();
+    // The level in progress is recorded as it is played (lastlevel.rec, for
+    // Continue): copy what changed every few seconds, in case the tab is
+    // closed in the middle of a level.
+    setInterval(syncSaves, 5000);
     try { Module.callMain([]); } catch (e) { if (e !== "unwind" && !(e && e.name === "ExitStatus")) throw e; }
   }
 

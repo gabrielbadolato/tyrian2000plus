@@ -18,6 +18,7 @@
  */
 #include "file.h"
 
+#include "logging.h"
 #include "opentyr.h"
 
 #include "SDL.h"
@@ -371,6 +372,51 @@ static void determineUserDirPath(void)
 
 	userDirPath = "";
 	userDirPathLen = 0;
+}
+
+// Opens the folder with the settings and saves in the system's file manager,
+// to copy tyrian.sav to or from another computer.
+bool userDirOpenInFileManager(void)
+{
+	if (userDirPath == NULL)
+		determineUserDirPath();
+
+	char *absolute = NULL;
+	const char *dir = userDirPath;
+	if (userDirPathLen == 0)
+		dir = absolute = SDL_GetBasePath();  // next to the executable
+	if (dir == NULL)
+		return false;
+	makeDir(dir);
+
+	// a file:// URL, with anything unusual in the path %-escaped
+	static const char hex[] = "0123456789ABCDEF";
+	char *url = malloc(8 + 3 * strlen(dir) + 1);
+	strcpy(url, dir[0] == '/' ? "file://" : "file:///");
+	char *out = url + strlen(url);
+	for (const unsigned char *in = (const unsigned char *)dir; *in != '\0'; ++in)
+	{
+		const unsigned char c = *in == '\\' ? '/' : *in;
+		if (isalnum(c) || strchr("/:._-~", c) != NULL)
+		{
+			*out++ = c;
+		}
+		else
+		{
+			*out++ = '%';
+			*out++ = hex[c >> 4];
+			*out++ = hex[c & 15];
+		}
+	}
+	*out = '\0';
+
+	const bool opened = SDL_OpenURL(url) == 0;
+	if (!opened)
+		logWarn("Failed to open '%s': %s", url, SDL_GetError());
+
+	free(url);
+	SDL_free(absolute);
+	return opened;
 }
 
 File userFileOpen(const char *filename, const char *mode)

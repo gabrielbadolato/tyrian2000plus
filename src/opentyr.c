@@ -59,6 +59,10 @@
 
 #include "SDL.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -299,6 +303,7 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_ABOUT,
 		MENU_ITEM_WHATS_NEW,
 		MENU_ITEM_STATISTICS,
+		MENU_ITEM_SAVES,
 		MENU_ITEM_DISPLAY,
 		MENU_ITEM_SCALER,
 		MENU_ITEM_SCALING_MODE,
@@ -389,6 +394,11 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_LANGUAGE, "Language:", "Choose the language of the menus and help.", getLanguagePickerItemsCount, getLanguagePickerItem },
 #ifndef __EMSCRIPTEN__  // the browser version is always the newest one
 				{ MENU_ITEM_UPDATE_CHECK, "Check Updates:", "Look for a new version when the game starts.", getOffOnPickerItemsCount, getOffOnPickerItem },
+#endif
+#ifdef __EMSCRIPTEN__
+				{ MENU_ITEM_SAVES, "Saved Games...", "Take your saved games to or from another computer." },
+#else
+				{ MENU_ITEM_SAVES, "Saved Games...", "Open the folder with tyrian.sav, your saved games." },
 #endif
 				{ MENU_ITEM_STATISTICS, "Statistics...", "Totals of all your games and the records of each level." },
 				{ MENU_ITEM_WHATS_NEW, "What's New...", "What changed in each version of the game." },
@@ -1152,6 +1162,19 @@ void setupMenuPage(SetupPage page)
 					menuParents[MENU_CONTROLS] = currentMenu;
 					currentMenu = MENU_CONTROLS;
 					selectedMenuItemIndexes[currentMenu] = 0;
+					break;
+				}
+				case MENU_ITEM_SAVES:
+				{
+					JE_playSampleNum(S_SELECT);
+
+					// tyrian.sav is up to date: the game writes it at every save
+#ifdef __EMSCRIPTEN__
+					// the page's own window, to download or upload the file
+					emscripten_run_script("if (window.tyrianSaves) window.tyrianSaves.open();");
+#else
+					userDirOpenInFileManager();
+#endif
 					break;
 				}
 				case MENU_ITEM_STATISTICS:

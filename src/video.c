@@ -22,6 +22,7 @@
 #include "logging.h"
 #include "opentyr.h"
 #include "smooth.h"
+#include "touch.h"
 #include "video_scale.h"
 
 #include <assert.h>
@@ -200,6 +201,7 @@ void set_sharp_bilinear(bool enabled)
 static void deinit_renderer(void)
 {
 	deinit_prescale_texture();
+	touch_release_textures();
 
 	if (main_window_renderer != NULL)
 	{
@@ -550,6 +552,8 @@ static void calc_dst_render_rect(SDL_Surface *const src_surface, SDL_Rect *const
 
 	dst_rect->x = (win_w - dst_rect->w) / 2;
 	dst_rect->y = (win_h - dst_rect->h) / 2;
+
+	touch_adjust_game_rect(win_w, win_h, dst_rect);
 }
 
 /** Returns the texture to draw at dst_rect: the scaler output, or its sharp bilinear prescale. */
@@ -611,6 +615,41 @@ static SDL_Texture *sharp_bilinear_prescale(const SDL_Rect *const dst_rect)
 	return prescale_texture;
 }
 
+static Uint32 last_present_ticks;
+
+// clears the window and draws the game (and the touch controls) on it
+static void present(SDL_Texture *output_texture, const SDL_Rect *dst_rect)
+{
+	SDL_SetRenderDrawColor(main_window_renderer, 0, 0, 0, 255);
+	SDL_RenderClear(main_window_renderer);
+	SDL_RenderCopy(main_window_renderer, output_texture, NULL, dst_rect);
+
+	int win_w, win_h;
+	SDL_GetWindowSize(main_window, &win_w, &win_h);
+	touch_draw(main_window_renderer, win_w, win_h, dst_rect);
+
+	SDL_RenderPresent(main_window_renderer);
+	last_present_ticks = SDL_GetTicks();
+}
+
+void video_refresh(void)
+{
+	// during a level the next frame comes soon anyway (and with VSync an
+	// extra present here would hold the game up)
+	if (main_window_renderer == NULL || SDL_GetTicks() - last_present_ticks < 40)
+		return;
+
+	SDL_Rect dst_rect;
+	calc_dst_render_rect(VGAScreen, &dst_rect);
+	present(sharp_bilinear_prescale(&dst_rect), &dst_rect);
+	last_output_rect = dst_rect;
+}
+
+void video_get_output_rect(SDL_Rect *out)
+{
+	*out = last_output_rect;
+}
+
 static void scale_and_flip(SDL_Surface *src_surface)
 {
 	assert(src_surface->format->BitsPerPixel == 8);
@@ -624,11 +663,7 @@ static void scale_and_flip(SDL_Surface *src_surface)
 
 	SDL_Texture *const output_texture = sharp_bilinear_prescale(&dst_rect);
 
-	// Clear the window and blit the output texture to it
-	SDL_SetRenderDrawColor(main_window_renderer, 0, 0, 0, 255);
-	SDL_RenderClear(main_window_renderer);
-	SDL_RenderCopy(main_window_renderer, output_texture, NULL, &dst_rect);
-	SDL_RenderPresent(main_window_renderer);
+	present(output_texture, &dst_rect);
 #ifdef __EMSCRIPTEN__
 	// The browser shows the frame only once the game hands control back to
 	// it.  The game's own waits do that (SDL_Delay), but a frame that runs

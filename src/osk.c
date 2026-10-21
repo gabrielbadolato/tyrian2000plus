@@ -25,6 +25,7 @@
 #include "nortsong.h"
 #include "sndmast.h"
 #include "sprite.h"
+#include "touch.h"
 #include "vga256d.h"
 
 #include <ctype.h>
@@ -78,7 +79,7 @@ static Uint8 keyChar(const Osk *osk, int row, int col)
 
 static bool shown(void)
 {
-	return joysticks > 0;
+	return joysticks > 0 || touch_shown();
 }
 
 void osk_init(Osk *osk, SDL_Surface *surface)

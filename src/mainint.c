@@ -54,6 +54,7 @@
 #include "smooth.h"
 #include "sndmast.h"
 #include "sprite.h"
+#include "touch.h"
 #include "stats.h"
 #include "varz.h"
 #include "vga256d.h"
@@ -3941,6 +3942,22 @@ redo:
 					mouseGetRelativePosition(&mouseXR, &mouseYR);
 					mouseXC += mouseXR;
 					mouseYC += mouseYR;
+				}
+
+				/* touch screen input (with the keyboard's player) */
+				TouchGameInput touch;
+				if ((inputDevice == 0 || inputDevice == 1) && !playDemo && touch_game_input(&touch))
+				{
+					// as an analog stick pushed all the way (joystick_axis_reduce)
+					mouseXC += (int)lroundf(touch.x * 16);
+					mouseYC += (int)lroundf(touch.y * 16);
+
+					button[0] |= touch.fire;
+					button[1] |= touch.sidekicks;
+					button[2] |= touch.sidekicks;
+					button[3] |= touch.mode_pressed;
+
+					ingamemenu_pressed |= touch.menu_pressed;
 				}
 
 				/* keyboard input */

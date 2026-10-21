@@ -10,6 +10,10 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Title screen with room to breathe**: the menu is back to the original
+  game's items (plus Continue) and spacing, so the lines no longer touch.
+  "Replay" is now "Replay Last Level" in Setup, and About is only in Setup
+  (it was in both places); the update notes in the corner say "See Setup."
 - **Smooth Motion, finer**: in the levels, the pictures in between are now
   drawn at up to 4x the game's resolution (1280x800), chosen by the size of
   the window, so things that move less than a pixel per frame glide too. The

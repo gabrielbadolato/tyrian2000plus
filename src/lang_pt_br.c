@@ -186,9 +186,8 @@ const LangEntry lang_pt_br[] =
 	{ "Instructions", "Instruções" },
 	{ "Quit", "Sair" },
 	{ "Setup", "Configurações" },
-	{ "About", "Sobre" },
+	{ "About", "Sobre" },  // title of the About screen
 	{ "Continue", "Continuar" },
-	{ "Replay", "Rever fase" },
 
 	// ---- messages during a level, at most 30 characters ----
 	{ "Enemy approaching from behind.", "Inimigo chegando por trás." },
@@ -572,7 +571,7 @@ const LangEntry lang_pt_br[] =
 	{ "Language:", "Idioma:" },
 	{ "Choose the language of the menus and help.", "Escolhe o idioma dos menus e da ajuda." },
 	{ "Automatic", "Automático" },
-	{ "Check Updates:", "Ver atualizações:" },
+	{ "Check Updates:", "Aviso de versão:" },
 	{ "Look for a new version when the game starts.", "Procura uma versão nova ao abrir o jogo." },
 	{ "About...", "Sobre..." },
 	{ "What this is, where it came from, and credits.", "O que é, de onde veio, e os créditos." },
@@ -711,7 +710,7 @@ const LangEntry lang_pt_br[] =
 	{ "Delete", "Apagar" },
 
 	// ---- update notice and About ----
-	{ "%s is out! See About.", "%s saiu! Veja em Sobre." },
+	{ "%s is out! See Setup.", "%s saiu! Veja Configurações." },
 	{ "New version available", "Versão nova disponível" },
 	{ "Tyrian 2000+ %s is out (this is %s). Download it from one of the links below. On the Steam Deck, run atualizar-tyrian.sh again.", "Saiu o Tyrian 2000+ %s (este é o %s). Baixe por um dos links abaixo. No Steam Deck, rode o atualizar-tyrian.sh de novo." },
 	{ "Download on itch.io", "Baixar no itch.io" },
@@ -727,7 +726,7 @@ const LangEntry lang_pt_br[] =
 	{ "Version History", "Novidades" },
 	{ "What changed in each version of the game.", "O que mudou em cada versão do jogo." },
 	{ "Enter (%s): see what changed in each version.", "Enter (%s): veja o que mudou em cada versão." },
-	{ "New in %s! See About.", "Novidades da %s em Sobre." },
+	{ "New in %s! See Setup.", "Novidades em Configurações." },
 	{ "No notes yet. They come with each new version.", "Ainda não há notas. Elas chegam com cada versão nova." },
 	{ "The notes below are in English only.", "As notas abaixo estão só em inglês." },
 	{ "Coming in the next version", "Na próxima versão" },
@@ -756,6 +755,10 @@ const LangEntry lang_pt_br[] =
 	{ "Tyrian 2000+ on itch.io:", "Tyrian 2000+ no itch.io:" },
 	{ "Tyrian 2000 freeware game data:", "Dados freeware do Tyrian 2000:" },
 	{ "Gabriel Badolato, with help from Claude (Anthropic)", "Gabriel Badolato, com a ajuda do Claude (Anthropic)" },
+
+	// ---- Setup > Replay Last Level (Tyrian 2000+) ----
+	{ "Replay Last Level...", "Rever a última fase..." },
+	{ "Watch the last level you played.", "Assista à última fase que você jogou." },
 
 	// ---- Statistics (Setup > Statistics... and the end of a level) ----
 	{ "Statistics...", "Estatísticas..." },

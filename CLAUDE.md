@@ -193,8 +193,11 @@ Keyboard do menu de arcade) abrem as telas do Setup com
 nave; as telas antigas (MENU_JOYSTICK_CONFIG etc. em `src/game_menu.c`)
 ficaram no código, sem acesso, para não atrapalhar merges do upstream.
 Setup > Controls > Shortcuts lista Alt+Enter, Esc, P, F1 e F11 (a fonte grande
-não tem "+", por isso a tela mostra "Alt-Enter"). Setup tem "Game Speed" e
-Graphics tem "Detail Level" (mesmos `gameSpeed`/`processorType` da pausa).
+não tem "+", por isso a tela mostra "Alt-Enter"). Setup tem "Game Speed" (mesmo `gameSpeed`
+da pausa). "Detail Level" saiu do Setup e da pausa na v1.5 (decisão do Gabriel
+em 2026-10-21): `loadConfiguration` sempre põe `processorType` = 4 (Pentium,
+todos os efeitos; o "High" antigo deixava de desenhar a 2ª camada nas fases com
+água ou lava). Gravações do levelrec continuam com o valor que tinham.
 Options tem "Setup..." (antes do Done), que abre o mesmo
 `setupMenu()` da tela de título e volta com `returnToItemScreen()`
 (`src/game_menu.c`). O texto do item é inserido em `menuInt[3]` ao carregar
@@ -263,8 +266,9 @@ fecha no meio da fase (sem o TOKEN_END), "Continue" (só se o save do slot
 11/22 ainda é o do início da fase) reproduz escondido e rápido até ali
 (`levelrec_fast()`, sem som nem espera; mostra "Resuming the level... N%") e
 pausa. Sair da fase pelo menu (Quit) ou terminá-la grava o fim: não retoma.
-Teclas de trapaça/debug no meio da fase param a gravação ali. "Replay" na tela
-de título (`MENU_ITEM_REPLAY`, escondido sem gravação) mostra a gravação
+Teclas de trapaça/debug no meio da fase param a gravação ali. Setup > "Replay
+Last Level..." (`MENU_ITEM_REPLAY` em `src/opentyr.c`; só no Setup aberto
+pela tela de título, `setupMenu()` devolve true, e com gravação) mostra a gravação
 (`levelrec_watching()`), sem salvar nada nem contar estatísticas. Se um
 checksum não bate, a retomada desiste e a fase recomeça (volta à nave, como
 ao morrer). Teste: `tests/run_resume.sh <pasta-data>` (ASan/UBSan; com
@@ -342,9 +346,11 @@ como no menu da nave; `setup` para abrir o Setup).
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).
 
-About: item "About" na tela de título, antes do Quit (inserido em
-`menuText[6]` ao carregar o `tyrian.hdt`, `src/helptext.c`), e também em
-Setup > "About..." (`aboutScreen()` em `src/about.c`) mostra o que é o
+Tela de título: os 7 itens do original (+ Continue), com o espaçamento
+original (13 px; 12 px com Continue). Sem espaço para mais: item novo vai no
+Setup (decisão do Gabriel em 2026-10-21, que tirou About e Replay de lá).
+
+About: Setup > "About..." (`aboutScreen()` em `src/about.c`) mostra o que é o
 jogo, o recado do Gabriel, os créditos (os do jogo original são lidos do
 `tyrian.cdt`) e links que abrem no navegador com `SDL_OpenURL`. O mesmo texto,
 em português, está no `README.pt-BR.md` (e em inglês no `README.md`, o principal no GitHub); mudou um, mude os outros. O README original
@@ -354,7 +360,7 @@ Aviso de atualização: ao abrir, `update_check_start()` (`src/update_check.c`)
 consulta em segundo plano a última Release do GitHub (API pública, sem token;
 WinHTTP no Windows, `curl` no Linux) e compara com `opentyrian_version` (o
 `git describe`, ex. v1.0.2). Se houver mais nova, a tela de título mostra
-"vX is out! See About." no canto e o About ganha os links de download (itch.io e GitHub). Opção
+"vX is out! See Setup." no canto e o About ganha os links de download (itch.io e GitHub). Opção
 Setup > "Check Updates" (`check` na seção "updates", ligada por padrão).
 Build sem tag de versão não consulta. Para testar o aviso, compile com
 `VCS_IDREV='echo v1.0.1'`.
@@ -373,7 +379,7 @@ como inglês): AO COLAR O PT NAS NOTAS DE UMA RELEASE, pôr o título
 "**Português**" antes dele. Versão mais nova que a instalada aparece primeiro
 ("vX - new"), então até uma versão antiga mostra o que a nova traz. A fonte
 pequena não tem ">" (vira "/"). Depois de atualizar, a tela de título mostra
-"New in vX! See About." até abrir a tela (`notes_seen` na seção "updates";
+"New in vX! See Setup." até abrir a tela (`notes_seen` na seção "updates";
 sem opentyrian.cfg conta como já visto). Teste: `tests/test_whatsnew.c`
 (aceita um JSON salvo da API como argumento).
 
@@ -444,7 +450,9 @@ Emery. Estudo: `/mnt/project-files/analises/traducao-pt-br.md`.
 
 Padrão: Scaling Mode "Fit 4:3" (fiel ao monitor 4:3 de 1995). A opção
 "Sharp Bilinear" em Setup > Graphics (`sharp_bilinear` na seção "video",
-desligada por padrão) amplia primeiro por um número inteiro (pixels nítidos)
+ligada por padrão desde a v1.5, porque o Fit 4:3 quase nunca dá ampliação
+inteira; o valor salvo só vale com `sharp_bilinear_chosen = yes`, gravado ao
+escolher no menu, porque até a v1.4 todos gravavam "off") amplia primeiro por um número inteiro (pixels nítidos)
 e depois encaixa na janela com filtro bilinear, para os pixels ficarem do
 mesmo tamanho quando a ampliação não é inteira (`sharp_bilinear_prescale()`
 em `src/video.c`). Em múltiplos exatos nada muda.
@@ -461,8 +469,11 @@ igualado medindo as 41 músicas (fator 6/5).
 Scaler: o padrão é "None" desde a v1.4 (antes Scale2x; pedido do Gabriel em
 2026-10-21). Como o cfg sempre grava o scaler, "Scale2x" salvo só vale com
 `scaler_chosen = yes` (gravado quando o jogador escolhe no menu); outro scaler
-salvo é escolha e fica. A janela nunca abre menor que 640x400
-(`window_set_scaler_size()` em `src/video.c`), porque o None é só 320x200.
+salvo é escolha e fica. A janela nunca abre menor que um tamanho
+confortável para a tela (`window_set_scaler_size()` em `src/video.c`, porque o
+None é só 320x200): a maior altura múltipla de 200 em 85% da área livre, largura
+em 4:3 (1067x800 em 1080p), no mínimo 640x400. Janela salva com 640x400 (o
+tamanho de antes da v1.5, nunca mexido) conta como não salva.
 
 Brilho: Setup > Graphics > Brightness é o mesmo `gammaCorrection` da tecla
 F11 (salvo no tyrian.cfg); só vale dentro das fases.
@@ -472,12 +483,13 @@ Análise de usabilidade dos menus (o que falta, como "vídeo na pausa"):
 
 Primeira vez no Steam Deck (sem opentyrian.cfg; SteamDeck=1 ou placa "Valve"
 em /sys/devices/virtual/dmi/id/board_vendor, `running_on_steam_deck()` em
-`src/config.c`): tela cheia + Sharp Bilinear + Smooth Motion, mantendo Fit 4:3
+`src/config.c`): tela cheia + Smooth Motion (Sharp Bilinear já é padrão), mantendo Fit 4:3
 (decisão do Gabriel em 2026-10-21). Quem já tem cfg não muda.
 
 Movimento suave (`src/smooth.c`, Setup > Graphics > "Smooth Motion" e na
-página Graphics da pausa; `smooth_motion` na seção "video", desligado por
-padrão, ligado na 1ª vez no Deck; escrito do zero, SEM código do Modern Tyrian
+página Graphics da pausa; `smooth_motion` na seção "video", ligado por
+padrão desde a v1.5 (pedido do Gabriel em 2026-10-21; o "off" que a v1.4
+gravava só vale com `smooth_motion_chosen = yes`, gravado ao escolher no menu); escrito do zero, SEM código do Modern Tyrian
 nem do Engaged, a pedido do Gabriel): a fase continua a 35 quadros/s. Cada
 primitiva de desenho (blit_sprite*, JE_pix, fill_rectangle_xy, JE_barShade,
 fundos `draw_background_layer`, filtros lava/água/blur, estrelas,
@@ -498,6 +510,37 @@ efeito); objeto novo que se mova precisa de `smooth_tag`. Testes:
 iguais/diferentes; tem de dar 0 diferentes) e `SMOOTH_DUMP=<pasta>:<quadro>:<n>`
 salva BMPs das imagens intermediárias. `TYRIAN_SMOOTH_STATS=1` escreve no log
 quantas imagens por segundo; `TYRIAN_SMOOTH_HZ` força a taxa do monitor.
+Imagens finas (v1.5): nas fases cada imagem do meio sai até 4x maior
+(`video_fine_scale()` = quanto cabe inteiro em 320x200 no retângulo da
+janela, 1..4, só com scaler None; `smooth_fine` na seção "video", sem item no
+menu: liga junto do Smooth Motion, decisão do Gabriel). Escala s: s×s fases,
+cada uma um redesenho 1x da lista com as primitivas de sempre; na fase (i,j)
+uma posição fina P = de*s + round((para-de)*s*alpha) vira
+`floorDiv(P - i + s - 1, s)` (`phased()`), e `drawFine()` entrelaça as
+fases (fine[(y*s+j)*W + x*s+i]). `video_present_fine()` mostra numa textura
+própria (Sharp Bilinear junto). Se desenhar levar mais que meia atualização
+do monitor, ou desenhar e mostrar mais que 1,25 atualização (média de 16;
+VSync espera no máximo uma), cai para s-1 e o log avisa. Imagem que demorou
+mais que isso (`slowPicture`, PC sem placa de vídeo, navegador com GL por
+software) faz as próximas começarem cedo o bastante para não atrasar o
+quadro; vai pela metade a cada quadro sem imagem. O teste confere que em
+alpha=65536 toda fase é o próprio quadro. `SMOOTH_DUMP_FINE=<s>` com
+SMOOTH_DUMP salva também as imagens finas. Menus/fades seguem em 1x.
+"Lead" (fração de pixel somada nas imagens do meio, `leadX`/`leadY` por
+camada e por grupo de inimigos, `leadIndex()`): camada que anda 1 pixel a
+cada N quadros (map1YDelayMax/map2YDelayMax, ex.: trecho das pedras da fase
+Tyrian, N=3 e 2) pararia e pularia, então `draw_background_1/2/3` chamam
+`smooth_layer_lead()` com quanto a camada está entre um passo e outro
+(centrado); os inimigos do chão (slots 25-49 e 75-99) dão o passo um quadro
+antes do fundo. O deslize lateral das camadas (parallax, 1/3, 2/3 e 1 de uma
+fração do x da nave, arredondado; `smooth_parallax()` no fim de
+`JE_mainGamePlayerFunctions`) também vira lead, e os inimigos pegam o da
+camada que somam ao x (`smooth_enemies_layer()` antes de cada
+`JE_drawEnemy`, "before" quando usam o valor de antes do movimento da nave).
+Sprites de tipos diferentes entre um quadro e outro (inimigo que pisca ao
+levar tiro) também deslizam (`sameKind()`). Os testes (`test_autoplay`)
+contam e logam coisas cuja velocidade vai e volta ("speed zigzags"); o que
+sobra é o movimento da nave do piloto e o próprio movimento dos inimigos.
 Fora das fases: `smooth_show_until_due(frames, show, data)` faz o mesmo
 ritmo (uma imagem por atualização até o quadro vencer) chamando `show(alpha)`;
 usado nos fades (`fade_steps()` em `src/palette.c`, paleta no meio do caminho

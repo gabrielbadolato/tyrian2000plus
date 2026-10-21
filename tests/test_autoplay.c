@@ -72,6 +72,12 @@ static void finish(int status, const char *message)
 	unsigned long same, different, skipped;
 	smooth_test_counts(&same, &different, &skipped);
 	printf("smooth motion: %lu frames redrawn the same, %lu different, %lu not redrawn\n", same, different, skipped);
+	unsigned long judder[16];
+	smooth_test_judder(judder);
+	printf("smooth motion: things whose speed zigzags: %lu backgrounds, %lu enemies, %lu enemy shots, %lu others\n",
+	       judder[SMOOTH_BACKGROUND], judder[SMOOTH_ENEMY], judder[SMOOTH_ENEMY_SHOT],
+	       judder[SMOOTH_PLAYER] + judder[SMOOTH_SIDEKICK] + judder[SMOOTH_PLAYER_SHOT] + judder[SMOOTH_EXPLOSION] +
+	       judder[SMOOTH_REP_EXPLOSION] + judder[SMOOTH_STAR] + judder[SMOOTH_SUPERPIXEL]);
 	if (different > 0 && status == 0)
 	{
 		status = EXIT_FAILURE;

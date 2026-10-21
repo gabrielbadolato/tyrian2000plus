@@ -18,7 +18,6 @@
  */
 #include "tyrian2.h"
 
-#include "about.h"
 #include "animlib.h"
 #include "backgrnd.h"
 #include "demo.h"
@@ -1355,6 +1354,8 @@ level_loop:
 
 	tempMapXOfs = mapXOfs;
 	tempBackMove = backMove;
+	smooth_enemies_layer(50, 1, false);
+	smooth_enemies_layer(100, 1, false);
 	JE_drawEnemy(50);
 	JE_drawEnemy(100);
 
@@ -1426,6 +1427,7 @@ level_loop:
 
 		tempMapXOfs = mapX2Ofs;
 		tempBackMove = 0;
+		smooth_enemies_layer(25, 2, false);
 		JE_drawEnemy(25);
 
 		if (enemyOnScreen == lastEnemyOnScreen)
@@ -1443,6 +1445,7 @@ level_loop:
 	{
 		tempMapXOfs = (background3x1 == 0) ? oldMapX3Ofs : mapXOfs;
 		tempBackMove = backMove3;
+		smooth_enemies_layer(75, background3x1 == 0 ? 3 : 1, false);
 		JE_drawEnemy(75);
 	}
 
@@ -1892,6 +1895,7 @@ draw_player_shot_loop_end:
 	{
 		tempMapXOfs = (background3x1 == 0) ? oldMapX3Ofs : oldMapXOfs;
 		tempBackMove = backMove3;
+		smooth_enemies_layer(75, background3x1 == 0 ? 3 : 1, true);
 		JE_drawEnemy(75);
 	}
 
@@ -1902,6 +1906,7 @@ draw_player_shot_loop_end:
 
 		tempMapXOfs = mapX2Ofs;
 		tempBackMove = 0;
+		smooth_enemies_layer(25, 2, false);
 		JE_drawEnemy(25);
 
 		if (enemyOnScreen == lastEnemyOnScreen)
@@ -3403,7 +3408,7 @@ static bool drawWhatsNewNotice(SDL_Surface *surface)
 		return false;
 
 	char text[64];
-	snprintf(text, sizeof(text), tr("New in %s! See About."), version);
+	snprintf(text, sizeof(text), tr("New in %s! See Setup."), version);
 	drawFontHvFullShadowAligned(surface, 318, 192, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, true, 1);
 	return true;
 }
@@ -3416,7 +3421,7 @@ static bool drawUpdateNotice(SDL_Surface *surface, int y)
 		return false;
 
 	char text[64];
-	snprintf(text, sizeof(text), tr("%s is out! See About."), version);
+	snprintf(text, sizeof(text), tr("%s is out! See Setup."), version);
 
 	drawFontHvFullShadowAligned(surface, 318, y, text, FONT_SMALL, ALIGN_RIGHT, 15, 4, true, 1);  // black outline: readable on the light and dark parts
 	return true;
@@ -3464,8 +3469,6 @@ bool titleScreen(void)
 		MENU_ITEM_INSTRUCTIONS,
 		MENU_ITEM_SETUP,
 		MENU_ITEM_DEMO,
-		MENU_ITEM_REPLAY,
-		MENU_ITEM_ABOUT,
 		MENU_ITEM_QUIT,
 	};
 
@@ -3477,7 +3480,7 @@ bool titleScreen(void)
 	bool whatsNewNoticeShown = false;
 
 	int continueSlot = continueSaveSlot();
-	// Continue is hidden without a saved game, Replay without a recorded level
+	// Continue is hidden without a saved game
 	bool shown[COUNTOF(menuText)];
 	int row[COUNTOF(menuText)];  // of the shown items
 	size_t selectedIndex = continueSlot > 0 ? MENU_ITEM_CONTINUE : MENU_ITEM_NEW_GAME;
@@ -3499,18 +3502,16 @@ bool titleScreen(void)
 			int rows = 0;
 			for (size_t i = 0; i < COUNTOF(menuText); ++i)
 			{
-				shown[i] = i == MENU_ITEM_CONTINUE ? continueSlot > 0
-				         : i == MENU_ITEM_REPLAY ? levelrec_can_watch()
-				         : true;
+				shown[i] = i != MENU_ITEM_CONTINUE || continueSlot > 0;
 				row[i] = rows;
 				rows += shown[i];
 			}
 			if (!shown[selectedIndex])
 				selectedIndex = MENU_ITEM_NEW_GAME;
 
-			// with more items the list closes up a little to stay on the screen
-			yMenuItems = rows > 9 ? 92 : rows > 8 ? 96 : 100;
-			hMenuItem = rows > 9 ? 10 : rows > 8 ? 11 : 12;
+			// the original spacing; with Continue the list closes up a little
+			yMenuItems = rows > 7 ? 98 : 104;
+			hMenuItem = rows > 7 ? 12 : 13;
 
 			play_song(SONG_TITLE);
 
@@ -3837,7 +3838,8 @@ bool titleScreen(void)
 			{
 				fade_black(15);
 
-				setupMenu();
+				if (setupMenu() && levelrec_start_watch())  // Replay Last Level
+					return true;
 
 				restart = true;
 				break;
@@ -3848,27 +3850,6 @@ bool titleScreen(void)
 
 				playDemo = true;
 				return true;
-			}
-			case MENU_ITEM_REPLAY:
-			{
-				fade_black(15);
-
-				if (levelrec_start_watch())
-					return true;
-
-				restart = true;
-				break;
-			}
-			case MENU_ITEM_ABOUT:
-			{
-				fade_black(15);
-
-				aboutScreen();
-
-				fade_black(15);
-
-				restart = true;
-				break;
 			}
 			case MENU_ITEM_QUIT:
 			{

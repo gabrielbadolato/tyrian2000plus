@@ -56,8 +56,8 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
   recordes, e aviso quando a bateria do controle está fraca.
 - "Continue" (Continuar) na tela de título: volta ao último jogo com um toque,
   e ao ponto exato da fase se o jogo fechou no meio dela.
-- "Replay" (Rever fase) na tela de título: assista de novo à última fase que
-  você jogou.
+- "Replay Last Level" (Rever a última fase) no Setup: assista de novo à
+  última fase que você jogou.
 - No menu de melhorias da nave, cada item mostra o dano (ou casco, escudo ou
   energia) em verde quando é melhor do que o da sua nave e em vermelho quando
   é pior.
@@ -67,11 +67,14 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
   OPL3, próximo de uma placa Sound Blaster de 1995 de verdade (o som clássico
   continua sendo o padrão).
 - Mais opções de vídeo, inclusive na pausa, e o filtro Sharp Bilinear.
-- Movimento suave (Setup > Graphics > Smooth Motion, desligado por padrão): o
+- Movimento suave (Setup > Graphics > Smooth Motion, ligado por padrão): o
   jogo continua rodando a 35 quadros por segundo, igual ao original, mas a
   tela mostra o movimento entre um quadro e outro na taxa do seu monitor (60,
   120, 144, 240 Hz...), nas fases, nos escurecimentos entre telas e na prévia
   das armas do menu da nave.
+  Nas fases, as imagens do meio são desenhadas em até 4x a resolução do jogo
+  (conforme o tamanho da janela, com o scaler "None"), então até um fundo que
+  anda um pixel por quadro desliza de quarto em quarto de pixel.
 - Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
 - Tela About com a história do projeto e os créditos.
@@ -164,7 +167,7 @@ instalou pelo app do itch.io não precisa do script: o app atualiza sozinho.
 **Tela do Deck:** o padrão é "Fit 4:3", fiel aos monitores de 1995. Para tela
 cheia com pixels nítidos, use Setup > Graphics > Scaling Mode > "Integer". O
 jogo roda a 35 quadros por segundo; o movimento suave (Smooth Motion, ligado
-por padrão no Deck) mostra o movimento na taxa da tela, então qualquer taxa
+por padrão) mostra o movimento na taxa da tela, então qualquer taxa
 serve. Se desligá-lo, ponha o Deck OLED em 70 Hz (perfil por jogo) e deixe o
 Deck LCD em 60 Hz. Não ligue o limite de quadros da Steam.
 
@@ -197,7 +200,8 @@ Setup > Controls > Shortcuts):
 | F1        | Ajuda, na fase ou no menu da nave                |
 | F11       | Brilho, durante a fase                           |
 
-Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
+Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho (na
+primeira vez, do maior tamanho que cabe bem na tela).
 
 **Tela de toque** (celular ou tablet, no navegador): toque na tela e aparecem
 um direcional e botões ao lado do jogo (embaixo dele com o celular em pé): o
@@ -209,12 +213,12 @@ os controles de toque sumirem de novo.
 
 ## Onde fica cada opção
 
-- **Tela de título > About:** o que é o jogo, de onde veio, os créditos e os
-  links (Enter ou A abre o link no navegador).
-- **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
-  (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
-  idioma (Language), Check Updates, jogos salvos (Saved Games), galeria
-  (Gallery, com as estatísticas), novidades (What's New) e About.
+- **Tela de título > Setup:** vídeo (Graphics), som
+  (Sound), controles (Controls), velocidade do jogo (Game Speed), idioma
+  (Language), aviso de versão (Check Updates), jogos salvos (Saved Games),
+  Jukebox, rever a
+  última fase (Replay Last Level), galeria (Gallery, com as estatísticas),
+  novidades (What's New) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
   carregado (o jogo também salva "LAST LEVEL" ao chegar na nave depois de
   cada fase e ao começar cada fase). Só aparece quando existe um. Se o jogo
@@ -222,10 +226,10 @@ os controles de toque sumirem de novo.
   o Continue volta àquele ponto da fase e pausa ali; leva alguns segundos,
   porque o jogo repete a fase escondido até aquele ponto. Sair da fase pelo
   menu dela continua sendo desistir da fase, como sempre.
-- **Tela de título > Replay (Rever fase):** mostra de novo a última fase que
-  você jogou (ela é gravada enquanto você joga, no lastlevel.rec da sua pasta
-  de usuário). Qualquer tecla ou botão para. Só aparece quando há uma fase
-  gravada.
+- **Setup > Replay Last Level (Rever a última fase):** mostra de novo a
+  última fase que você jogou (ela é gravada enquanto você joga, no
+  lastlevel.rec da sua pasta de usuário). Qualquer tecla ou botão para. Só
+  aparece quando há uma fase gravada, no Setup da tela de título.
 - **Setup > Sound > Music Sound (Som da música):** "Classic" (Clássico, o
   padrão, o emulador que o OpenTyrian sempre usou) ou "Accurate" (Fiel, Nuked
   OPL3).
@@ -244,7 +248,7 @@ os controles de toque sumirem de novo.
 - **Menu da nave (entre as fases) > Options > Setup...:** o mesmo Setup. Os
   itens Joystick, Keyboard e Mouse de lá abrem as mesmas telas de
   Setup > Controls.
-- **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire,
+- **Durante a fase, Start ou Esc:** volume, velocidade, Auto Fire,
   Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
   Sharp Bilinear, VSync, movimento suave e brilho, aplicados na hora).
 - **Setup > Gallery (Galeria):** as naves, armas, sidekicks, escudos,
@@ -268,17 +272,18 @@ os controles de toque sumirem de novo.
   de baixo (no Steam Deck em Modo de Jogo não há gerenciador de arquivos, e
   fica só o caminho); no navegador, baixa ou carrega esse arquivo. Veja
   abaixo.
-- **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
+- **Setup > About (Sobre):** o que é o jogo, de onde veio, os créditos e os
+  links (Enter ou A abre o link no navegador).
 - **Setup > What's New (Novidades)** (também no alto do About): o que mudou
   em cada versão, da mais nova para a mais antiga, em português ou inglês. Se
   já saiu uma versão mais nova, as notas dela aparecem primeiro, para você ver
   o que ela traz antes de atualizar. Depois de uma atualização, a tela de
-  título mostra "Novidades da vX em Sobre." até você abrir a tela.
+  título mostra "Novidades em Configurações." até você abrir a tela.
 - **Setup > Language:** menus, ajuda e nomes dos itens em português ou em
   inglês. "Automatic" (o padrão) segue o idioma do sistema; em português, o
   Setup aparece como "Configurações" e a opção como "Idioma". As histórias dos
   datacubes continuam em inglês.
-- **Setup > Check Updates:** ao abrir, o jogo pergunta ao GitHub qual é a
+- **Setup > Check Updates (Aviso de versão):** ao abrir, o jogo pergunta ao GitHub qual é a
   última versão publicada. Se houver uma mais nova, aparece um aviso no canto
   da tela de título, e o About mostra os links para baixar (itch.io e GitHub). A mesma
   resposta traz as notas de cada versão para a tela de novidades, guardadas

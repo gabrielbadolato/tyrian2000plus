@@ -1572,7 +1572,7 @@ JE_boolean JE_inGameSetup(void)
 	{
 		MENU_ITEM_MUSIC_VOLUME,
 		MENU_ITEM_EFFECTS_VOLUME,
-		MENU_ITEM_DETAIL_LEVEL,
+		// no Detail Level: always "Pentium" (see loadConfiguration)
 		MENU_ITEM_GAME_SPEED,
 		MENU_ITEM_AUTO_FIRE,
 		isNetworkGame ? -1 : MENU_ITEM_CONTROLS,
@@ -2109,6 +2109,7 @@ JE_boolean JE_inGameSetup(void)
 				JE_playSampleNum(S_CURSOR);
 
 				smooth_motion = !smooth_motion;
+				smooth_motion_chosen = true;
 				break;
 			}
 			case MENU_ITEM_BRIGHTNESS:
@@ -4998,7 +4999,8 @@ void JE_mainGamePlayerFunctions(void)
 	else
 		tempX = player[0].x;
 
-	tempW = floorf((float)(260 - (tempX - 36)) / (260 - 36) * (24 * 3) - 1);
+	const float parallaxExact = (float)(260 - (tempX - 36)) / (260 - 36) * (24 * 3) - 1;
+	tempW = floorf(parallaxExact);
 	mapX3Ofs   = tempW;
 	mapX3Pos   = mapX3Ofs % 24;
 	mapX3bpPos = 1 - (mapX3Ofs / 24);
@@ -5018,6 +5020,8 @@ void JE_mainGamePlayerFunctions(void)
 		mapX3Pos = mapXPos;
 		mapX3bpPos = mapXbpPos - 1;
 	}
+
+	smooth_parallax(parallaxExact, (Sint16)mapXOfs, (Sint16)mapX2Ofs, (Sint16)(background3x1 ? mapXOfs : (JE_word)tempW), background3x1);
 }
 
 const char *JE_getName(JE_byte pnum)

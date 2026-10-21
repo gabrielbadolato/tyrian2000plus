@@ -34,6 +34,7 @@
 #include "jukebox.h"
 #include "keyboard.h"
 #include "lang.h"
+#include "levelrec.h"
 #include "logging.h"
 #include "loudness.h"
 #include "mainint.h"
@@ -186,20 +187,6 @@ static const char *getScalingModePickerItem(size_t i, char *buffer, size_t buffe
 	return tr(scaling_mode_names[i]);
 }
 
-// the detail levels the pause menu steps through (5 and 6 only come from
-// old saves and a cheat key, and are kept until another one is chosen)
-static size_t getDetailLevelPickerItemsCount(void)
-{
-	return 4;
-}
-
-static const char *getDetailLevelPickerItem(size_t i, char *buffer, size_t bufferSize)
-{
-	(void)buffer, (void)bufferSize;
-
-	return detailLevel[i];
-}
-
 static size_t getGameSpeedPickerItemsCount(void)
 {
 	return COUNTOF(gameSpeedText);
@@ -315,6 +302,9 @@ static void setSavesStatus(bool opened)
 	snprintf(savesStatus, sizeof(savesStatus), "%s %s%s", prefix, start != shown ? "..." : "", start);
 }
 
+static bool setupFromTitle;     // Setup opened by setupMenu()
+static bool setupReplayChosen;  // Replay Last Level was chosen
+
 void setupMenuPage(SetupPage page)
 {
 	typedef enum
@@ -337,7 +327,6 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_SMOOTH_MOTION,
 		MENU_ITEM_SHARP_BILINEAR,
 		MENU_ITEM_BRIGHTNESS,
-		MENU_ITEM_DETAIL_LEVEL,
 		MENU_ITEM_GAME_SPEED,
 		MENU_ITEM_SHORTCUTS,
 		MENU_ITEM_SHORTCUT,  // a line of Shortcuts, nothing to change
@@ -366,6 +355,7 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_MUSIC_VOLUME,
 		MENU_ITEM_SOUND_VOLUME,
 		MENU_ITEM_MUSIC_CHIP,
+		MENU_ITEM_REPLAY,
 	} MenuItemId;
 
 	// items that stand for one of several actions share the first one's id
@@ -404,7 +394,7 @@ void setupMenuPage(SetupPage page)
 		const char *header;
 		bool compact;  // tighter rows, for long lists
 		int wItemName; // 0 = default
-		const MenuItem items[13];
+		const MenuItem items[15];
 	} Menu;
 
 	static const Menu menus[] = {
@@ -415,7 +405,6 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_SOUND, "Sound...", "Change the sound settings." },
 				{ MENU_ITEM_CONTROLS, "Controls...", "Change the control settings." },
 				{ MENU_ITEM_GAME_SPEED, "Game Speed:", "Change how fast the levels run.", getGameSpeedPickerItemsCount, getGameSpeedPickerItem },
-				{ MENU_ITEM_JUKEBOX, "Jukebox", "Listen to the music of Tyrian." },
 				// { MENU_ITEM_DESTRUCT, "Destruct", "Play a bonus mini-game." },
 				{ MENU_ITEM_LANGUAGE, "Language:", "Choose the language of the menus and help.", getLanguagePickerItemsCount, getLanguagePickerItem },
 #ifndef __EMSCRIPTEN__  // the browser version is always the newest one
@@ -426,6 +415,8 @@ void setupMenuPage(SetupPage page)
 #else
 				{ MENU_ITEM_SAVES, "Saved Games...", "Open the folder with tyrian.sav, your saved games." },
 #endif
+				{ MENU_ITEM_JUKEBOX, "Jukebox...", "Listen to the music of Tyrian." },
+				{ MENU_ITEM_REPLAY, "Replay Last Level...", "Watch the last level you played." },
 				{ MENU_ITEM_GALLERY, "Gallery...", "Ships, weapons and enemies found, and your statistics." },
 				{ MENU_ITEM_WHATS_NEW, "What's New...", "What changed in each version of the game." },
 				{ MENU_ITEM_ABOUT, "About...", "What this is, where it came from, and credits." },
@@ -443,7 +434,6 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_SMOOTH_MOTION, "Smooth Motion:", "Show the levels at the display's refresh rate.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_BRIGHTNESS, "Brightness:", "Brighten the levels (F11 also works in game).", getBrightnessPickerItemsCount, getBrightnessPickerItem },
-				{ MENU_ITEM_DETAIL_LEVEL, "Detail Level:", "Show fewer or more effects in the levels.", getDetailLevelPickerItemsCount, getDetailLevelPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -610,12 +600,25 @@ void setupMenuPage(SetupPage page)
 
 		const Menu *menu = &menus[currentMenu];
 
+		// Replay only from the title screen (not with a game going on), and
+		// only with a recorded level
+		MenuItem shownItems[COUNTOF(menu->items)];
+		size_t shownCount = 0;
+		for (size_t i = 0; ; ++i)
+		{
+			if (menu->items[i].id == MENU_ITEM_REPLAY && !(setupFromTitle && levelrec_can_watch()))
+				continue;
+			shownItems[shownCount++] = menu->items[i];
+			if (menu->items[i].id == (MenuItemId)-1)
+				break;
+		}
+
 		const int wMenuItemName = menu->wItemName != 0 ? menu->wItemName : 135;
 		const int xMenuItemValue = xMenuItemName + wMenuItemName;
 		const int wMenuItemValue = menu->wItemName != 0 ? 320 - 10 - xMenuItemValue : 95;
 		const int wMenuItem = wMenuItemName + wMenuItemValue;
 		size_t itemsCount = 0;
-		while (menu->items[itemsCount].id != (MenuItemId)-1)
+		while (shownItems[itemsCount].id != (MenuItemId)-1)
 			++itemsCount;
 
 		const int yMenuItems = menu->compact ? 30 : 37;
@@ -635,7 +638,7 @@ void setupMenuPage(SetupPage page)
 		const int hPickerItem = dyPickerItem - dyPickerItemPadding;
 
 		size_t *const selectedMenuItemIndex = &selectedMenuItemIndexes[currentMenu];
-		const MenuItem *const menuItems = menu->items;
+		const MenuItem *const menuItems = shownItems;
 
 		// Draw menu items.
 
@@ -693,9 +696,6 @@ void setupMenuPage(SetupPage page)
 
 			case MENU_ITEM_BRIGHTNESS:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
-			case MENU_ITEM_DETAIL_LEVEL:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, detailLevel[processorType - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 			case MENU_ITEM_GAME_SPEED:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, gameSpeedText[gameSpeed - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
@@ -1209,6 +1209,15 @@ void setupMenuPage(SetupPage page)
 #endif
 					break;
 				}
+				case MENU_ITEM_REPLAY:
+				{
+					JE_playSampleNum(S_SELECT);
+
+					// titleScreen() plays it once Setup is closed
+					setupReplayChosen = true;
+					currentMenu = MENU_NONE;
+					break;
+				}
 				case MENU_ITEM_GALLERY:
 				{
 					JE_playSampleNum(S_SELECT);
@@ -1324,14 +1333,6 @@ void setupMenuPage(SetupPage page)
 
 					currentPicker = selectedMenuItemId;
 					pickerSelectedIndex = gammaCorrection % COUNTOF(brightnessNames);
-					break;
-				}
-				case MENU_ITEM_DETAIL_LEVEL:
-				{
-					JE_playSampleNum(S_CLICK);
-
-					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = processorType >= 1 && processorType <= 4 ? processorType - 1 : 3;
 					break;
 				}
 				case MENU_ITEM_GAME_SPEED:
@@ -1567,17 +1568,12 @@ void setupMenuPage(SetupPage page)
 				case MENU_ITEM_SMOOTH_MOTION:
 				{
 					smooth_motion = pickerSelectedIndex == 1;
+					smooth_motion_chosen = true;
 					break;
 				}
 				case MENU_ITEM_BRIGHTNESS:
 				{
 					gammaCorrection = pickerSelectedIndex;  // applied when a level starts
-					break;
-				}
-				case MENU_ITEM_DETAIL_LEVEL:
-				{
-					processorType = pickerSelectedIndex + 1;
-					JE_initProcessorType();  // the game speed is applied when a level starts
 					break;
 				}
 				case MENU_ITEM_GAME_SPEED:
@@ -1635,9 +1631,13 @@ static File logFile;
 static SDL_LogOutputFunction defaultLogOutput;
 static void *defaultLogUserdata;
 
-void setupMenu(void)
+bool setupMenu(void)
 {
+	setupFromTitle = true;
+	setupReplayChosen = false;
 	setupMenuPage(SETUP_PAGE_MAIN);
+	setupFromTitle = false;
+	return setupReplayChosen;
 }
 
 void controlsMenu(void)

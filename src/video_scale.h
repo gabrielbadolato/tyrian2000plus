@@ -33,6 +33,7 @@ struct Scalers
 };
 
 extern uint scaler;
+extern bool scaler_chosen;
 extern const struct Scalers scalers[];
 extern const uint scalers_count;
 

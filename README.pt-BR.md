@@ -208,8 +208,9 @@ os controles de toque sumirem de novo.
 ## Onde fica cada opção
 
 - **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
-  (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
-  idioma (Language), aviso de versão (Check Updates), jogos salvos (Saved Games), rever a
+  (Sound), controles (Controls), velocidade do jogo (Game Speed), idioma
+  (Language), aviso de versão (Check Updates), jogos salvos (Saved Games),
+  Jukebox, rever a
   última fase (Replay Last Level), estatísticas (Statistics), novidades
   (What's New) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou

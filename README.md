@@ -203,7 +203,7 @@ controls again.
 ## Where each option is
 
 - **Title screen > Setup:** Graphics (with the detail level), Sound,
-  Controls, game speed, Jukebox, Language, Check Updates, Saved Games,
+  Controls, game speed, Language, Check Updates, Saved Games, Jukebox,
   Replay Last Level, Statistics, What's New and About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
   game also saves "LAST LEVEL" when you arrive at the ship after a level and

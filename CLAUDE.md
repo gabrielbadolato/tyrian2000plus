@@ -455,7 +455,11 @@ uma posição fina P = de*s + round((para-de)*s*alpha) vira
 `floorDiv(P - i + s - 1, s)` (`phased()`), e `drawFine()` entrelaça as
 fases (fine[(y*s+j)*W + x*s+i]). `video_present_fine()` mostra numa textura
 própria (Sharp Bilinear junto). Se desenhar levar mais que meia atualização
-do monitor (média de 64), cai para s-1 e o log avisa. O teste confere que em
+do monitor, ou desenhar e mostrar mais que 1,25 atualização (média de 16;
+VSync espera no máximo uma), cai para s-1 e o log avisa. Imagem que demorou
+mais que isso (`slowPicture`, PC sem placa de vídeo, navegador com GL por
+software) faz as próximas começarem cedo o bastante para não atrasar o
+quadro; vai pela metade a cada quadro sem imagem. O teste confere que em
 alpha=65536 toda fase é o próprio quadro. `SMOOTH_DUMP_FINE=<s>` com
 SMOOTH_DUMP salva também as imagens finas. Menus/fades seguem em 1x.
 Fora das fases: `smooth_show_until_due(frames, show, data)` faz o mesmo

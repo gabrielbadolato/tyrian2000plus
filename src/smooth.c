@@ -576,7 +576,8 @@ static Uint8 *fine = NULL;
 static size_t fineSize = 0;
 static int fineLimit = SMOOTH_FINE_MAX;  // lowered when the pictures take too long
 static Uint64 renderTook = 0;  // how long the last picture took to draw (not to show)
-static Uint64 renderSum = 0;
+static Uint64 renderSum = 0, totalSum = 0;
+static Sint32 slowPicture = 0;  // how long a picture took when it took longer than a refresh (ms << 10)
 static unsigned int renderCount = 0;
 static Uint64 statsRender = 0, statsShow = 0;  // TYRIAN_SMOOTH_STATS: time drawing and showing
 static int statsScale = 1;
@@ -643,26 +644,34 @@ static void showBetween(Uint32 alpha, int view)
 		renderTook = SDL_GetPerformanceCounter() - before;
 		video_present(compose);
 	}
+	const Uint64 total = SDL_GetPerformanceCounter() - before;
 	statsRender += renderTook;
-	statsShow += SDL_GetPerformanceCounter() - before - renderTook;
+	statsShow += total - renderTook;
 	statsScale = scale;
+
+	// Waiting for the display takes up to a refresh; a picture that takes
+	// longer is slow to show (a computer without a graphics card), so the
+	// next ones start early enough to be shown before the frame is due.
+	const Uint64 budget = (Uint64)refreshPeriod() * SDL_GetPerformanceFrequency() / (1000 << 10);
+	slowPicture = total * 4 > budget * 5 ? (Sint32)(total * (1000 << 10) / SDL_GetPerformanceFrequency()) : 0;
 
 	if (scale > 1)
 	{
 		// too slow for the display: one step coarser (16 phases to 9, to 4)
 		renderSum += renderTook;
-		if (++renderCount == 64)
+		totalSum += total;
+		if (++renderCount == 16)
 		{
-			const Uint64 average = renderSum / renderCount;
-			const Uint64 budget = (Uint64)refreshPeriod() * SDL_GetPerformanceFrequency() / (1000 << 10);
-			if (average * 2 > budget)
+			const Uint64 average = renderSum / renderCount, averageTotal = totalSum / renderCount;
+			if (average * 2 > budget || averageTotal * 4 > budget * 5)
 			{
 				fineLimit = scale - 1;
-				logInfo("Smooth motion: pictures %dx finer took %.1f ms of %.1f; now %dx.",
+				logInfo("Smooth motion: pictures %dx finer took %.1f ms to draw and %.1f ms in all, of %.1f; now %dx.",
 				        scale, average * 1000.0 / SDL_GetPerformanceFrequency(),
+				        averageTotal * 1000.0 / SDL_GetPerformanceFrequency(),
 				        budget * 1000.0 / SDL_GetPerformanceFrequency(), fineLimit);
 			}
-			renderSum = 0;
+			renderSum = totalSum = 0;
 			renderCount = 0;
 		}
 	}
@@ -688,7 +697,7 @@ static bool showUntilDue(Sint32 period, Sint32 refresh, void (*show)(Uint32 alph
 		while ((Sint32)(nextPicture - now) < 0)
 			nextPicture += refresh;
 
-		if (period <= 0 || (Sint32)(due - nextPicture) < 0)
+		if (period <= 0 || (Sint32)(due - nextPicture - slowPicture) < 0)
 			break;  // it would show after the frame is due
 
 		if (!presentWaits)
@@ -716,6 +725,9 @@ static bool showUntilDue(Sint32 period, Sint32 refresh, void (*show)(Uint32 alph
 		else
 			nextPicture += refresh;
 	}
+
+	if (!shown)
+		slowPicture /= 2;  // try again: the slow one may have been a one-off
 
 	return shown;
 }

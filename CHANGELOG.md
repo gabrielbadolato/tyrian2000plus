@@ -8,7 +8,7 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## Next version
+## v1.5 (2026-10-21)
 
 - **Smooth Motion is on by default.** If you turn it off in Setup > Graphics,
   it stays off. (Version 1.4 saved "off" for everyone, so that saved setting

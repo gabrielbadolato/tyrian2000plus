@@ -19,6 +19,7 @@
 #include "vga256d.h"
 
 #include "opentyr.h"
+#include "smooth.h"
 
 #include "SDL.h"
 
@@ -27,6 +28,7 @@
 
 void JE_pix(SDL_Surface *surface, int x, int y, JE_byte c)
 {
+	SMOOTH_RECORD(SMOOTH_OP_PIX, surface, NULL, x, y, c, 0, 0, 0);
 	/* Bad things happen if we don't clip */
 	if (x <  surface->pitch && y <  surface->h)
 	{
@@ -47,6 +49,7 @@ void JE_pix3(SDL_Surface *surface, int x, int y, JE_byte c)
 
 void JE_rectangle(SDL_Surface *surface, int a, int b, int c, int d, int e) /* x1, y1, x2, y2, color */
 {
+	SMOOTH_RECORD(SMOOTH_OP_RECTANGLE, surface, NULL, a, b, c, d, e, 0);
 	if (a < surface->pitch && b < surface->h &&
 	    c < surface->pitch && d < surface->h)
 	{
@@ -79,12 +82,14 @@ void JE_rectangle(SDL_Surface *surface, int a, int b, int c, int d, int e) /* x1
 
 void fill_rectangle_xy(SDL_Surface *surface, int x, int y, int x2, int y2, Uint8 color)
 {
+	SMOOTH_RECORD(SMOOTH_OP_FILL, surface, NULL, x, y, x2, y2, color, 0);
 	SDL_Rect rect = { x, y, x2 - x + 1, y2 - y + 1 };
 	SDL_FillRect(surface, &rect, color);
 }
 
 void JE_barShade(SDL_Surface *surface, int a, int b, int c, int d) /* x1, y1, x2, y2 */
 {
+	SMOOTH_RECORD(SMOOTH_OP_BAR_SHADE, surface, NULL, a, b, c, d, 0, 0);
 	if (a < surface->pitch && b < surface->h &&
 	    c < surface->pitch && d < surface->h)
 	{
@@ -109,6 +114,7 @@ void JE_barShade(SDL_Surface *surface, int a, int b, int c, int d) /* x1, y1, x2
 
 void JE_barBright(SDL_Surface *surface, int a, int b, int c, int d) /* x1, y1, x2, y2 */
 {
+	SMOOTH_RECORD(SMOOTH_OP_BAR_BRIGHT, surface, NULL, a, b, c, d, 0, 0);
 	if (a < surface->pitch && b < surface->h &&
 	    c < surface->pitch && d < surface->h)
 	{

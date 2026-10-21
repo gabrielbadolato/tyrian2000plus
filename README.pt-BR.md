@@ -63,6 +63,10 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
   OPL3, próximo de uma placa Sound Blaster de 1995 de verdade (o som clássico
   continua sendo o padrão).
 - Mais opções de vídeo, inclusive na pausa, e o filtro Sharp Bilinear.
+- Movimento suave (Setup > Graphics > Smooth Motion, desligado por padrão): o
+  jogo continua rodando a 35 quadros por segundo, igual ao original, mas a
+  tela mostra o movimento entre um quadro e outro na taxa do seu monitor (60,
+  120, 144, 240 Hz...).
 - Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
 - Tela About com a história do projeto e os créditos.
@@ -154,9 +158,10 @@ instalou pelo app do itch.io não precisa do script: o app atualiza sozinho.
 
 **Tela do Deck:** o padrão é "Fit 4:3", fiel aos monitores de 1995. Para tela
 cheia com pixels nítidos, use Setup > Graphics > Scaling Mode > "Integer". O
-jogo roda a 35 quadros por segundo: no Deck OLED, ponha a taxa de atualização
-em 70 Hz (perfil por jogo); no Deck LCD, deixe em 60 Hz. Não ligue o limite de
-quadros da Steam.
+jogo roda a 35 quadros por segundo; o movimento suave (Smooth Motion, ligado
+por padrão no Deck) mostra o movimento na taxa da tela, então qualquer taxa
+serve. Se desligá-lo, ponha o Deck OLED em 70 Hz (perfil por jogo) e deixe o
+Deck LCD em 60 Hz. Não ligue o limite de quadros da Steam.
 
 ## Controles
 
@@ -228,7 +233,7 @@ Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
   Setup > Controls.
 - **Durante a fase, Start ou Esc:** volume, detalhes, velocidade, Auto Fire,
   Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
-  Sharp Bilinear, VSync e brilho, aplicados na hora).
+  Sharp Bilinear, VSync, movimento suave e brilho, aplicados na hora).
 - **Setup > Statistics (Estatísticas):** os totais de todos os seus jogos
   (tempo nas fases, fases concluídas, inimigos destruídos, mortes, fases
   secretas, datacubes, maior pontuação) e os recordes de cada fase: maior

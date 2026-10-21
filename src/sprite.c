@@ -23,6 +23,7 @@
 #include "logging.h"
 #include "padglyph.h"
 #include "opentyr.h"
+#include "smooth.h"
 #include "video.h"
 
 #include <assert.h>
@@ -104,6 +105,7 @@ void load_sprites(unsigned int table, File *file)
 
 void free_sprites(unsigned int table)
 {
+	smooth_forget_sprites();
 	for (unsigned int i = 0; i < sprite_table[table].count; ++i)
 	{
 		Sprite * const cur_sprite = sprite(table, i);
@@ -122,6 +124,7 @@ void free_sprites(unsigned int table)
 // does not clip on left or right edges of surface
 void blit_sprite(SDL_Surface *surface, int x, int y, unsigned int table, unsigned int index)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE, surface, NULL, x, y, table, index, 0, 0);
 	if (index >= sprite_table[table].count || !sprite_exists(table, index))
 	{
 		assert(false);
@@ -182,6 +185,7 @@ void blit_sprite(SDL_Surface *surface, int x, int y, unsigned int table, unsigne
 // does not clip on left or right edges of surface
 void blit_sprite_blend(SDL_Surface *surface, int x, int y, unsigned int table, unsigned int index)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE_BLEND, surface, NULL, x, y, table, index, 0, 0);
 	if (index >= sprite_table[table].count || !sprite_exists(table, index))
 	{
 		assert(false);
@@ -244,6 +248,7 @@ void blit_sprite_blend(SDL_Surface *surface, int x, int y, unsigned int table, u
 // we can replace it when we know that we don't rely on that 'feature'
 void blit_sprite_hv_unsafe(SDL_Surface *surface, int x, int y, unsigned int table, unsigned int index, Uint8 hue, Sint8 value)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE_HV_UNSAFE, surface, NULL, x, y, table, index, hue, value);
 	if (index >= sprite_table[table].count || !sprite_exists(table, index))
 	{
 		assert(false);
@@ -306,6 +311,7 @@ void blit_sprite_hv_unsafe(SDL_Surface *surface, int x, int y, unsigned int tabl
 // does not clip on left or right edges of surface
 void blit_sprite_hv(SDL_Surface *surface, int x, int y, unsigned int table, unsigned int index, Uint8 hue, Sint8 value)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE_HV, surface, NULL, x, y, table, index, hue, value);
 	if (index >= sprite_table[table].count || !sprite_exists(table, index))
 	{
 		assert(false);
@@ -374,6 +380,7 @@ void blit_sprite_hv(SDL_Surface *surface, int x, int y, unsigned int table, unsi
 // does not clip on left or right edges of surface
 void blit_sprite_hv_blend(SDL_Surface *surface, int x, int y, unsigned int table, unsigned int index, Uint8 hue, Sint8 value)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE_HV_BLEND, surface, NULL, x, y, table, index, hue, value);
 	if (index >= sprite_table[table].count || !sprite_exists(table, index))
 	{
 		assert(false);
@@ -442,6 +449,7 @@ void blit_sprite_hv_blend(SDL_Surface *surface, int x, int y, unsigned int table
 // does not clip on left or right edges of surface
 void blit_sprite_dark(SDL_Surface *surface, int x, int y, unsigned int table, unsigned int index, bool black)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE_DARK, surface, NULL, x, y, table, index, black, 0);
 	if (index >= sprite_table[table].count || !sprite_exists(table, index))
 	{
 		assert(false);
@@ -536,6 +544,7 @@ void JE_loadCompShapesB(Sprite2_array *sprite2s, File *file)
 
 void free_sprite2s(Sprite2_array *sprite2s)
 {
+	smooth_forget_sprites();
 	free(sprite2s->data);
 	sprite2s->data = NULL;
 
@@ -545,6 +554,7 @@ void free_sprite2s(Sprite2_array *sprite2s)
 // does not clip on left or right edges of surface
 void blit_sprite2(SDL_Surface *surface, int x, int y, Sprite2_array sprite2s, unsigned int index)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE2, surface, NULL, x, y, sprite2s.size, sprite2s.data, index, 0);
 	assert(surface->format->BitsPerPixel == 8);
 	Uint8 *             pixels =    (Uint8 *)surface->pixels + (y * surface->pitch) + x;
 	const Uint8 * const pixels_ll = (Uint8 *)surface->pixels,  // lower limit
@@ -580,6 +590,7 @@ void blit_sprite2(SDL_Surface *surface, int x, int y, Sprite2_array sprite2s, un
 
 void blit_sprite2_clip(SDL_Surface *surface, int x, int y, Sprite2_array sprite2s, unsigned int index)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE2_CLIP, surface, NULL, x, y, sprite2s.size, sprite2s.data, index, 0);
 	assert(surface->format->BitsPerPixel == 8);
 
 	const Uint8 *data = sprite2s.data + SDL_SwapLE16(((Uint16 *)sprite2s.data)[index - 1]);
@@ -622,6 +633,7 @@ void blit_sprite2_clip(SDL_Surface *surface, int x, int y, Sprite2_array sprite2
 // does not clip on left or right edges of surface
 void blit_sprite2_blend(SDL_Surface *surface,  int x, int y, Sprite2_array sprite2s, unsigned int index)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE2_BLEND, surface, NULL, x, y, sprite2s.size, sprite2s.data, index, 0);
 	assert(surface->format->BitsPerPixel == 8);
 	Uint8 *             pixels =    (Uint8 *)surface->pixels + (y * surface->pitch) + x;
 	const Uint8 * const pixels_ll = (Uint8 *)surface->pixels,  // lower limit
@@ -658,6 +670,7 @@ void blit_sprite2_blend(SDL_Surface *surface,  int x, int y, Sprite2_array sprit
 // does not clip on left or right edges of surface
 void blit_sprite2_darken(SDL_Surface *surface, int x, int y, Sprite2_array sprite2s, unsigned int index)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE2_DARKEN, surface, NULL, x, y, sprite2s.size, sprite2s.data, index, 0);
 	assert(surface->format->BitsPerPixel == 8);
 	Uint8 *             pixels =    (Uint8 *)surface->pixels + (y * surface->pitch) + x;
 	const Uint8 * const pixels_ll = (Uint8 *)surface->pixels,  // lower limit
@@ -694,6 +707,7 @@ void blit_sprite2_darken(SDL_Surface *surface, int x, int y, Sprite2_array sprit
 // does not clip on left or right edges of surface
 void blit_sprite2_filter(SDL_Surface *surface, int x, int y, Sprite2_array sprite2s, unsigned int index, Uint8 filter)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE2_FILTER, surface, NULL, x, y, sprite2s.size, sprite2s.data, index, filter);
 	assert(surface->format->BitsPerPixel == 8);
 	Uint8 *             pixels =    (Uint8 *)surface->pixels + (y * surface->pitch) + x;
 	const Uint8 * const pixels_ll = (Uint8 *)surface->pixels,  // lower limit
@@ -729,6 +743,7 @@ void blit_sprite2_filter(SDL_Surface *surface, int x, int y, Sprite2_array sprit
 
 void blit_sprite2_filter_clip(SDL_Surface *surface, int x, int y, Sprite2_array sprite2s, unsigned int index, Uint8 filter)
 {
+	SMOOTH_RECORD(SMOOTH_OP_SPRITE2_FILTER_CLIP, surface, NULL, x, y, sprite2s.size, sprite2s.data, index, filter);
 	assert(surface->format->BitsPerPixel == 8);
 
 	const Uint8 *data = sprite2s.data + SDL_SwapLE16(((Uint16 *)sprite2s.data)[index - 1]);

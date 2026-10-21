@@ -386,8 +386,32 @@ Análise de usabilidade dos menus (o que falta, como "vídeo na pausa"):
 
 Primeira vez no Steam Deck (sem opentyrian.cfg; SteamDeck=1 ou placa "Valve"
 em /sys/devices/virtual/dmi/id/board_vendor, `running_on_steam_deck()` em
-`src/config.c`): tela cheia + Sharp Bilinear, mantendo Fit 4:3 (decisão do
-Gabriel em 2026-10-21). Quem já tem cfg não muda.
+`src/config.c`): tela cheia + Sharp Bilinear + Smooth Motion, mantendo Fit 4:3
+(decisão do Gabriel em 2026-10-21). Quem já tem cfg não muda.
+
+Movimento suave (`src/smooth.c`, Setup > Graphics > "Smooth Motion" e na
+página Graphics da pausa; `smooth_motion` na seção "video", desligado por
+padrão, ligado na 1ª vez no Deck; escrito do zero, SEM código do Modern Tyrian
+nem do Engaged, a pedido do Gabriel): a fase continua a 35 quadros/s. Cada
+primitiva de desenho (blit_sprite*, JE_pix, fill_rectangle_xy, JE_barShade,
+fundos `draw_background_layer`, filtros lava/água/blur, estrelas,
+superpixels) chama `SMOOTH_RECORD` e entra numa lista do quadro, quando o
+destino é game_screen ou VGAScreen2 (a HUD em VGAScreenSeg não entra).
+`smooth_tag()` diz de quem é o desenho (inimigo i, tiro z, explosão, nave,
+sidekick, estrela, fundo). Em `JE_starShowVGA`, `smooth_frame_due()` redesenha
+a lista sobre a cópia do quadro anterior e confere que sai igual (memcmp; se
+não sai, o quadro aparece como antes), e até o quadro vencer mostra imagens
+com cada coisa marcada no meio do caminho entre o quadro anterior e este
+(salto > 40 px não desliza; fundo pela linha/coluna do mapa), uma por
+atualização do monitor, nunca mais rápido que ele, nem sem VSync. O quadro em
+si não é mostrado (a próxima imagem parte dele), então a simulação começa na
+hora certa. Nada disso lê ou muda o estado do jogo. Primitiva nova que desenhe
+na fase precisa do `SMOOTH_RECORD` (senão o quadro sai diferente e perde o
+efeito); objeto novo que se mova precisa de `smooth_tag`. Testes:
+`test_autoplay` e `test_resume` ligam `smooth_test_enable` (conta quadros
+iguais/diferentes; tem de dar 0 diferentes) e `SMOOTH_DUMP=<pasta>:<quadro>:<n>`
+salva BMPs das imagens intermediárias. `TYRIAN_SMOOTH_STATS=1` escreve no log
+quantas imagens por segundo; `TYRIAN_SMOOTH_HZ` força a taxa do monitor.
 
 Steam Deck: o modo "Integer" já dá o encaixe exato 4x (1280x800, pixels
 quadrados), então não há opção nova para isso. O jogo não muda a taxa da tela

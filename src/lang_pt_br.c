@@ -585,6 +585,8 @@ const LangEntry lang_pt_br[] =
 	{ "Change the scaling mode.", "Muda o jeito de encaixar a imagem na tela." },
 	{ "Keep pixels even when the scale is not exact.", "Pixels iguais mesmo quando a escala não é exata." },
 	{ "Sync to the display to prevent tearing.", "Sincroniza com o monitor para a imagem não rasgar." },
+	{ "Smooth Motion:", "Movimento suave:" },
+	{ "Show the levels at the display's refresh rate.", "Mostra as fases na taxa de atualização do monitor." },
 	{ "Brightness:", "Brilho:" },
 	{ "Brighten the levels (F11 also works in game).", "Clareia as fases (na fase, F11 também muda)." },
 	{ "Keyboard...", "Teclado..." },
@@ -677,6 +679,8 @@ const LangEntry lang_pt_br[] =
 	{ "Scaling Mode", "Encaixe" },
 	{ "Brightness", "Brilho" },
 	{ "Brighten the level (F11 also works).", "Clareia a fase (F11 também muda)." },
+	{ "Smooth Motion", "Mov. suave" },
+	{ "Show the level at the display's refresh rate.", "Mostra a fase na taxa do monitor." },
 
 	// ---- Controller Map ----
 	{ "Controller Map", "Mapa do controle" },

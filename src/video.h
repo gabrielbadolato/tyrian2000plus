@@ -71,6 +71,8 @@ bool set_scaling_mode_by_name(const char *name);
 void deinit_video(void);
 
 void JE_clr256(SDL_Surface *);
+// Shows `surface` instead of VGAScreen (smooth motion's pictures in between).
+void video_present(SDL_Surface *surface);
 void JE_showVGA(void);
 
 void mapScreenPointToWindow(Sint32 *inout_x, Sint32 *inout_y);

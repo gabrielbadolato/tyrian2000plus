@@ -343,6 +343,7 @@ JE_word JE_portConfigs(void);
 /*SuperPixels*/
 void JE_doSP(JE_word x, JE_word y, JE_word num, JE_byte explowidth, JE_byte color);
 void JE_drawSP(void);
+void draw_superpixel(SDL_Surface *surface, int x, int y, Uint8 z, Uint8 color);
 
 void JE_drawOptionLevel(void);
 

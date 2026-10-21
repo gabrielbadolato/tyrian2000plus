@@ -48,6 +48,7 @@
 #include "pcxmast.h"
 #include "picload.h"
 #include "shots.h"
+#include "smooth.h"
 #include "update_check.h"
 #include "whatsnew.h"
 #include "sprite.h"
@@ -87,8 +88,16 @@ void JE_starShowVGA(void)
 		// resuming a level: as fast as it goes, showing a frame now and then
 		const bool fast = levelrec_fast();
 
+		const int view = starShowVGASpecialCode == 1 ? 1 :
+		                 starShowVGASpecialCode == 2 && processorType >= 2 ? 2 : 0;
+
+		// smooth motion: the pictures between the last frame and this one
+		bool shownBetween = false;
+
 		if (smoothScroll != 0 /*&& thisPlayerNum != 2*/ && !fast)
 		{
+			shownBetween = smooth_frame_due(view);
+
 			delayUntilElapsed();
 
 			setFrameCount(frameCountMax);
@@ -96,11 +105,11 @@ void JE_starShowVGA(void)
 
 		if (!fast || levelrec_fast_frame_due())
 		{
-			if (starShowVGASpecialCode == 1)
+			if (view == 1)
 			{
 				showFlipped(VGAScreenSeg, game_screen);
 			}
-			else if (starShowVGASpecialCode == 2 && processorType >= 2)
+			else if (view == 2)
 			{
 				showHeadlight(VGAScreenSeg, game_screen, player[0].x, player[0].y);
 			}
@@ -110,8 +119,13 @@ void JE_starShowVGA(void)
 			}
 			if (fast)
 				levelrec_draw_progress(VGAScreenSeg);
-			JE_showVGA();
+			// with smooth motion, the next pictures in between start from
+			// this frame, so it is not shown by itself
+			if (!shownBetween)
+				JE_showVGA();
 		}
+
+		smooth_frame_shown();
 	}
 
 	handleSdlEvents();
@@ -129,10 +143,12 @@ inline static void blit_enemy(SDL_Surface *surface, unsigned int i, signed int x
 	          y = enemy[i].ey + y_offset;
 	const unsigned int index = enemy[i].egr[enemy[i].enemycycle - 1] + sprite_offset;
 
+	smooth_tag(SMOOTH_ENEMY, i, (Uint8)x_offset | (Uint8)y_offset << 8);
 	if (enemy[i].filter != 0)
 		blit_sprite2_filter(surface, x, y, *enemy[i].sprite2s, index, enemy[i].filter);
 	else
 		blit_sprite2(surface, x, y, *enemy[i].sprite2s, index);
+	smooth_untag();
 }
 
 void JE_drawEnemy(int enemyOffset) // actually does a whole lot more than just drawing
@@ -613,6 +629,7 @@ start_level:
 	stats_level_end();  // before galagaMode changes twoPlayerMode
 
 	levelrec_level_end();
+	smooth_level_end();
 	watchedReplay = levelrec_end_watch();
 
 	if (galagaMode)
@@ -1007,6 +1024,7 @@ start_level_first:
 	BKwrap3 = BKwrap3to = &megaData3.mainmap[1][0];
 
 	stats_level_start();
+	smooth_level_begin();
 
 level_loop:
 
@@ -1374,7 +1392,10 @@ level_loop:
 			JE_word tempX2, tempY2;
 			JE_integer damage;
 			
-			if (!player_shot_move_and_draw(z, &is_special, &tempShotX, &tempShotY, &damage, &temp2, &chain, &playerNum, &tempX2, &tempY2))
+			smooth_tag(SMOOTH_PLAYER_SHOT, z, 0);
+			const bool shot_drawn = player_shot_move_and_draw(z, &is_special, &tempShotX, &tempShotY, &damage, &temp2, &chain, &playerNum, &tempX2, &tempY2);
+			smooth_untag();
+			if (!shot_drawn)
 			{
 				goto draw_player_shot_loop_end;
 			}
@@ -1782,10 +1803,12 @@ draw_player_shot_loop_end:
 								enemyShot[z].animate = 0;
 						}
 
+						smooth_tag(SMOOTH_ENEMY_SHOT, z, 0);
 						if (enemyShot[z].sgr >= 500)
 							blit_sprite2(VGAScreen, enemyShot[z].sx, enemyShot[z].sy, spriteSheet12, enemyShot[z].sgr + enemyShot[z].animate - 500);
 						else
 							blit_sprite2(VGAScreen, enemyShot[z].sx, enemyShot[z].sy, spriteSheet8, enemyShot[z].sgr + enemyShot[z].animate);
+						smooth_untag();
 					}
 				}
 
@@ -1885,10 +1908,12 @@ draw_player_shot_loop_end:
 			}
 			else
 			{
+				smooth_tag(SMOOTH_EXPLOSION, j, 0);
 				if (explosionTransparent)
 					blit_sprite2_blend(VGAScreen, explosions[j].x, explosions[j].y, explosionSpriteSheet, explosions[j].sprite + 1);
 				else
 					blit_sprite2(VGAScreen, explosions[j].x, explosions[j].y, explosionSpriteSheet, explosions[j].sprite + 1);
+				smooth_untag();
 
 				explosions[j].ttl--;
 			}

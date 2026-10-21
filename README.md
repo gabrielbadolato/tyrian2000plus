@@ -62,6 +62,9 @@ the open-source port of Tyrian. What this version adds:
   default).
 - More graphics options, including in the pause menu, and a Sharp Bilinear
   filter.
+- Smooth Motion (Setup > Graphics, off by default): the game still runs at
+  35 frames per second, exactly as before, but the screen shows the movement
+  in between at your monitor's refresh rate (60, 120, 144, 240 Hz...).
 - Menus, help and item names in Portuguese (Brazilian).
 - Ready-to-play builds for Windows, Linux and the Steam Deck.
 - An About screen with the story of the project and the credits.
@@ -150,9 +153,10 @@ through the itch.io app you don't need the script: the app updates itself.
 
 **Deck screen:** the default is "Fit 4:3", true to 1995 monitors. For full
 screen with sharp pixels, use Setup > Graphics > Scaling Mode > "Integer". The
-game runs at 35 frames per second: on the Deck OLED, set the refresh rate to
-70 Hz (per-game profile); on the Deck LCD, leave it at 60 Hz. Don't turn on
-Steam's frame limit.
+game runs at 35 frames per second; Smooth Motion (on by default on the Deck)
+shows the movement at the screen's refresh rate, so any rate works. If you
+turn it off, set the Deck OLED to 70 Hz (per-game profile) and leave the Deck
+LCD at 60 Hz. Don't turn on Steam's frame limit.
 
 ## Controls
 
@@ -221,7 +225,8 @@ In a window, the game opens where it was last time, with the same size.
   Controls.
 - **During a level, Start or Esc:** volume, detail level, game speed, Auto
   Fire, Controls... (the same Setup > Controls) and Graphics... (full screen,
-  scaling, Sharp Bilinear, VSync and brightness, applied right away).
+  scaling, Sharp Bilinear, VSync, Smooth Motion and brightness, applied right
+  away).
 - **Setup > Statistics:** the totals of all your games (time in levels,
   levels completed, enemies destroyed, deaths, secret levels, datacubes,
   highest score) and the records of each level: best score, fastest time and

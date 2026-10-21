@@ -58,6 +58,20 @@ change is in this repository's git log.
   the browser downloads it or loads one (keeping a copy of the previous
   saves). A tyrian.sav copied into the folder while the game is open is
   read at the title screen and no longer written over when the game closes.
+  The folder's path is shown on the status line too, for where there is no
+  file manager to open it (the Steam Deck in Game Mode).
+- **What's New in the browser** now has the notes of each version from
+  GitHub too, in Portuguese as well, and shows a newer version's notes
+  first, like the Windows and Linux versions.
+- The settings folder is created even when the folder above it is missing
+  (a Linux user without ~/.config got no settings, saves or log at all).
+- Review before this version: the whole game was played automatically again
+  with Smooth Motion on (every frame it redraws is checked against the
+  original), and the Steam Deck simulator now saves and resumes like the
+  real thing. Small fixes from it: a note with a link in the middle of a
+  sentence keeps the words after the link; with Smooth Motion on, the menus
+  wake up less often to move the mouse pointer; the log says the display's
+  refresh rate when Smooth Motion starts.
 
 ## v1.3 (2026-10-20)
 

@@ -215,7 +215,7 @@ Uint32 mouse_pointer_between(void)
 	if (wait == UINT32_MAX || wait > 0)
 		return wait;
 	if (mouseX == pointerX && mouseY == pointerY)
-		return 2;  // look again soon
+		return MAX(2, smooth_refresh_ms() / 4);  // look again soon, without waking up all the time
 
 	if (pointerScreen == NULL || pointerScreen->w != VGAScreen->w || pointerScreen->h != VGAScreen->h)
 	{

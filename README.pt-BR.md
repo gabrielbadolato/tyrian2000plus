@@ -251,8 +251,10 @@ os controles de toque sumirem de novo.
   pontuação, menor tempo e mais inimigos destruídos. Ficam no arquivo
   statistics.cfg, junto dos saves.
 - **Setup > Saved Games (Jogos salvos):** no Windows e no Linux, abre a
-  pasta do tyrian.sav (seus jogos salvos); no navegador, baixa ou carrega
-  esse arquivo. Veja abaixo.
+  pasta do tyrian.sav (seus jogos salvos) e mostra o caminho dela na linha
+  de baixo (no Steam Deck em Modo de Jogo não há gerenciador de arquivos, e
+  fica só o caminho); no navegador, baixa ou carrega esse arquivo. Veja
+  abaixo.
 - **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
 - **Setup > What's New (Novidades)** (também no alto do About): o que mudou
   em cada versão, da mais nova para a mais antiga, em português ou inglês. Se
@@ -269,7 +271,9 @@ os controles de toque sumirem de novo.
   resposta traz as notas de cada versão para a tela de novidades, guardadas
   no release-notes.txt da sua pasta de usuário para quando não houver
   internet. Nenhum dado seu é enviado; sem internet, nada aparece. Coloque em
-  "Off" para desligar.
+  "Off" para desligar. No navegador o jogo nunca pergunta (aquela versão é
+  sempre a mais nova do itch.io); a própria página busca as notas para a
+  tela de novidades.
 
 ## Jogos salvos entre computador e navegador
 

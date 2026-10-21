@@ -166,13 +166,37 @@ File dataFileOpen(const char *filename, const char *mode)
 	return file;
 }
 
-static void makeDir(const char *path)
+static void makeOneDir(const char *path)
 {
 #ifdef _WIN32
 	(void)_mkdir(path);
 #else
 	(void)mkdir(path, 0700);
 #endif
+}
+
+// Creates the folder and the folders above it that are missing (like
+// "mkdir -p"): a Linux user without ~/.config, or the Steam Deck simulator
+// with a fresh folder, would otherwise get no settings, saves or log at all.
+static void makeDir(const char *path)
+{
+	char *copy = malloc(strlen(path) + 1);
+	if (copy == NULL)
+		return;
+	strcpy(copy, path);
+
+	for (char *c = copy + 1; *c != '\0'; ++c)
+	{
+		if (*c == '/' || *c == '\\')
+		{
+			const char sep = *c;
+			*c = '\0';
+			makeOneDir(copy);
+			*c = sep;
+		}
+	}
+	makeOneDir(copy);
+	free(copy);
 }
 
 // "dir/name" in a new string (just a copy of dir when name is NULL).
@@ -392,6 +416,11 @@ bool userDirOpenInFileManager(void)
 	// a file:// URL, with anything unusual in the path %-escaped
 	static const char hex[] = "0123456789ABCDEF";
 	char *url = malloc(8 + 3 * strlen(dir) + 1);
+	if (url == NULL)
+	{
+		SDL_free(absolute);
+		return false;
+	}
 	strcpy(url, dir[0] == '/' ? "file://" : "file:///");
 	char *out = url + strlen(url);
 	for (const unsigned char *in = (const unsigned char *)dir; *in != '\0'; ++in)
@@ -417,6 +446,15 @@ bool userDirOpenInFileManager(void)
 	free(url);
 	SDL_free(absolute);
 	return opened;
+}
+
+// The folder with the settings and saves, to show to the player; "" if it is
+// the game's own folder (portable mode).
+const char *userDirDisplayPath(void)
+{
+	if (userDirPath == NULL)
+		determineUserDirPath();
+	return userDirPath;
 }
 
 File userFileOpen(const char *filename, const char *mode)

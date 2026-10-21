@@ -675,6 +675,8 @@ const LangEntry lang_pt_br[] =
 	{ "Saved Games...", "Jogos salvos..." },
 	{ "Take your saved games to or from another computer.", "Leve ou traga seus jogos salvos de outro computador." },
 	{ "Open the folder with tyrian.sav, your saved games.", "Abre a pasta do tyrian.sav, com os seus jogos salvos." },
+	{ "Opening:", "Abrindo:" },  // the status line with the folder's path
+	{ "Folder:", "Pasta:" },
 
 	// ---- pause menu (Tyrian 2000+) ----
 	{ "Auto Fire", "Tiro auto." },

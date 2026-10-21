@@ -71,6 +71,11 @@ static void finish(int status, const char *message)
 	unsigned long same, different, skipped;
 	smooth_test_counts(&same, &different, &skipped);
 	printf("smooth motion: %lu frames redrawn the same, %lu different, %lu not redrawn\n", same, different, skipped);
+	if (different > 0 && status == 0)
+	{
+		status = EXIT_FAILURE;
+		message = "smooth motion redrew a frame differently (a drawing primitive without SMOOTH_RECORD?)";
+	}
 	printf("%s: episode %u, difficulty %d, route %u, %u levels, %u s of game time, %u enemies removed by the autopilot%s%s\n",
 	       status == 0 ? "ok" : "FAIL", startEpisode, initialDifficulty, route, levelsPlayed,
 	       virtualTicks / 1000, enemiesRemoved, message ? ": " : "", message ? message : "");

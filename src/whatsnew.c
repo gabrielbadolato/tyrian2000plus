@@ -173,6 +173,12 @@ static void emitParagraph(NotesSink sink, NotesStyle style, char *text)
 		char link[256];
 		SDL_strlcpy(link, url, MIN(strcspn(url, " )") + 1, sizeof(link)));
 
+		// what follows the link ("See https://... for details") is kept
+		// as a line of its own, after the link
+		char *after = url + strcspn(url, " )");
+		while (*after == ')' || *after == ' ' || *after == ',' || *after == '.')
+			++after;
+
 		char *label = start;
 		*url = '\0';
 		length = strlen(label);
@@ -182,6 +188,8 @@ static void emitParagraph(NotesSink sink, NotesStyle style, char *text)
 			label = strstr(link, "://") + 3;
 
 		emit(sink, NOTES_LINK, label, link);
+		if (*after != '\0')
+			emit(sink, style == NOTES_BULLET || style == NOTES_SUBBULLET ? NOTES_SUBBULLET : style, after, NULL);
 		return;
 	}
 

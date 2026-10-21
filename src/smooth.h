@@ -144,6 +144,8 @@ bool smooth_show_until_due(int frames, void (*show)(Uint32 alpha, const void *da
 // was shown.
 Uint32 smooth_picture_wait(void);
 void smooth_picture_shown(void);
+// the time between two pictures of the display (ms)
+Uint32 smooth_refresh_ms(void);
 
 void smooth_sim_begin(void);
 void smooth_sim_drawn(void);

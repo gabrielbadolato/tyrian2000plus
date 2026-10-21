@@ -84,6 +84,17 @@ static bool manual = false;
 
 static void finish(int status, const char *message)
 {
+	// smooth motion: every frame shown must come out the same when it is
+	// redrawn from its list of drawings (src/smooth.c)
+	unsigned long same, different, skipped;
+	smooth_test_counts(&same, &different, &skipped);
+	printf("smooth motion: %lu frames redrawn the same, %lu different, %lu not redrawn\n", same, different, skipped);
+	if (different > 0 && status == 0)
+	{
+		status = EXIT_FAILURE;
+		message = "smooth motion redrew a frame differently (a drawing primitive without SMOOTH_RECORD?)";
+	}
+
 	printf("%s: %s%s%s\n", status == 0 ? "ok" : "FAIL",
 	       testMode == RECORD ? "record" : testMode == RESUME ? "resume" : "watch",
 	       message ? ": " : "", message ? message : "");

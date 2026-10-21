@@ -166,7 +166,14 @@ void mouseClearInput(void)
 
 void mouseSetRelative(bool enable)
 {
+#ifndef __EMSCRIPTEN__
 	SDL_SetRelativeMouseMode(enable && windowHasFocus);
+#else
+	// In the browser relative mode is a pointer lock: the browser takes it
+	// at the next key press after a level resumes, and then keeps the next
+	// Esc for itself (to release the mouse) instead of passing it to the
+	// game.  Mouse movement still reaches the ship without it.
+#endif
 
 	mouseRelativeEnabled = enable;
 

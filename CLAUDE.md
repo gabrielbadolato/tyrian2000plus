@@ -354,11 +354,22 @@ Accurate usa o Nuked OPL3 1.8
 (`src/opl.c`). Os dois recebem todas as escritas; o volume do Nuked foi
 igualado medindo as 41 músicas (fator 6/5).
 
+Scaler: o padrão é "None" desde a v1.4 (antes Scale2x; pedido do Gabriel em
+2026-10-21). Como o cfg sempre grava o scaler, "Scale2x" salvo só vale com
+`scaler_chosen = yes` (gravado quando o jogador escolhe no menu); outro scaler
+salvo é escolha e fica. A janela nunca abre menor que 640x400
+(`window_set_scaler_size()` em `src/video.c`), porque o None é só 320x200.
+
 Brilho: Setup > Graphics > Brightness é o mesmo `gammaCorrection` da tecla
 F11 (salvo no tyrian.cfg); só vale dentro das fases.
 
 Análise de usabilidade dos menus (o que falta, como "vídeo na pausa"):
 `/mnt/project-files/analises/usabilidade-menus.md` no projeto.
+
+Primeira vez no Steam Deck (sem opentyrian.cfg; SteamDeck=1 ou placa "Valve"
+em /sys/devices/virtual/dmi/id/board_vendor, `running_on_steam_deck()` em
+`src/config.c`): tela cheia + Sharp Bilinear, mantendo Fit 4:3 (decisão do
+Gabriel em 2026-10-21). Quem já tem cfg não muda.
 
 Steam Deck: o modo "Integer" já dá o encaixe exato 4x (1280x800, pixels
 quadrados), então não há opção nova para isso. O jogo não muda a taxa da tela

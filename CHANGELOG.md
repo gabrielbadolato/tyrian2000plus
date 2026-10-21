@@ -10,6 +10,15 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Sharp pixels by default**: Setup > Graphics > "Scaler" now starts at
+  "None" instead of "Scale2x", so the game looks like the original, with no
+  smoothing of the edges. If you never changed the scaler, it switches to
+  None once; if you picked another one, it stays. The window still opens at
+  640x400 or more.
+- **Steam Deck, first start**: with no settings saved yet, the game opens in
+  full screen with "Sharp Bilinear" on, so the 4:3 picture fills the 1280x800
+  screen's height with even pixels. Saved settings are kept, and nothing
+  changes on a PC.
 - **Browser: Esc pauses on the first press every time.** After the pause
   the browser no longer grabs the mouse pointer, which made it keep the next
   Esc for itself.

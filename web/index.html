@@ -413,6 +413,13 @@
       lockReleasing = true;
       document.exitPointerLock();
     }
+    // A level started or resumed with a click or a key a moment ago still
+    // counts as one, so a mouse player is not left without it; not after
+    // Esc, which the browser would take back along with the lock.
+    if (lockWanted && performance.now() - mouseMovedAt < 30000 &&
+        performance.now() - escapeAt > 1500 &&
+        (!navigator.userActivation || navigator.userActivation.isActive))
+      takeMouseLock();
   };
   function takeMouseLock() {
     if (!lockWanted || mouseLocked() || !running || saves.classList.contains("open")) return;
@@ -440,7 +447,9 @@
     if (released || !lockWanted || document.hidden || !document.hasFocus() ||
         performance.now() - escapeAt < 500)
       return;
-    ["keydown", "keyup"].forEach(function (type) {
+    // (a keyup first: the browser may have kept the one of an earlier Esc,
+    // and the game would take this one for the same key still held)
+    ["keyup", "keydown", "keyup"].forEach(function (type) {
       var e = new KeyboardEvent(type, { key: "Escape", code: "Escape", bubbles: true, cancelable: true });
       Object.defineProperty(e, "keyCode", { value: 27 });
       Object.defineProperty(e, "which", { value: 27 });

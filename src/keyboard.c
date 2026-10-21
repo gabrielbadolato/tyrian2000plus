@@ -37,6 +37,15 @@ bool windowHasFocus;
 
 bool keysactive[SDL_NUM_SCANCODES];
 
+// A quick tap could start and end between two frames (more so in the
+// browser, where key events arrive in bursts), and then the game, which
+// reads keysactive once per frame, never saw it.  So a key stays held for at
+// least a couple of frames after it is pressed.
+#define KEY_MIN_HOLD_MS 60
+static Uint32 keyDownTicks[SDL_NUM_SCANCODES];
+static bool keyReleasePending[SDL_NUM_SCANCODES];
+static bool anyKeyReleasePending;
+
 // There are too many virtual keys, so just keep track of the few we need.
 const SDL_Keycode lordKeySyms[] = { SDLK_l, SDLK_o, SDLK_r, SDLK_d };
 bool lordKeySymsDown[4] = { 0 };
@@ -179,6 +188,25 @@ void handleSdlEvents(void)
 {
 	SDL_Event ev;
 
+	if (anyKeyReleasePending)
+	{
+		anyKeyReleasePending = false;
+		for (size_t i = 0; i < COUNTOF(keyReleasePending); ++i)
+		{
+			if (!keyReleasePending[i])
+				continue;
+			if (SDL_GetTicks() - keyDownTicks[i] >= KEY_MIN_HOLD_MS)
+			{
+				keysactive[i] = false;
+				keyReleasePending[i] = false;
+			}
+			else
+			{
+				anyKeyReleasePending = true;
+			}
+		}
+	}
+
 	while (SDL_PollEvent(&ev))
 	{
 		switch (ev.type)
@@ -220,7 +248,11 @@ void handleSdlEvents(void)
 				}
 
 				if (!ev.key.repeat)
+				{
 					keysactive[ev.key.keysym.scancode] = true;
+					keyDownTicks[ev.key.keysym.scancode] = SDL_GetTicks();
+					keyReleasePending[ev.key.keysym.scancode] = false;
+				}
 
 				for (size_t i = 0; i < COUNTOF(lordKeySyms); ++i)
 					lordKeySymsDown[i] |= ev.key.keysym.sym == lordKeySyms[i];
@@ -241,7 +273,18 @@ void handleSdlEvents(void)
 				break;
 
 			case SDL_KEYUP:
-				keysactive[ev.key.keysym.scancode] = false;
+				// (not the keys pushed for controllers, sym 0, which come
+				// down and up together on purpose)
+				if (ev.key.keysym.sym != 0 &&
+				    SDL_GetTicks() - keyDownTicks[ev.key.keysym.scancode] < KEY_MIN_HOLD_MS)
+				{
+					keyReleasePending[ev.key.keysym.scancode] = true;
+					anyKeyReleasePending = true;
+				}
+				else
+				{
+					keysactive[ev.key.keysym.scancode] = false;
+				}
 
 				for (size_t i = 0; i < COUNTOF(lordKeySyms); ++i)
 					lordKeySymsDown[i] &= ev.key.keysym.sym != lordKeySyms[i];

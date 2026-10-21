@@ -32,6 +32,17 @@ change is in this repository's git log.
 - **Browser: Esc pauses on the first press every time.** After the pause
   the browser no longer grabs the mouse pointer, which made it keep the next
   Esc for itself.
+- **Touch controls in the browser**: on a phone or tablet, touching the
+  screen brings up a stick and buttons beside the game (below it with the
+  phone upright): FIRE, SIDEKICKS (both), MODE (rear weapon) and MENU.
+  Dragging a finger on the game moves the ship too, and menus work by
+  tapping. A key or a controller hides them again. Menu rows on the title
+  screens are easier to tap or click.
+- **Saved games between the browser and the computer**: Setup > "Saved
+  Games..." opens the folder with tyrian.sav on Windows and Linux, and in
+  the browser downloads it or loads one (keeping a copy of the previous
+  saves). A tyrian.sav copied into the folder while the game is open is
+  read at the title screen and no longer written over when the game closes.
 
 ## v1.3 (2026-10-20)
 

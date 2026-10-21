@@ -40,6 +40,7 @@ bool userFileExists(const char *filename);
 
 File dataFileOpen(const char *filename, const char *mode);
 File userFileOpen(const char *filename, const char *mode);
+bool userDirOpenInFileManager(void);
 
 void fileSetPosition(File *file, long position);
 long fileGetPosition(File *file);

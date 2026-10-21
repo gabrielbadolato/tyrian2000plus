@@ -13,8 +13,10 @@ do jogo são os da versão freeware original, sem nenhuma alteração.
 
 Grátis, já com os dados originais do jogo: instalador ou .zip para Windows,
 e Linux / Steam Deck. Como instalar está [mais abaixo](#instalação).
-Ou jogue direto no navegador, na página do itch.io, sem instalar nada (os
-saves ficam guardados naquele navegador).
+Ou jogue direto no navegador, na página do itch.io, sem instalar nada,
+inclusive no celular ou tablet (controles na tela). Os saves ficam guardados
+naquele navegador, e dá para levá-los ao computador e trazer de volta (veja
+[Jogos salvos](#jogos-salvos-entre-computador-e-navegador)).
 
 <table>
   <tr>
@@ -189,14 +191,22 @@ Setup > Controls > Shortcuts):
 
 Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
 
+**Tela de toque** (celular ou tablet, no navegador): toque na tela e aparecem
+um direcional e botões ao lado do jogo (embaixo dele com o celular em pé): o
+direcional move, TIRO atira, SIDEKICKS dispara os dois sidekicks, MODO troca
+a arma traseira e MENU abre o menu do jogo. Também dá para arrastar o dedo
+sobre o próprio jogo: a nave vai junto, atirando. Nos menus, toque no item,
+ou use o direcional e TIRO (OK) / MENU (voltar). Teclado ou controle fazem
+os controles de toque sumirem de novo.
+
 ## Onde fica cada opção
 
 - **Tela de título > About:** o que é o jogo, de onde veio, os créditos e os
   links (Enter ou A abre o link no navegador).
 - **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
   (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
-  idioma (Language), Check Updates, estatísticas (Statistics), novidades
-  (What's New) e About.
+  idioma (Language), Check Updates, jogos salvos (Saved Games), estatísticas
+  (Statistics), novidades (What's New) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
   carregado (o jogo também salva "LAST LEVEL" ao chegar na nave depois de
   cada fase e ao começar cada fase). Só aparece quando existe um. Se o jogo
@@ -234,6 +244,9 @@ Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
   secretas, datacubes, maior pontuação) e os recordes de cada fase: maior
   pontuação, menor tempo e mais inimigos destruídos. Ficam no arquivo
   statistics.cfg, junto dos saves.
+- **Setup > Saved Games (Jogos salvos):** no Windows e no Linux, abre a
+  pasta do tyrian.sav (seus jogos salvos); no navegador, baixa ou carrega
+  esse arquivo. Veja abaixo.
 - **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
 - **Setup > What's New (Novidades)** (também no alto do About): o que mudou
   em cada versão, da mais nova para a mais antiga, em português ou inglês. Se
@@ -251,6 +264,27 @@ Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
   no release-notes.txt da sua pasta de usuário para quando não houver
   internet. Nenhum dado seu é enviado; sem internet, nada aparece. Coloque em
   "Off" para desligar.
+
+## Jogos salvos entre computador e navegador
+
+Todos os seus jogos salvos e recordes ficam num arquivo só, o `tyrian.sav`,
+igual em todas as versões (é até o formato do jogo original).
+
+- **Do navegador para o computador:** no navegador, Configurações > Jogos
+  salvos... (ou "Jogos salvos" na primeira tela, antes do Jogar) > "Baixar o
+  tyrian.sav". No computador, com o jogo na tela de título (ou fechado),
+  Configurações > Jogos salvos... abre a pasta do jogo: ponha ali o
+  `tyrian.sav` baixado, substituindo o que estiver lá.
+- **Do computador para o navegador:** no computador, Configurações > Jogos
+  salvos... abre a pasta do `tyrian.sav`. No navegador, Configurações > Jogos
+  salvos... > "Carregar um tyrian.sav..." e escolha esse arquivo. O navegador
+  guarda os saves anteriores como `tyrian-antes-de-carregar.sav` e reabre o
+  jogo.
+
+A pasta do jogo é `%APPDATA%\Tyrian2000Plus` no Windows e
+`~/.config/tyrian2000plus` no Linux e no Steam Deck. Um `tyrian.sav` posto
+ali com o jogo aberto é lido quando você volta à tela de título, e o jogo não
+grava por cima dele ao fechar.
 
 ## Dicas do Steam Controller
 

@@ -28,6 +28,7 @@
 #include "nortsong.h"
 #include "opentyr.h"
 #include "padglyph.h"
+#include "touch.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -482,7 +483,10 @@ void poll_joystick(int j)
 
 	// if new input, reset press-repeat delay
 	if (joystick[j].input_pressed)
+	{
 		joystick[j].joystick_delay = SDL_GetTicks() + joystick_repeat_delay;
+		touch_hide();  // playing with the controller: the touch controls go away
+	}
 }
 
 // updates all joystick states
@@ -520,6 +524,7 @@ void push_joysticks_as_keyboard(void)
 	const SDL_Scancode direction[4] = { SDL_SCANCODE_UP, SDL_SCANCODE_RIGHT, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT };
 
 	poll_joysticks();
+	touch_push_as_keyboard();
 
 	for (int j = 0; j < joysticks; j++)
 	{

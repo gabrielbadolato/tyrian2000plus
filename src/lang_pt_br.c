@@ -668,6 +668,9 @@ const LangEntry lang_pt_br[] =
 	{ "Unknown Controller", "Controle desconhecido" },
 	{ "Press ESC to quit the jukebox.", "Aperte ESC para sair da jukebox." },
 	{ "Arrow keys change the song being played.", "As setas trocam a música que está tocando." },
+	{ "Saved Games...", "Jogos salvos..." },
+	{ "Take your saved games to or from another computer.", "Leve ou traga seus jogos salvos de outro computador." },
+	{ "Open the folder with tyrian.sav, your saved games.", "Abre a pasta do tyrian.sav, com os seus jogos salvos." },
 
 	// ---- pause menu (Tyrian 2000+) ----
 	{ "Auto Fire", "Tiro auto." },
@@ -691,6 +694,9 @@ const LangEntry lang_pt_br[] =
 	{ "Battery: Low", "Bateria: fraca" },
 	{ "Battery: Medium", "Bateria: média" },
 	{ "Battery: Full", "Bateria: cheia" },
+
+	// ---- touch screen buttons ("FIRE" is above; short, they fit a button) ----
+	{ "MODE", "MODO" },
 
 	// ---- keyboard on the screen (keys at most 9 characters) ----
 	{ "Space", "Espaço" },

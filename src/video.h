@@ -72,6 +72,8 @@ void deinit_video(void);
 
 void JE_clr256(SDL_Surface *);
 void JE_showVGA(void);
+void video_refresh(void);  // shows the last frame again (the touch controls changed)
+void video_get_output_rect(SDL_Rect *out);  // where the game is in the window
 
 void mapScreenPointToWindow(Sint32 *inout_x, Sint32 *inout_y);
 void mapWindowPointToScreen(Sint32 *inout_x, Sint32 *inout_y);

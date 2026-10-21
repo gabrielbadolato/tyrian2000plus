@@ -173,6 +173,8 @@ void saveConfiguration(void);
 
 void loadSaves(void);
 void saveSaves(void);
+void saveSavesUnlessReplaced(void);  // when the game closes
+void reloadSavesIfReplaced(void);    // tyrian.sav changed outside the game
 
 void JE_saveGame(JE_byte slot, const char *name);
 void JE_loadGame(JE_byte slot);

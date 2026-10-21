@@ -8,6 +8,14 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Browser: the mouse stays in the game**: during a level, once the mouse is
+  used (a click, or a key after moving it), the page holds the pointer, so the
+  ship keeps following the mouse instead of stopping when the pointer reaches
+  the edge of the page. Esc still pauses with the first press; menus,
+  keyboard and touch work as before.
+
 ## v1.4 (2026-10-21)
 
 - **What's New**: Setup > "What's New..." (also at the top of About) shows

@@ -82,6 +82,19 @@ pequenas e podem seguir as regras acima normalmente.
   segue o build.yml de sempre. Precisa da opção "Allow GitHub Actions to
   create and approve pull requests"; sem ela o resumo da execução dá o link
   para abrir o PR à mão.
+- Navegador (itch.io): `./make_web.sh [--with-data]` compila o mesmo código
+  com Emscripten (SDL2 port do mesmo fonte do make_linux.sh, ASYNCIFY: cada
+  SDL_Delay devolve o controle ao navegador, então os laços do jogo ficaram
+  como estão) e gera `dist/Tyrian2000Plus-web/` (index.html de `web/`,
+  tyrian.js/.wasm e `data/tyrian2000.tar` com os dados sem alteração, só com
+  --with-data). A página guarda a pasta do usuário no IndexedDB, pede um clique
+  antes de começar (som) e tem botão de tela cheia (trava o Esc no Chrome).
+  Diferenças no C ficam em `#ifdef __EMSCRIPTEN__`: sem rede e sem aviso de
+  atualização (o item some do Setup), a janela segue o tamanho da página
+  (`window_fit_page()` em `src/video.c`) e cada quadro devolve a vez ao
+  navegador. Job "Web (browser)" no build.yml; na release vai ao itch.io pelo
+  canal "html5" (na página do itch: marcar o arquivo como "played in the
+  browser"). Teste local: `python3 -m http.server -d dist/Tyrian2000Plus-web`.
 - Steam Deck: `linux/atualizar-tyrian.sh` instala/atualiza pela última
   Release (sem chave, repositório público), conferindo o SHA256SUMS; com uma
   chave do GitHub em ~/.config/tyrian2000plus/github-token pega o build mais

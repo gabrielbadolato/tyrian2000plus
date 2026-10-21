@@ -1,0 +1,252 @@
+<!doctype html>
+<!--
+  Tyrian 2000+ in the browser: the page around the WebAssembly build
+  (see make_web.sh).
+
+  Copyright (C) 2026 Tyrian 2000+ contributors
+  GNU General Public License version 2 or later (licencas/GPL-2.0.txt).
+
+  What the page does, before the game starts:
+  - keeps the game's user folder (settings, saves, statistics) in the
+    browser's IndexedDB, loaded before the game and written back a moment
+    after the game closes a file, every few seconds, when the tab is hidden
+    and when the game quits;
+  - loads the game data (data/tyrian2000.tar) into the folder the game
+    looks for it in (/data, next to the "executable");
+  - waits for a click or a key: browsers only allow sound after one.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tyrian 2000+</title>
+<link rel="icon" href="icon.png">
+<style>
+  :root { --bg: #000; --fg: #e8d9a8; --dim: #9a8c66; --accent: #f0b53c; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font: 16px/1.4 system-ui, sans-serif; overflow: hidden; }
+  #canvas { display: block; width: 100vw; height: 100vh; outline: none;
+    image-rendering: pixelated; }
+  #overlay { position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; background: var(--bg);
+    text-align: center; padding: 16px; box-sizing: border-box; cursor: default; }
+  #overlay.ready { cursor: pointer; }
+  #overlay img { width: 96px; height: 96px; image-rendering: pixelated; }
+  #overlay h1 { margin: 0; font-size: 28px; letter-spacing: 1px; color: var(--accent); }
+  #status { min-height: 1.4em; color: var(--dim); }
+  #play { display: none; font: inherit; font-size: 20px; padding: 10px 28px;
+    border: 2px solid var(--accent); background: transparent; color: var(--accent);
+    border-radius: 6px; cursor: pointer; }
+  #overlay.ready #play { display: inline-block; }
+  #play:hover, #play:focus-visible { background: var(--accent); color: var(--bg); outline: none; }
+  #hint { max-width: 34em; font-size: 14px; color: var(--dim); }
+  #hint a { color: var(--fg); }
+  #full { position: fixed; top: 8px; right: 8px; display: none; font: inherit; font-size: 13px;
+    padding: 4px 10px; border: 1px solid var(--dim); background: rgba(0,0,0,.6);
+    color: var(--fg); border-radius: 4px; cursor: pointer; opacity: .35; }
+  #full:hover { opacity: 1; }
+  body.playing #full { display: block; }
+  body.playing:fullscreen #full, body.playing:has(:fullscreen) #full { display: none; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+<button id="full" type="button"></button>
+<div id="overlay">
+  <img src="icon.png" alt="">
+  <h1>Tyrian 2000+</h1>
+  <div id="status"></div>
+  <button id="play" type="button"></button>
+  <div id="hint"></div>
+</div>
+<script>
+"use strict";
+(function () {
+  var pt = /^pt/i.test(navigator.language || "");
+  var T = pt ? {
+    loading: "Carregando...", data: "Carregando os dados do jogo... ",
+    saves: "Abrindo os saves...", play: "Jogar",
+    hint: "Os saves ficam guardados neste navegador. Tela cheia: botão no canto ou Alt-Enter. " +
+          "Controles Xbox e PlayStation funcionam (aperte um botão depois de começar).",
+    full: "Tela cheia", nodata: "Esta versão não tem os dados do jogo.",
+    error: "Não foi possível abrir o jogo: ", closed: "O jogo foi fechado.", again: "Jogar de novo"
+  } : {
+    loading: "Loading...", data: "Loading the game data... ",
+    saves: "Opening the saves...", play: "Play",
+    hint: "Your saves are kept in this browser. Full screen: the button in the corner or Alt-Enter. " +
+          "Xbox and PlayStation controllers work (press a button after the game starts).",
+    full: "Full screen", nodata: "This build has no game data.",
+    error: "The game could not start: ", closed: "The game was closed.", again: "Play again"
+  };
+  document.documentElement.lang = pt ? "pt-BR" : "en";
+
+  var overlay = document.getElementById("overlay");
+  var status = document.getElementById("status");
+  var play = document.getElementById("play");
+  var full = document.getElementById("full");
+  var canvas = document.getElementById("canvas");
+  play.textContent = T.play;
+  full.textContent = T.full;
+  document.getElementById("hint").textContent = T.hint;
+  status.textContent = T.loading;
+
+  // The game's user folder (see determineUserDirPath in src/file.c).
+  var USER_DIR = "/home/web_user/.config";
+  var syncing = false, syncAgain = false, syncTimer = 0;
+
+  function fail(message) {
+    status.textContent = T.error + message;
+    overlay.classList.remove("ready");
+    overlay.style.display = "";
+  }
+
+  function syncSaves() {
+    if (syncing) { syncAgain = true; return; }
+    syncing = true;
+    Module.FS.syncfs(false, function (err) {
+      syncing = false;
+      if (err) console.warn("saving to IndexedDB failed", err);
+      if (syncAgain) { syncAgain = false; syncSaves(); }
+    });
+  }
+  function syncSoon() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncSaves, 500);
+  }
+
+  function loadSaves() {
+    var FS = Module.FS;
+    FS.mkdirTree(USER_DIR);
+    FS.mount(Module.IDBFS, {}, USER_DIR);
+    Module.addRunDependency("saves");
+    FS.syncfs(true, function (err) {
+      if (err) console.warn("reading from IndexedDB failed", err);
+      Module.removeRunDependency("saves");
+    });
+    // Any file the game writes or closes in its folder is copied back soon.
+    var close = FS.close;
+    FS.close = function (stream) {
+      var r = close.apply(this, arguments);
+      if (stream && stream.path && stream.path.indexOf(USER_DIR) === 0 && (stream.flags & 3) !== 0)
+        syncSoon();
+      return r;
+    };
+  }
+
+  // data/tyrian2000.tar: the original data files, unchanged, in a plain
+  // (ustar) tar; see make_web.sh.
+  function untar(buf) {
+    var bytes = new Uint8Array(buf), files = [];
+    function text(at, len) {
+      var s = "";
+      for (var i = at; i < at + len && bytes[i]; ++i) s += String.fromCharCode(bytes[i]);
+      return s;
+    }
+    for (var at = 0; at + 512 <= bytes.length && bytes[at]; ) {
+      var name = text(at, 100).replace(/^\.\//, "");
+      var size = parseInt(text(at + 124, 12).trim(), 8) || 0;
+      var type = text(at + 156, 1);
+      if ((type === "0" || type === "") && name)
+        files.push({ name: name, data: bytes.subarray(at + 512, at + 512 + size) });
+      at += 512 + Math.ceil(size / 512) * 512;
+    }
+    return files;
+  }
+
+  function loadData() {
+    Module.addRunDependency("data");
+    status.textContent = T.data;
+    fetch("data/tyrian2000.tar").then(function (r) {
+      if (!r.ok) throw new Error(T.nodata);
+      var total = +r.headers.get("Content-Length") || 0;
+      if (!r.body || !total) return r.arrayBuffer();
+      // with a progress figure while it downloads
+      var reader = r.body.getReader(), chunks = [], got = 0;
+      return (function pump() {
+        return reader.read().then(function (part) {
+          if (part.done) {
+            var all = new Uint8Array(got), at = 0;
+            chunks.forEach(function (c) { all.set(c, at); at += c.length; });
+            return all.buffer;
+          }
+          chunks.push(part.value);
+          got += part.value.length;
+          status.textContent = T.data + Math.min(100, Math.round(got * 100 / total)) + "%";
+          return pump();
+        });
+      })();
+    }).then(function (buf) {
+      var files = untar(buf);
+      if (!files.length) throw new Error(T.nodata);
+      Module.FS.mkdirTree("/data");
+      files.forEach(function (f) { Module.FS.writeFile("/data/" + f.name, f.data); });
+      Module.removeRunDependency("data");
+    }).catch(function (e) {
+      fail(e.message);
+    });
+  }
+
+  function start() {
+    if (!overlay.classList.contains("ready")) return;
+    overlay.style.display = "none";
+    document.body.classList.add("playing");
+    canvas.focus();
+    // The level in progress is recorded as it is played (lastlevel.rec, for
+    // Continue): copy what changed every few seconds, in case the tab is
+    // closed in the middle of a level.
+    setInterval(syncSaves, 5000);
+    try { Module.callMain([]); } catch (e) { if (e !== "unwind" && !(e && e.name === "ExitStatus")) throw e; }
+  }
+
+  function fullscreen() {
+    var el = document.documentElement;
+    var p = el.requestFullscreen ? el.requestFullscreen() : null;
+    // In full screen Esc would leave it instead of reaching the game (its
+    // pause key); Chrome and Edge can keep Esc for the page.
+    if (p && navigator.keyboard && navigator.keyboard.lock)
+      p.then(function () { navigator.keyboard.lock(["Escape"]).catch(function () {}); }).catch(function () {});
+    canvas.focus();
+  }
+  full.addEventListener("click", fullscreen);
+
+  overlay.addEventListener("click", start);
+  document.addEventListener("keydown", function (e) {
+    if (overlay.style.display !== "none" && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      start();
+    }
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && Module.FS) syncSaves();
+  });
+
+  window.Module = {
+    canvas: canvas,
+    preRun: [loadSaves, loadData],
+    onRuntimeInitialized: function () {
+      status.textContent = "";
+      overlay.classList.add("ready");
+      play.focus();
+    },
+    onExit: function () {
+      syncSaves();
+      document.body.classList.remove("playing");
+      if (document.fullscreenElement) document.exitFullscreen();
+      status.textContent = T.closed;
+      play.textContent = T.again;
+      overlay.classList.remove("ready");
+      overlay.style.display = "";
+      overlay.onclick = function () { location.reload(); };
+      play.style.display = "inline-block";
+    },
+    printErr: function (text) { console.warn(text); },
+    print: function (text) { console.log(text); }
+  };
+  window.addEventListener("error", function (e) {
+    if (overlay.style.display !== "none" && !overlay.classList.contains("ready")) fail(e.message);
+  });
+})();
+</script>
+<script src="tyrian.js"></script>
+</body>
+</html>

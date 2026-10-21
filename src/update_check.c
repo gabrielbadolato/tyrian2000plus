@@ -155,6 +155,14 @@ done:
 
 	return ok;
 }
+#elif defined(__EMSCRIPTEN__)
+// the browser version never checks (see update_check_start)
+static bool fetchLatestRelease(char *buffer, size_t bufferSize)
+{
+	(void)buffer;
+	(void)bufferSize;
+	return false;
+}
 #else
 static bool fetchLatestRelease(char *buffer, size_t bufferSize)
 {
@@ -255,6 +263,11 @@ void update_check_start(void)
 	if (!update_check_enabled || started)
 		return;
 	started = true;
+
+#ifdef __EMSCRIPTEN__
+	// The browser version is always the newest one, and has no threads.
+	return;
+#endif
 
 	// builds from a plain commit (no release tag) have nothing to compare
 	if (!parseVersion(opentyrian_version, currentVersion))

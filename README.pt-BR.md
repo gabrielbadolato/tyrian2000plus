@@ -13,6 +13,8 @@ do jogo são os da versão freeware original, sem nenhuma alteração.
 
 Grátis, já com os dados originais do jogo: instalador ou .zip para Windows,
 e Linux / Steam Deck. Como instalar está [mais abaixo](#instalação).
+Ou jogue direto no navegador, na página do itch.io, sem instalar nada (os
+saves ficam guardados naquele navegador).
 
 <table>
   <tr>

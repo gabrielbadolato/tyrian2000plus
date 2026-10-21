@@ -1,6 +1,7 @@
 name: Build
 
-# Builds Tyrian2000Plus for Windows and Linux (Steam Deck) on every push.
+# Builds Tyrian2000Plus for Windows, Linux (Steam Deck) and web browsers on
+# every push.
 # The packages are on the run's page under "Artifacts".  Publishing a GitHub
 # release also attaches them to the release.  Only the release packages carry
 # the freeware game data (unchanged, see add_game_data.sh); the per-push
@@ -160,6 +161,39 @@ jobs:
         with:
           name: release-windows
           path: release/
+
+  web:
+    name: Web (browser)
+    # The version that plays on the itch.io page (make_web.sh, Emscripten).
+    # 24.04 for its newer node, which Emscripten needs.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Cache Emscripten and SDL2
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: build/web
+          key: web-${{ hashFiles('make_web.sh') }}
+      - name: Build (make_web.sh)
+        run: ./make_web.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: Tyrian2000Plus-web
+          path: dist/Tyrian2000Plus-web/
+      # Release only: the same build with the game data, sent to the itch.io
+      # page, where it plays in the browser.
+      - name: Build with the game data (release)
+        if: github.event_name == 'release'
+        run: ./make_web.sh --with-data
+      - name: Send to itch.io
+        if: github.event_name == 'release'
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: ./itch_push.sh dist/Tyrian2000Plus-web html5 "$TAG"
 
   release:
     name: Attach to the release

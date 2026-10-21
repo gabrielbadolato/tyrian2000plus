@@ -295,7 +295,6 @@ const LangEntry lang_pt_br[] =
 	// ---- pause menu, at most 20 characters ----
 	{ "Music Volume", "Música" },
 	{ "Sound Volume", "Efeitos" },
-	{ "Detail Level", "Detalhes" },
 	{ "Game Speed", "Velocidade" },
 	{ "Return to Game", "Voltar ao jogo" },
 	{ "Quit Level", "Sair da fase" },
@@ -609,8 +608,6 @@ const LangEntry lang_pt_br[] =
 	{ "Accurate", "Fiel" },
 	{ "Game Speed:", "Velocidade:" },
 	{ "Change how fast the levels run.", "Muda a velocidade das fases." },
-	{ "Detail Level:", "Detalhes:" },
-	{ "Show fewer or more effects in the levels.", "Mostra menos ou mais efeitos nas fases." },
 	{ "Left/right change the volume, Enter mutes.", "Esquerda/direita mudam o volume, Enter desliga." },
 	{ "Shortcuts...", "Atalhos..." },
 	{ "See the keys that work anywhere in the game.", "Mostra as teclas que valem em todo o jogo." },

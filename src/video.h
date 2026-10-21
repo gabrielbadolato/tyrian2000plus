@@ -48,6 +48,7 @@ extern WindowGeometry window_geometry;
 extern ScalingMode scaling_mode;
 extern bool vsync_enabled;
 extern bool sharp_bilinear_enabled;
+extern bool sharp_bilinear_chosen;
 
 void set_vsync(bool enabled);
 void set_sharp_bilinear(bool enabled);

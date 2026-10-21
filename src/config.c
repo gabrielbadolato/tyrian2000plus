@@ -259,14 +259,13 @@ static void loadOpenTyrianConfig(void)
 	{
 		logWarn("Failed to open '%s': %s", opentyrianConfigFilename, fileGetError(&file));
 
-		// First start on a Steam Deck: full screen, and the 4:3 picture with even pixels
-		// (1280x800 enlarges 320x200 by 4 down but 3.33 across in Fit 4:3), and
-		// smooth motion (the screen runs at 60 or 90 Hz, which 35 does not divide).
+		// First start on a Steam Deck: full screen (Sharp Bilinear, on everywhere, keeps
+		// the 4:3 picture's pixels even: 1280x800 enlarges 320x200 by 4 down but 3.33
+		// across), and smooth motion (the screen runs at 60 or 90 Hz, which 35 does not divide).
 		if (running_on_steam_deck())
 		{
-			logInfo("Steam Deck: starting in full screen with Sharp Bilinear and Smooth Motion.");
+			logInfo("Steam Deck: starting in full screen with Smooth Motion.");
 			fullscreen_display = 0;
-			sharp_bilinear_enabled = true;
 			smooth_motion = true;
 		}
 
@@ -313,8 +312,12 @@ static void loadOpenTyrianConfig(void)
 		if (config_get_bool_option(section, "vsync", &vsync))
 			vsync_enabled = vsync;
 
+		// "off" was the default up to v1.4 and was saved for everyone, so the saved
+		// value only counts when the player picked it in a menu
+		config_get_bool_option(section, "sharp_bilinear_chosen", &sharp_bilinear_chosen);
+
 		bool sharpBilinear;
-		if (config_get_bool_option(section, "sharp_bilinear", &sharpBilinear))
+		if (sharp_bilinear_chosen && config_get_bool_option(section, "sharp_bilinear", &sharpBilinear))
 			sharp_bilinear_enabled = sharpBilinear;
 
 		config_get_bool_option(section, "smooth_motion", &smooth_motion);
@@ -454,6 +457,7 @@ static void saveOpenTyrianConfig(void)
 	config_set_bool_option(section, "vsync", vsync_enabled, OFF_ON);
 
 	config_set_bool_option(section, "sharp_bilinear", sharp_bilinear_enabled, OFF_ON);
+	config_set_bool_option(section, "sharp_bilinear_chosen", sharp_bilinear_chosen, NO_YES);
 
 	config_set_bool_option(section, "smooth_motion", smooth_motion, OFF_ON);
 	config_set_bool_option(section, "smooth_fine", smooth_fine, OFF_ON);
@@ -895,7 +899,7 @@ void loadConfiguration(void)
 		inputDevice_ = 0;
 		jConfigure = 0;
 		versionNum = 3;
-		processorType = 3;
+		processorType = 4;
 		midiPort = 1;
 		soundEffects = 1;
 		gammaCorrection = 0;
@@ -909,6 +913,11 @@ void loadConfiguration(void)
 	}
 	
 	loadOpenTyrianConfig();
+
+	// The detail levels were for the computers of 1995 (and none changes the game, only
+	// its looks); every device of today runs "Pentium", with all the effects of the
+	// levels, so there is no menu item for it any more.
+	processorType = 4;
 
 	set_volume(tyrMusicVolume, fxVolume);
 

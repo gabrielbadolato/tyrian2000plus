@@ -1572,7 +1572,7 @@ JE_boolean JE_inGameSetup(void)
 	{
 		MENU_ITEM_MUSIC_VOLUME,
 		MENU_ITEM_EFFECTS_VOLUME,
-		MENU_ITEM_DETAIL_LEVEL,
+		// no Detail Level: always "Pentium" (see loadConfiguration)
 		MENU_ITEM_GAME_SPEED,
 		MENU_ITEM_AUTO_FIRE,
 		isNetworkGame ? -1 : MENU_ITEM_CONTROLS,

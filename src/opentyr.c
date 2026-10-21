@@ -185,20 +185,6 @@ static const char *getScalingModePickerItem(size_t i, char *buffer, size_t buffe
 	return tr(scaling_mode_names[i]);
 }
 
-// the detail levels the pause menu steps through (5 and 6 only come from
-// old saves and a cheat key, and are kept until another one is chosen)
-static size_t getDetailLevelPickerItemsCount(void)
-{
-	return 4;
-}
-
-static const char *getDetailLevelPickerItem(size_t i, char *buffer, size_t bufferSize)
-{
-	(void)buffer, (void)bufferSize;
-
-	return detailLevel[i];
-}
-
 static size_t getGameSpeedPickerItemsCount(void)
 {
 	return COUNTOF(gameSpeedText);
@@ -336,7 +322,6 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_SMOOTH_MOTION,
 		MENU_ITEM_SHARP_BILINEAR,
 		MENU_ITEM_BRIGHTNESS,
-		MENU_ITEM_DETAIL_LEVEL,
 		MENU_ITEM_GAME_SPEED,
 		MENU_ITEM_SHORTCUTS,
 		MENU_ITEM_SHORTCUT,  // a line of Shortcuts, nothing to change
@@ -442,7 +427,6 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_SMOOTH_MOTION, "Smooth Motion:", "Show the levels at the display's refresh rate.", getOffOnPickerItemsCount, getOffOnPickerItem },
 				{ MENU_ITEM_BRIGHTNESS, "Brightness:", "Brighten the levels (F11 also works in game).", getBrightnessPickerItemsCount, getBrightnessPickerItem },
-				{ MENU_ITEM_DETAIL_LEVEL, "Detail Level:", "Show fewer or more effects in the levels.", getDetailLevelPickerItemsCount, getDetailLevelPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
 			},
@@ -692,9 +676,6 @@ void setupMenuPage(SetupPage page)
 
 			case MENU_ITEM_BRIGHTNESS:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
-			case MENU_ITEM_DETAIL_LEVEL:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, detailLevel[processorType - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 			case MENU_ITEM_GAME_SPEED:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, gameSpeedText[gameSpeed - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
@@ -1325,14 +1306,6 @@ void setupMenuPage(SetupPage page)
 					pickerSelectedIndex = gammaCorrection % COUNTOF(brightnessNames);
 					break;
 				}
-				case MENU_ITEM_DETAIL_LEVEL:
-				{
-					JE_playSampleNum(S_CLICK);
-
-					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = processorType >= 1 && processorType <= 4 ? processorType - 1 : 3;
-					break;
-				}
 				case MENU_ITEM_GAME_SPEED:
 				{
 					JE_playSampleNum(S_CLICK);
@@ -1571,12 +1544,6 @@ void setupMenuPage(SetupPage page)
 				case MENU_ITEM_BRIGHTNESS:
 				{
 					gammaCorrection = pickerSelectedIndex;  // applied when a level starts
-					break;
-				}
-				case MENU_ITEM_DETAIL_LEVEL:
-				{
-					processorType = pickerSelectedIndex + 1;
-					JE_initProcessorType();  // the game speed is applied when a level starts
 					break;
 				}
 				case MENU_ITEM_GAME_SPEED:

@@ -45,7 +45,9 @@ const char *const scaling_mode_names[ScalingMode_MAX] = {
 int fullscreen_display;
 ScalingMode scaling_mode = SCALE_ASPECT_4_3;  // matches the original 4:3 CRT presentation
 bool vsync_enabled = true;  // sync presentation to the display refresh (no tearing)
-bool sharp_bilinear_enabled = false;  // even pixels when the window is not an exact multiple
+// even pixels when the window is not an exact multiple, which Fit 4:3 almost never is
+bool sharp_bilinear_enabled = true;
+bool sharp_bilinear_chosen = false;  // picked in a menu (v1.4 and older always saved "off")
 static SDL_Rect last_output_rect = { 0, 0, vga_width, vga_height };
 
 // the window's size and position when it is not fullscreen, remembered between sessions
@@ -218,6 +220,7 @@ static bool prescale_failed = false;
 void set_sharp_bilinear(bool enabled)
 {
 	sharp_bilinear_enabled = enabled;
+	sharp_bilinear_chosen = true;
 	prescale_failed = false;
 
 	if (!enabled)
@@ -277,12 +280,27 @@ static int window_get_display_index(void)
 	return SDL_GetWindowDisplayIndex(main_window);
 }
 
-// The scaler's output size, but never under 640x400: "None" (the default) is only 320x200
-// and the scaling mode enlarges it anyway.
+// The scaler's output size, but never under a comfortable size for the display: "None"
+// (the default) is only 320x200 and the scaling mode enlarges it anyway.  That size is
+// the tallest multiple of 200 lines within 85% of the display (800 on a 1080p one, at
+// least 400), as wide as the scaling mode's picture.
 static void window_set_scaler_size(void)
 {
-	SDL_SetWindowSize(main_window, MAX((int)scalers[scaler].width, 2 * vga_width),
-	                               MAX((int)scalers[scaler].height, 2 * vga_height));
+	int h = 2 * vga_height;
+
+	SDL_Rect bounds = { 0, 0, 0, 0 };
+	if (SDL_GetDisplayUsableBounds(MAX(0, window_get_display_index()), &bounds) == 0)
+		h = MAX(h, bounds.h * 85 / 100 / vga_height * vga_height);
+
+	int w = scaling_mode == SCALE_ASPECT_4_3 ? (h * 4 + 2) / 3 : h * vga_width / vga_height;
+	if (bounds.w > 0 && w > bounds.w * 9 / 10)
+	{
+		w = MAX(2 * vga_width, bounds.w * 9 / 10);
+		h = MAX(2 * vga_height, scaling_mode == SCALE_ASPECT_4_3 ? w * 3 / 4 : w * vga_height / vga_width);
+	}
+
+	SDL_SetWindowSize(main_window, MAX((int)scalers[scaler].width, w),
+	                               MAX((int)scalers[scaler].height, h));
 }
 
 static void window_center_in_display(int display_index)
@@ -345,6 +363,10 @@ static int display_showing_window_top(int x, int y, int w)
 static bool window_restore_geometry(void)
 {
 	if (window_geometry.w <= 0 || window_geometry.h <= 0)
+		return false;
+
+	// v1.4 and older opened at 640x400; a window still at that size was never resized
+	if (window_geometry.w == 2 * vga_width && window_geometry.h == 2 * vga_height && !window_geometry.maximized)
 		return false;
 
 	int display = window_geometry.has_position && window_position_supported()

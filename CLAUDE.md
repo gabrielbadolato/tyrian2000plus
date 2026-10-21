@@ -225,6 +225,18 @@ conta acertos diretos (tiro que atravessa conta ~20 px de contato; reação em
 cadeia soma um disparo da arma da explosão); alguns níveis do jogo trocam dano
 por espalhamento/teleguiado, então o número pode cair ao subir de nível.
 
+Jukebox (`src/jukebox.c`): com controle, X para/toca, Y esconde o texto e
+LB/RB tocam os efeitos sonoros (as letras do teclado continuam valendo); a
+tela mostra os botões no lugar das teclas.
+
+Simular o Steam Deck: `tests/run_deck_sim.sh <pasta-data> <roteiro> <pasta-prints>`
+roda o jogo numa tela virtual 1280x800 (Xvfb + matchbox-window-manager,
+que deixa a janela cheia como o Modo de Jogo), com SteamDeck=1 e o controle
+virtual da Steam (28de:11ff), apertando botões e tirando prints conforme um
+roteiro (`tests/deck/*.txt`, formato em `tests/deck_sim.c`). Sem pasta de
+usuário, começa sem configuração (primeira vez no Deck). Use em vez de pedir
+ao Gabriel para testar no Deck.
+
 Continuar: item "Continue" na tela de título (`menuText[0]`, escondido sem
 jogo salvo), carrega `lastSaveSlot` (último slot salvo ou carregado,
 `last_save` na seção "gameplay"; sem ele, o "LAST LEVEL" do slot 11).

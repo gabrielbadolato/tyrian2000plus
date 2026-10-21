@@ -670,6 +670,8 @@ const LangEntry lang_pt_br[] =
 	{ "Unknown Controller", "Controle desconhecido" },
 	{ "Press ESC to quit the jukebox.", "Aperte ESC para sair da jukebox." },
 	{ "Arrow keys change the song being played.", "As setas trocam a música que está tocando." },
+	{ "%s quit   %s stop/play   %s hide text", "%s sai   %s para/toca   %s esconde o texto" },
+	{ "%s song   %s%s sound effects", "%s música   %s%s efeitos sonoros" },
 	{ "Saved Games...", "Jogos salvos..." },
 	{ "Take your saved games to or from another computer.", "Leve ou traga seus jogos salvos de outro computador." },
 	{ "Open the folder with tyrian.sav, your saved games.", "Abre a pasta do tyrian.sav, com os seus jogos salvos." },

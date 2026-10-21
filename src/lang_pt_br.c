@@ -290,6 +290,7 @@ const LangEntry lang_pt_br[] =
 	{ "Armor %u", "Casco %u" },
 	{ "Shield %u", "Escudo %u" },
 	{ "Power %u", "Energia %u" },
+	{ "Strength %u", "Força %u" },
 	{ "Graphics, sound and all control settings.", "Gráficos, som e todos os controles." },
 
 	// ---- pause menu, at most 20 characters ----

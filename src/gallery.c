@@ -465,7 +465,9 @@ static void seeEnemy(SeenEnemy *e, const char *level, unsigned int armor, bool i
 {
 	if (!e->seen)
 	{
+		// where this player met it (the list says where it comes first)
 		e->seen = true;
+		e->episode = episodeNum;
 		snprintf(e->level, sizeof(e->level), "%s", level);
 		dirty = true;
 	}
@@ -1025,6 +1027,8 @@ void gallery_load(void)
 			enemies[listed].armor = e->armor;
 			enemies[listed].indestructible = e->indestructible;
 			memcpy(enemies[listed].level, e->level, sizeof(e->level));
+			if (e->episode != 0)
+				enemies[listed].episode = e->episode;
 		}
 	}
 
@@ -1384,6 +1388,11 @@ static void drawEntryPicture(const Entry *entry)
 // The canvas fit into a box, centered, at most `maxScale` times bigger;
 // `crop`: a long one only fits its width and is cut; `silhouette`: only its
 // shape, in one color.
+static bool isVowel(char c)
+{
+	return c != '\0' && strchr("aeiouAEIOU", c) != NULL;
+}
+
 static void showCanvas(SDL_Surface *surface, int bx, int by, int bw, int bh, int maxScale, bool crop, bool silhouette)
 {
 	if (canvas.x2 <= canvas.x1)
@@ -1395,7 +1404,9 @@ static void showCanvas(SDL_Surface *surface, int bx, int by, int bw, int bh, int
 	int num = 1, den = 1;
 	if (w <= bw && h <= bh)
 	{
-		num = MIN(maxScale, MIN(bw / w, bh / h));
+		// a tiny one (a mine, a spark) bigger, so it does not look empty
+		const int most = (w <= 8 && h <= 8) ? 2 * maxScale : maxScale;
+		num = MIN(most, MIN(bw / w, bh / h));
 		num = MAX(num, 1);
 	}
 	else
@@ -1522,49 +1533,71 @@ static void drawDetails(const Entry *entry)
 	char buffer[64], line[96];
 	const char *const name = entryName(entry, buffer, sizeof(buffer));
 
-	// the name, on two lines if it is long, in the small font only if it
-	// does not fit in two
+	// the name, on more lines if it is long (up to three), in the small font
+	// only if it does not fit so
 	int y = GRID_Y + 2;
 	const int maxW = PANEL_W - 8;
-	if (JE_textWidth(name, FONT_NORMAL) <= maxW)
+	const Font fonts[2] = { FONT_NORMAL, FONT_SMALL };
+	for (int f = 0; f < 2; ++f)
 	{
-		drawFontHvShadow(VGAScreen, PANEL_X + 4, y, name, FONT_NORMAL, 15, 2, false, 1);
-		y += 12;
-	}
-	else
-	{
-		const Font fonts[2] = { FONT_NORMAL, FONT_SMALL };
-		bool drawn = false;
-		for (int f = 0; f < 2 && !drawn; ++f)
+		// each line: up to the last space (or after the last hyphen) that fits
+		char lines[3][64];
+		int count = 0;
+		const char *rest = name;
+		while (*rest != '\0' && count < 3)
 		{
-			// break at the last space that fits
-			char first[64];
-			snprintf(first, sizeof(first), "%s", name);
-			char *cut = NULL;
-			for (char *s = strchr(first, ' '); s != NULL; s = strchr(s + 1, ' '))
+			int cut = -1, next = 0;
+			for (int i = 0; rest[i] != '\0' && i < 63; ++i)
 			{
-				*s = '\0';
-				const bool fits = JE_textWidth(first, fonts[f]) <= maxW;
-				*s = ' ';
-				if (!fits)
+				const bool end = rest[i + 1] == '\0';
+				if (rest[i] != ' ' && rest[i] != '-' && !end)
+					continue;
+				const int len = rest[i] == ' ' ? i : i + 1;
+				snprintf(lines[count], sizeof(lines[count]), "%.*s", len, rest);
+				if (JE_textWidth(lines[count], fonts[f]) > maxW)
 					break;
-				cut = s;
+				cut = len;
+				next = i + 1;
 			}
-			if (cut == NULL || JE_textWidth(cut + 1, fonts[f]) > maxW)
+			if (cut < 0)
+			{
+				// one word longer than the line: cut it with a hyphen, between
+				// syllables if it can (vowel, consonant-vowel: "Invulnera-bilidade")
+				int k = 0, any = 0;
+				for (int n = 3; rest[n] != '\0' && rest[n] != ' ' && n < 60; ++n)
+				{
+					if (strlen(rest + n) < 4)
+						break;
+					snprintf(lines[count], sizeof(lines[count]), "%.*s-", n, rest);
+					if (JE_textWidth(lines[count], fonts[f]) > maxW)
+						break;
+					any = n;
+					if (isVowel(rest[n - 1]) && !isVowel(rest[n]) && isalpha((unsigned char)rest[n]) && isVowel(rest[n + 1]))
+						k = n;
+				}
+				if (k == 0)
+					k = any;
+				if (k == 0)
+					break;
+				snprintf(lines[count], sizeof(lines[count]), "%.*s-", k, rest);
+				++count;
+				rest += k;
 				continue;
+			}
+			snprintf(lines[count], sizeof(lines[count]), "%.*s", cut, rest);
+			++count;
+			rest += next;
+		}
+		if (*rest != '\0' && f == 0)
+			continue;  // does not fit: the small font
+		if (count == 0)
+			snprintf(lines[count++], sizeof(lines[0]), "%s", name);
 
-			*cut = '\0';
-			const int brightness = fonts[f] == FONT_NORMAL ? 2 : 4, height = fonts[f] == FONT_NORMAL ? 12 : 9;
-			drawFontHvShadow(VGAScreen, PANEL_X + 4, y, first, fonts[f], 15, brightness, false, 1);
-			drawFontHvShadow(VGAScreen, PANEL_X + 4, y + height, cut + 1, fonts[f], 15, brightness, false, 1);
-			y += 2 * height;
-			drawn = true;
-		}
-		if (!drawn)
-		{
-			drawFontHvShadow(VGAScreen, PANEL_X + 4, y, name, FONT_SMALL, 15, 4, false, 1);
-			y += 12;
-		}
+		const int brightness = fonts[f] == FONT_NORMAL ? 2 : 4, height = fonts[f] == FONT_NORMAL ? 12 : 9;
+		for (int l = 0; l < count; ++l)
+			drawFontHvShadow(VGAScreen, PANEL_X + 4, y + l * height, lines[l], fonts[f], 15, brightness, false, 1);
+		y += MAX(count, 1) * height;
+		break;
 	}
 
 	// the picture, down to where the numbers start
@@ -1591,8 +1624,10 @@ static void drawDetails(const Entry *entry)
 		}
 		break;
 	case KIND_WEAPON:
-		drawInfoLine(&y, shopFront[entry->id] && shopRear[entry->id] ? tr("Front or rear weapon")
-		                 : shopRear[entry->id] ? tr("Rear weapon") : tr("Front weapon"), 0);
+		// (one no menu offers, such as the Hot Dogs: which side is not known)
+		if (shopFront[entry->id] || shopRear[entry->id])
+			drawInfoLine(&y, shopFront[entry->id] && shopRear[entry->id] ? tr("Front or rear weapon")
+			                 : shopRear[entry->id] ? tr("Rear weapon") : tr("Front weapon"), 0);
 		snprintf(line, sizeof(line), tr("Damage %u at power 1"), shop_item_stat(3, entry->id, 1));
 		drawInfoLine(&y, line, 2);
 		snprintf(line, sizeof(line), tr("Damage %u at power 11"), shop_item_stat(3, entry->id, 11));
@@ -1614,7 +1649,7 @@ static void drawDetails(const Entry *entry)
 		break;
 	case KIND_SHIELD:
 		drawInfoLine(&y, tr("Shield"), 0);
-		snprintf(line, sizeof(line), tr("Shield %u"), shop_item_stat(5, entry->id, 1));
+		snprintf(line, sizeof(line), tr("Strength %u"), shop_item_stat(5, entry->id, 1));
 		drawInfoLine(&y, line, 2);
 		if (shields[entry->id].cost > 0)
 		{

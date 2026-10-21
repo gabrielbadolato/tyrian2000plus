@@ -333,7 +333,10 @@ mesmo tamanho quando a ampliação não é inteira (`sharp_bilinear_prescale()`
 em `src/video.c`). Em múltiplos exatos nada muda.
 
 Música: Setup > Sound > "Music Sound" (`src/oplchip.c`, `music_chip` =
-accurate/classic na seção "sound"). Accurate (padrão) usa o Nuked OPL3 1.8
+accurate/classic na seção "sound"). Classic é o padrão (pedido do Gabriel em
+2026-10-21); o cfg só vale se `music_chip_chosen = yes` (gravado quando o
+jogador escolhe no menu), porque a v1.1/v1.2 sempre gravavam "accurate".
+Accurate usa o Nuked OPL3 1.8
 (`src/opl3.c`, LGPL 2.1+, sem alteração); Classic é o emulador do DOSBox
 (`src/opl.c`). Os dois recebem todas as escritas; o volume do Nuked foi
 igualado medindo as 41 músicas (fator 6/5).

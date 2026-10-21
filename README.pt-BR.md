@@ -57,8 +57,9 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - No menu de melhorias da nave, cada item mostra o dano (ou casco, escudo ou
   energia) em verde quando é melhor do que o da sua nave e em vermelho quando
   é pior.
-- Música mais fiel: o emulador Nuked OPL3, próximo de uma placa Sound Blaster
-  de 1995 de verdade (o som antigo continua em Setup > Sound).
+- Um segundo som de música para escolher em Setup > Sound: o emulador Nuked
+  OPL3, próximo de uma placa Sound Blaster de 1995 de verdade (o som clássico
+  continua sendo o padrão).
 - Mais opções de vídeo, inclusive na pausa, e o filtro Sharp Bilinear.
 - Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
@@ -201,9 +202,9 @@ Em janela, o jogo abre onde estava da última vez, com o mesmo tamanho.
   você jogou (ela é gravada enquanto você joga, no lastlevel.rec da sua pasta
   de usuário). Qualquer tecla ou botão para. Só aparece quando há uma fase
   gravada.
-- **Setup > Sound > Music Sound (Som da música):** "Accurate" (Fiel, o
-  padrão, Nuked OPL3) ou "Classic" (Clássico, o emulador que o OpenTyrian
-  sempre usou).
+- **Setup > Sound > Music Sound (Som da música):** "Classic" (Clássico, o
+  padrão, o emulador que o OpenTyrian sempre usou) ou "Accurate" (Fiel, Nuked
+  OPL3).
 - **Setup > Controls:** teclado, controle, mouse, Auto Fire, vibração
   (Vibration), o desenho do controle (Controller Map, com o nível da bateria)
   e a lista de atalhos do teclado (Shortcuts).

@@ -10,6 +10,11 @@ change is in this repository's git log.
 
 ## Next version
 
+- **Classic music by default**: the music sounds as it always did in
+  OpenTyrian again, unless you pick "Accurate" in Setup > Sound > "Music
+  Sound". If you already chose Classic there, nothing changes; if you had
+  chosen Accurate, pick it once more.
+
 - **Back to a level in progress**: if the game closes in the middle of a
   level (the window closed, the Steam Deck turned off, a crash), Continue
   takes you back to that point of the level, paused, instead of its start.

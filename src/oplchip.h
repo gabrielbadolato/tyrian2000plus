@@ -22,8 +22,13 @@
 #include <stdbool.h>
 
 // Setup > Sound > Music Chip: true = Nuked OPL3 (close to a real Sound
-// Blaster), false = the DOSBox emulator OpenTyrian always used
+// Blaster), false = the DOSBox emulator OpenTyrian always used (the default)
 extern bool opl_accurate;
+
+// true once the player picked the music chip in Setup; until then the
+// default applies even if the config says otherwise (v1.1 and v1.2 always
+// saved "accurate", their default)
+extern bool opl_chosen;
 
 void opl_set_accurate(bool accurate);
 

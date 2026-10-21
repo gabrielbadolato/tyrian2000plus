@@ -1886,7 +1886,7 @@ static void demoFrame(const Entry *entry, unsigned int tick, unsigned int level,
 		((Uint8 *)VGAScreen->pixels)[(STAGE_Y1 + y) * VGAScreen->pitch + STAGE_X1 + demoStar[i][0]] = demoStar[i][2] == 3 ? 0x0e : demoStar[i][2] == 2 ? 0x0a : 0x07;
 	}
 
-	if (entry->kind == KIND_ENEMY || entry->kind == KIND_SHIELD || entry->kind == KIND_GENERATOR || entry->kind == KIND_SPECIAL)
+	if (entry->kind == KIND_ENEMY)
 	{
 		drawEntryPicture(entry, tick);
 		showCanvas(VGAScreen, STAGE_X1 + 4, STAGE_Y1 + 4, w - 8, h - 8, 4, false, false);
@@ -2123,7 +2123,7 @@ void galleryScreen(void)
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_Y),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
-		else if (j >= 0 && tab != GALLERY_STATS)
+		else if (j >= 0 && tab != GALLERY_STATS && tab != GALLERY_OTHER)
 			snprintf(help, sizeof(help), tr("%s%s: page. %s: see it. %s: back."),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
 			         joystick_button_icon(j, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
@@ -2142,6 +2142,8 @@ void galleryScreen(void)
 			snprintf(help, sizeof(help), "%s", tr("Tab: page. Enter: see it. E: episode. Esc: back."));
 		else if (tab == GALLERY_STATS)
 			snprintf(help, sizeof(help), "%s", tr("Tab: page. Up/Down: scroll. Esc: back."));
+		else if (tab == GALLERY_OTHER)
+			snprintf(help, sizeof(help), "%s", tr("Tab: page. Arrows: choose. Esc: back."));
 		else
 			snprintf(help, sizeof(help), "%s", tr("Tab: page. Enter: see it. Esc: back."));
 		JE_textShade(VGAScreen, GRID_X, HELP_Y, help, 15, 4, PART_SHADE);
@@ -2413,7 +2415,7 @@ void galleryScreen(void)
 				demoReset();
 			}
 		}
-		else if (openView && !view && entryCount > 0 && entries[cursor].seen && demoStart())
+		else if (openView && !view && entryCount > 0 && entries[cursor].seen && tab != GALLERY_OTHER && demoStart())
 		{
 			view = true;
 			viewTick = 0;

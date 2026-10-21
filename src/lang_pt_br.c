@@ -801,6 +801,7 @@ const LangEntry lang_pt_br[] =
 	{ "Meet them in the levels.", "Encontre-os nas fases." },
 	{ "%s%s: page. %s: back.", "%s%s: página. %s: voltar." },
 	{ "Tab: page. Enter: see it. Esc: back.", "Tab: página. Enter: ver. Esc: voltar." },
+	{ "Tab: page. Arrows: choose. Esc: back.", "Tab: página. Setas: escolher. Esc: voltar." },
 	{ "Tab: page. Enter: see it. E: episode. Esc: back.", "Tab: página. Enter: ver. E: episódio. Esc: voltar." },
 	{ "%s%s: page. %s: see it. %s: back.", "%s%s: página. %s: ver. %s: voltar." },
 	{ "%s%s: page. %s: see it. %s: episode. %s: back.", "%s%s: página. %s: ver. %s: episódio. %s: voltar." },

@@ -21,8 +21,8 @@ change is in this repository's git log.
   to the saves (tyrian.sav does not change); keyboard, controller (LB/RB
   change the page), mouse and touch. The statistics moved into it, as its
   last page (Setup no longer has "Statistics...").
-  Enter (A on a controller, or a click on the picture) shows the chosen one
-  in motion: a weapon fired by a ship, at any power from 1 to 11 (and in
+  Enter (A on a controller, or a click on the picture) shows the chosen
+  ship, weapon, sidekick or enemy in motion: a weapon fired by a ship, at any power from 1 to 11 (and in
   both modes for rear weapons), a sidekick firing, a ship flying, an enemy
   animated as in the levels. The enemies page can show one episode at a
   time (E, or Y on a controller).

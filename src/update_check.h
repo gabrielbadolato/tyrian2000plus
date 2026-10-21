@@ -20,6 +20,7 @@
 #define UPDATE_CHECK_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 // "check" in the "updates" section of opentyrian.cfg; on by default
 extern bool update_check_enabled;
@@ -31,6 +32,30 @@ void update_check_start(void);
 // the newer release's tag (e.g. "v1.0.3"), or NULL if there is none, the
 // answer has not arrived yet, or the check is off
 const char *update_check_newer_version(void);
+
+// a published release and its notes (Markdown, as written on GitHub)
+typedef struct
+{
+	char tag[32];   // "v1.3"
+	char date[11];  // "2026-10-20", or ""
+	char *notes;
+} ReleaseNotes;
+
+#define UPDATE_CHECK_MAX_RELEASES 10
+
+// the newest releases with their notes, as GitHub last gave them (kept in
+// release-notes.txt, so also without internet); newest first, maybe none
+const ReleaseNotes *update_check_releases(size_t *count);
+
+// "v1.2.3" (or "v1.2", anything after it ignored) as numbers; false if it is
+// not a version
+bool update_check_parse_version(const char *text, int version[3]);
+int update_check_compare_versions(const int a[3], const int b[3]);
+
+// for the tests: GitHub's list of releases (drafts and pre-releases left
+// out) and the release-notes.txt file; they return how many were read
+size_t update_check_parse_releases(const char *json, ReleaseNotes *list, size_t max);
+size_t update_check_parse_notes_file(const char *text, ReleaseNotes *list, size_t max);
 
 // where the newer release can be downloaded
 #define UPDATE_CHECK_ITCH_URL "https://gabrielbadolato.itch.io/tyrian2000plus"

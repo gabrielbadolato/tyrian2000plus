@@ -68,6 +68,9 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - Menus, ajuda e nomes dos itens em português.
 - Versões prontas para Windows, Linux e Steam Deck.
 - Tela About com a história do projeto e os créditos.
+- Tela de novidades (What's New) com o que mudou em cada versão, em português
+  ou inglês, que mostra também o que uma versão mais nova traz antes de você
+  atualizar.
 
 ## Um recado do Gabriel
 
@@ -203,7 +206,7 @@ os controles de toque sumirem de novo.
 - **Tela de título > Setup:** vídeo (Graphics, com o nível de detalhes), som
   (Sound), controles (Controls), velocidade do jogo (Game Speed), Jukebox,
   idioma (Language), Check Updates, jogos salvos (Saved Games), estatísticas
-  (Statistics) e About.
+  (Statistics), novidades (What's New) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
   carregado (o jogo também salva "LAST LEVEL" ao chegar na nave depois de
   cada fase e ao começar cada fase). Só aparece quando existe um. Se o jogo
@@ -245,14 +248,22 @@ os controles de toque sumirem de novo.
   pasta do tyrian.sav (seus jogos salvos); no navegador, baixa ou carrega
   esse arquivo. Veja abaixo.
 - **Setup > About:** a mesma tela About, para ver no meio de um jogo salvo.
+- **Setup > What's New (Novidades)** (também no alto do About): o que mudou
+  em cada versão, da mais nova para a mais antiga, em português ou inglês. Se
+  já saiu uma versão mais nova, as notas dela aparecem primeiro, para você ver
+  o que ela traz antes de atualizar. Depois de uma atualização, a tela de
+  título mostra "Novidades da vX em Sobre." até você abrir a tela.
 - **Setup > Language:** menus, ajuda e nomes dos itens em português ou em
   inglês. "Automatic" (o padrão) segue o idioma do sistema; em português, o
   Setup aparece como "Configurações" e a opção como "Idioma". As histórias dos
   datacubes continuam em inglês.
 - **Setup > Check Updates:** ao abrir, o jogo pergunta ao GitHub qual é a
   última versão publicada. Se houver uma mais nova, aparece um aviso no canto
-  da tela de título, e o About mostra os links para baixar (itch.io e GitHub). Nenhum dado seu é
-  enviado; sem internet, nada aparece. Coloque em "Off" para desligar.
+  da tela de título, e o About mostra os links para baixar (itch.io e GitHub). A mesma
+  resposta traz as notas de cada versão para a tela de novidades, guardadas
+  no release-notes.txt da sua pasta de usuário para quando não houver
+  internet. Nenhum dado seu é enviado; sem internet, nada aparece. Coloque em
+  "Off" para desligar.
 
 ## Jogos salvos entre computador e navegador
 

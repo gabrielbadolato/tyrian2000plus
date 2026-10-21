@@ -67,6 +67,8 @@ the open-source port of Tyrian. What this version adds:
 - Menus, help and item names in Portuguese (Brazilian).
 - Ready-to-play builds for Windows, Linux and the Steam Deck.
 - An About screen with the story of the project and the credits.
+- A What's New screen with what changed in each version, in English or
+  Portuguese, which also shows what a newer version brings before you update.
 
 ## A note from Gabriel
 
@@ -199,7 +201,7 @@ controls again.
   and the links (Enter or A opens a link in your browser).
 - **Title screen > Setup:** Graphics (with the detail level), Sound,
   Controls, game speed, Jukebox, Language, Check Updates, Saved Games,
-  Statistics and About.
+  Statistics, What's New and About.
 - **Title screen > Continue:** loads the game you last saved or loaded (the
   game also saves "LAST LEVEL" when you arrive at the ship after a level and
   when a level starts). Shown when there is one. If the game closed in the
@@ -239,13 +241,21 @@ controls again.
   below.
 - **Setup > About:** the same About screen, to see it in the middle of a
   saved game.
+- **Setup > What's New** (also at the top of About): what changed in each
+  version, newest first, in English or Portuguese. If a newer version is out,
+  its notes are at the top, so you can see what it brings before updating.
+  After an update, the title screen says "New in vX! See About." until you
+  open it.
 - **Setup > Language:** English or Portuguese (Brazilian) menus, help and
   item names. "Automatic" (the default) follows the system's language. The
   data cube stories are still in English.
 - **Setup > Check Updates:** at startup the game asks GitHub for the latest
   published version. If there is a newer one, a note shows in the corner of
-  the title screen, and About has the links to download it (itch.io and GitHub). None of your data
-  is sent; without internet, nothing shows. Set it to "Off" to turn it off.
+  the title screen, and About has the links to download it (itch.io and GitHub). The same
+  answer brings the notes of each version for What's New, kept in
+  release-notes.txt in your user folder for when there is no internet. None
+  of your data is sent; without internet, nothing shows. Set it to "Off" to
+  turn it off.
 
 ## Saved games between computers and the browser
 

@@ -101,6 +101,10 @@ static Uint32 statsSince = 0;
 static Uint32 nextPicture = 0;
 static bool presentWaits = false;
 
+// How long the frame being drawn lasts (frame_period() * frameCountMax when it
+// was scheduled: at the "Slow" game speed, frameCountMax changes every frame).
+static Sint32 levelFramePeriod = 0;
+
 static bool testEnabled = false;
 static Uint32 testAlpha = 0;
 static unsigned long testSame = 0, testDifferent = 0, testSkipped = 0;
@@ -673,7 +677,8 @@ bool smooth_frame_due(int view)
 		return false;
 
 	const Sint32 refresh = refreshPeriod();
-	const bool shown = showUntilDue(frame_period() * frameCountMax, refresh, showLevelPicture, &view);
+	const Sint32 period = levelFramePeriod > 0 ? levelFramePeriod : frame_period() * frameCountMax;
+	const bool shown = showUntilDue(period, refresh, showLevelPicture, &view);
 
 	countFrame(refresh);
 
@@ -682,6 +687,8 @@ bool smooth_frame_due(int view)
 
 void smooth_frame_shown(void)
 {
+	levelFramePeriod = frame_period() * frameCountMax;
+
 	if (!smooth_recording)
 	{
 		// smooth motion was turned on in the middle of a level

@@ -30,7 +30,8 @@
 
 #include <stdint.h>
 
-bool opl_accurate = true;
+bool opl_accurate = false;
+bool opl_chosen = false;
 
 static opl3_chip nuked;
 

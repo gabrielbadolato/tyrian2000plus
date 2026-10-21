@@ -55,8 +55,9 @@ the open-source port of Tyrian. What this version adds:
 - In the ship's upgrade menu, each item shows its damage (or armor, shield or
   power) in green when it beats what your ship has and in red when it is
   weaker.
-- More faithful music: the Nuked OPL3 emulator, close to a real 1995 Sound
-  Blaster card (the old sound is still in Setup > Sound).
+- A second music sound to choose in Setup > Sound: the Nuked OPL3 emulator,
+  close to a real 1995 Sound Blaster card (the classic sound stays the
+  default).
 - More graphics options, including in the pause menu, and a Sharp Bilinear
   filter.
 - Menus, help and item names in Portuguese (Brazilian).
@@ -197,8 +198,8 @@ In a window, the game opens where it was last time, with the same size.
 - **Title screen > Replay:** shows the last level you played again (it is
   recorded as you play, in lastlevel.rec in your user folder). Any key or
   button stops it. Shown when there is a recorded level.
-- **Setup > Sound > Music Sound:** "Accurate" (the default, Nuked OPL3) or
-  "Classic" (the emulator OpenTyrian always used).
+- **Setup > Sound > Music Sound:** "Classic" (the default, the
+  emulator OpenTyrian always used) or "Accurate" (Nuked OPL3).
 - **Setup > Controls:** keyboard, controller, mouse, Auto Fire, Vibration,
   the Controller Map (with the controller's battery level) and the list of
   keyboard shortcuts.

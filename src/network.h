@@ -22,6 +22,8 @@
 #include "opentyr.h"
 
 #include "SDL.h"
+
+#include <setjmp.h>
 #ifdef WITH_NETWORK
 #	include "SDL_net.h"
 #endif
@@ -44,6 +46,9 @@
 #define PACKET_STATE         0x41    // <state>  (not acknowledged)
 #define PACKET_STATE_XOR     0x42    // <xor state>  (not acknowledged)
 
+#define PACKET_PING          0x50    // ticks  (Tyrian 2000+; not acknowledged)
+#define PACKET_PONG          0x51    // the ping's ticks, sent back
+
 extern bool isNetworkGame;
 extern int network_delay;
 
@@ -58,6 +63,10 @@ extern UDPpacket *packet_in[], *packet_out[],
 #endif
 
 extern uint thisPlayerNum;
+extern bool network_delay_fixed;
+extern bool network_from_menu;
+extern char network_opponent_version[32];
+extern jmp_buf *network_abort;
 extern JE_boolean haltGame;
 extern JE_boolean moveOk;
 extern JE_boolean pauseRequest, skipLevelRequest, helpRequest, nortShipRequest;
@@ -80,6 +89,12 @@ void network_state_reset(void);
 
 int network_connect(void);
 void network_tyrian_halt(unsigned int err, bool attempt_sync);
+void network_measure_delay(void);
+void network_frame_state(Uint32 checksum);
+void network_close(void);
+bool network_is_connected(void);
+
+extern bool network_peer_local;
 
 int network_init(void);
 

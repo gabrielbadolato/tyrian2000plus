@@ -28,6 +28,7 @@
 #include "fonthand.h"
 #include "game_menu.h"
 #include "helptext.h"
+#include "inputdev.h"
 #include "joystick.h"
 #include "keyboard.h"
 #include "lang.h"
@@ -3723,6 +3724,12 @@ redo:
 	if (isNetworkGame)
 	{
 		inputDevice = 0;
+#ifdef WITH_NETWORK
+		// Two copies on one computer: the window in front plays with the
+		// keyboard, the other one with the first controller.
+		if (network_peer_local)
+			inputDevice = windowHasFocus ? INPUT_DEVICE_KEYBOARD : INPUT_DEVICE_JOYSTICK;
+#endif
 	}
 
 	mouseXC = 0;
@@ -3885,7 +3892,7 @@ redo:
 					snprintf(lowBatteryText, sizeof(lowBatteryText), tr("Controller %d: battery low!"), lowBattery + 1);
 					JE_drawTextWindow(lowBatteryText);
 				}
-				if ((inputDevice == 0 || inputDevice >= 3) && joysticks > 0)
+				if ((inputDevice == 0 || input_device_is_joystick(inputDevice)) && joysticks > 0)
 				{
 					int j = inputDevice  == 0 ? 0 : inputDevice - 3;
 					int j_max = inputDevice == 0 ? joysticks : inputDevice - 3 + 1;
@@ -3961,23 +3968,25 @@ redo:
 					ingamemenu_pressed |= touch.menu_pressed;
 				}
 
-				/* keyboard input */
-				if ((inputDevice == 0 || inputDevice == 1) && !playDemo)
+				/* keyboard input (Tyrian 2000+: or the second player's keys on the same keyboard) */
+				if ((inputDevice == 0 || inputDevice == 1 || inputDevice == INPUT_DEVICE_KEYBOARD2) && !playDemo)
 				{
-					if (keysactive[keySettings[KEY_SETTING_UP]])
+					const SDL_Scancode *const keys = inputDevice == INPUT_DEVICE_KEYBOARD2 ? keySettings2 : keySettings;
+
+					if (keysactive[keys[KEY_SETTING_UP]])
 						this_player->y -= CURRENT_KEY_SPEED;
-					if (keysactive[keySettings[KEY_SETTING_DOWN]])
+					if (keysactive[keys[KEY_SETTING_DOWN]])
 						this_player->y += CURRENT_KEY_SPEED;
 
-					if (keysactive[keySettings[KEY_SETTING_LEFT]])
+					if (keysactive[keys[KEY_SETTING_LEFT]])
 						this_player->x -= CURRENT_KEY_SPEED;
-					if (keysactive[keySettings[KEY_SETTING_RIGHT]])
+					if (keysactive[keys[KEY_SETTING_RIGHT]])
 						this_player->x += CURRENT_KEY_SPEED;
 
-					button[0] |= keysactive[keySettings[KEY_SETTING_FIRE]];
-					button[3] |= keysactive[keySettings[KEY_SETTING_CHANGE_FIRE]];
-					button[1] |= keysactive[keySettings[KEY_SETTING_LEFT_SIDEKICK]];
-					button[2] |= keysactive[keySettings[KEY_SETTING_RIGHT_SIDEKICK]];
+					button[0] |= keysactive[keys[KEY_SETTING_FIRE]];
+					button[3] |= keysactive[keys[KEY_SETTING_CHANGE_FIRE]];
+					button[1] |= keysactive[keys[KEY_SETTING_LEFT_SIDEKICK]];
+					button[2] |= keysactive[keys[KEY_SETTING_RIGHT_SIDEKICK]];
 
 					if (constantPlay)
 					{

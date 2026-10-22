@@ -4,9 +4,11 @@
 # Baixa a versão mais recente publicada em Releases no GitHub, instala em
 # ~/Jogos/Tyrian2000Plus (mantendo saves e configurações) e, se os dados do
 # Tyrian 2000 ainda não estiverem lá, baixa-os do site original (camanis.net).
-# Na primeira vez, também põe o jogo na biblioteca da Steam (como jogo
-# não-Steam), para abrir no Modo de Jogo; para isso a Steam fecha e abre de
-# novo sozinha, se o jogador concordar.
+# Na primeira vez, também põe na biblioteca da Steam (como jogos não-Steam) o
+# jogo e este atualizador ("Tyrian 2000+ Update"), para abrir os dois no Modo
+# de Jogo; para isso a Steam fecha e abre de novo sozinha, se o jogador
+# concordar. Aberto pela Steam, sem terminal, o script mostra as mensagens em
+# janelas (kdialog).
 #
 # Para testar builds novos antes de virarem versão: guarde uma chave do GitHub
 # (fine-grained token, só leitura de Actions deste repositório) em
@@ -26,6 +28,9 @@ set -euo pipefail
 # bash continuaria lendo o arquivo novo do ponto em que estava no antigo.
 {
 
+# Para saber, depois de instalar, se a versão nova deste script é outra.
+SELF_SUM=$(sha256sum < "$0" 2>/dev/null || true)
+
 REPO="gabrielbadolato/tyrian2000plus"
 ARTIFACT="Tyrian2000Plus-linux-x86_64"
 DEST="${TYRIAN_DIR:-$HOME/Jogos/Tyrian2000Plus}"
@@ -35,7 +40,23 @@ DATA_URL="https://www.camanis.net/tyrian/tyrian2000.zip"
 DATA_SHA256="348bc76e73514e452279b8730cf217daf0f70a282f07b6b94af653d87e921667"
 
 have_gui() { [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && command -v kdialog >/dev/null; }
+# Sem terminal (aberto pela Steam ou pelo menu), uma janela diz que o script
+# está trabalhando enquanto baixa; senão a tela ficaria parada.
+busy_ref=""
+busy_start() {
+    if [ -z "$busy_ref" ] && have_gui && [ ! -t 1 ]; then
+        busy_ref=$(kdialog --title "Tyrian 2000+" --progressbar "$1" 0 2>/dev/null) || busy_ref=""
+    fi
+}
+busy_stop() {  # a resposta do kdialog é "<serviço D-Bus> <objeto>"
+    [ -n "$busy_ref" ] || return 0
+    local service="${busy_ref%% *}" path="${busy_ref#* }"
+    dbus-send --session --type=method_call --dest="$service" "$path" org.kde.kdialog.ProgressDialog.close >/dev/null 2>&1 \
+        || kill "${service##*-}" 2>/dev/null || true
+    busy_ref=""
+}
 ask() {  # pergunta sim/não; sem terminal nem janela, a resposta é não
+    busy_stop
     if [ -t 0 ] && [ -t 1 ]; then
         local r
         read -r -p "$1 [S/n] " r || return 1
@@ -46,10 +67,12 @@ ask() {  # pergunta sim/não; sem terminal nem janela, a resposta é não
 }
 say() {
     echo "$1"
+    busy_stop
     if have_gui && [ ! -t 1 ]; then kdialog --title "Tyrian 2000+" --msgbox "$1" || true; fi
 }
 fail() {
     echo "ERRO: $1" >&2
+    busy_stop
     if have_gui && [ ! -t 1 ]; then kdialog --title "Tyrian 2000+" --error "$1" || true; fi
     exit 1
 }
@@ -67,7 +90,7 @@ TOKEN=""
 [ -s "$TOKEN_FILE" ] && TOKEN=$(tr -d '[:space:]' < "$TOKEN_FILE")
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+trap 'busy_stop; rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/x"
 
 # Resposta em $TMP/api.json; devolve o código HTTP (000 = sem conexão).
@@ -96,7 +119,11 @@ sha256_ok() {  # $1 = arquivo, $2 = sha256 esperado
 }
 
 
-if [ -n "$TOKEN" ]; then
+busy_start "Procurando a versão mais nova do Tyrian 2000+ ..."
+if [ -n "${TYRIAN_REEXEC:-}" ]; then
+    # Chamado pela versão anterior deste script logo depois de instalar.
+    versao="" run_desc="$TYRIAN_REEXEC"
+elif [ -n "$TOKEN" ]; then
     # ---- build mais recente do main que passou (para testes) ----
     # Só o main: builds de outros branches (PRs em teste) não chegam ao Deck.
     runs=$(api_ok "actions/workflows/build.yml/runs?branch=main&status=success&event=push&per_page=1")
@@ -132,8 +159,11 @@ steam_shortcuts() {  # $1 = check | add
 import os, struct, sys, zlib
 
 mode, dest = sys.argv[1], sys.argv[2]
-exe = os.path.join(dest, "Tyrian2000Plus")
-name = "Tyrian 2000+"
+# (tipo, nome na biblioteca, programa); o nome do atualizador fica em inglês.
+wanted = [
+    ("game", "Tyrian 2000+", os.path.join(dest, "Tyrian2000Plus")),
+    ("updater", "Tyrian 2000+ Update", os.path.join(dest, "atualizar-tyrian.sh")),
+]
 
 def read_str(b, i):
     j = b.index(b"\0", i)
@@ -165,11 +195,12 @@ def write_map(items):
         out += write_map(v) if t == 0 else (v + b"\0" if t == 1 else v)
     return out + b"\x08"
 
-def ours(entry):  # já tem um atalho do Tyrian 2000+ (deste script ou feito à mão)
-    for t, key, v in entry:
-        if t == 1 and key.lower() in (b"exe", b"appname") and b"tyrian" in v.lower():
-            return True
-    return False
+def kind(entry):  # atalho do Tyrian 2000+ (deste script ou feito à mão)?
+    text = b" ".join(v.lower() for t, key, v in entry
+                     if t == 1 and key.lower() in (b"exe", b"appname"))
+    if b"tyrian" not in text:
+        return None
+    return "updater" if b"atualizar" in text or b"update" in text else "game"
 
 users = []
 for root in sys.argv[3:]:
@@ -191,26 +222,29 @@ for u in users:
     else:
         root = [(0, b"shortcuts", [])]
         shortcuts = root[0][2]
-    if not any(t == 0 and ours(v) for t, k, v in shortcuts):
-        pending.append((path, root, shortcuts))
+    have = {kind(v) for t, k, v in shortcuts if t == 0}
+    missing = [w for w in wanted if w[0] not in have]
+    if missing:
+        pending.append((path, root, shortcuts, missing))
 
 if mode == "check":
     sys.exit(0 if pending else 1)
 
 def s(k, v): return (1, k.encode(), v.encode())
 def n(k, v): return (2, k.encode(), struct.pack("<I", v))
-# O mesmo número que a Steam e outros programas dão ao atalho.
-appid = zlib.crc32(('"%s"%s' % (exe, name)).encode()) | 0x80000000
-for path, root, shortcuts in pending:
-    index = max([int(k) for t, k, v in shortcuts if k.isdigit()] + [-1]) + 1
-    shortcuts.append((0, str(index).encode(), [
-        n("appid", appid), s("AppName", name), s("Exe", '"%s"' % exe),
-        s("StartDir", '"%s/"' % dest), s("icon", os.path.join(dest, "Tyrian2000Plus.png")),
-        s("ShortcutPath", ""), s("LaunchOptions", ""), n("IsHidden", 0),
-        n("AllowDesktopConfig", 1), n("AllowOverlay", 1), n("OpenVR", 0),
-        n("Devkit", 0), s("DevkitGameID", ""), n("DevkitOverrideAppID", 0),
-        n("LastPlayTime", 0), s("FlatpakAppID", ""), (0, b"tags", []),
-    ]))
+for path, root, shortcuts, missing in pending:
+    for _, name, exe in missing:
+        # O mesmo número que a Steam e outros programas dão ao atalho.
+        appid = zlib.crc32(('"%s"%s' % (exe, name)).encode()) | 0x80000000
+        index = max([int(k) for t, k, v in shortcuts if k.isdigit()] + [-1]) + 1
+        shortcuts.append((0, str(index).encode(), [
+            n("appid", appid), s("AppName", name), s("Exe", '"%s"' % exe),
+            s("StartDir", '"%s/"' % dest), s("icon", os.path.join(dest, "Tyrian2000Plus.png")),
+            s("ShortcutPath", ""), s("LaunchOptions", ""), n("IsHidden", 0),
+            n("AllowDesktopConfig", 1), n("AllowOverlay", 1), n("OpenVR", 0),
+            n("Devkit", 0), s("DevkitGameID", ""), n("DevkitOverrideAppID", 0),
+            n("LastPlayTime", 0), s("FlatpakAppID", ""), (0, b"tags", []),
+        ]))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if os.path.exists(path) and not os.path.exists(path + ".antes-tyrian"):
         os.rename(path, path + ".antes-tyrian")  # cópia do original, por segurança
@@ -226,8 +260,8 @@ add_to_steam() {  # põe o jogo na Steam, se faltar; o resultado fica em $steam_
     if command -v python3 >/dev/null && steam_shortcuts check 2>/dev/null; then
         if [ -n "${SteamAppId:-}${SteamGameId:-}" ] || [ "${XDG_CURRENT_DESKTOP:-}" = gamescope ]; then
             # Aberto pela própria Steam ou no Modo de Jogo: fechá-la encerraria tudo.
-            steam_msg="Para pôr o jogo na biblioteca da Steam, rode este script de novo no Modo Desktop."
-        elif ! steam_running || ask "Para pôr o Tyrian 2000+ na biblioteca da Steam, a Steam precisa fechar por alguns segundos (ela abre de novo sozinha). Fechar a Steam agora?"; then
+            steam_msg="Para pôr o jogo e o atualizador na biblioteca da Steam, rode este script de novo no Modo Desktop."
+        elif ! steam_running || ask "Para pôr o Tyrian 2000+ e o atualizador (\"Tyrian 2000+ Update\") na biblioteca da Steam, a Steam precisa fechar por alguns segundos (ela abre de novo sozinha). Fechar a Steam agora?"; then
             reopen=""
             if steam_running; then
                 echo "Fechando a Steam ..."
@@ -238,7 +272,7 @@ add_to_steam() {  # põe o jogo na Steam, se faltar; o resultado fica em $steam_
             if steam_running; then
                 steam_msg="A Steam não fechou; o jogo não foi posto na biblioteca. Rode o script de novo com a Steam fechada."
             elif steam_shortcuts add >/dev/null; then
-                steam_msg="O jogo está na biblioteca da Steam, como \"Tyrian 2000+\"."
+                steam_msg="Na biblioteca da Steam: \"Tyrian 2000+\" (o jogo) e \"Tyrian 2000+ Update\" (atualiza o jogo)."
             else
                 steam_msg="Não consegui pôr o jogo na biblioteca da Steam; adicione-o lá como jogo não-Steam."
             fi
@@ -251,6 +285,11 @@ add_to_steam() {  # põe o jogo na Steam, se faltar; o resultado fica em $steam_
     fi
 }
 
+if [ -n "${TYRIAN_REEXEC:-}" ]; then
+    add_to_steam
+    say "Tyrian 2000+ instalado na versão $run_desc, em $DEST.${steam_msg:+ $steam_msg}"
+    exit 0
+fi
 if [ -f "$DEST/.versao" ] && [ "$(cat "$DEST/.versao")" = "$versao" ] && [ -x "$DEST/Tyrian2000Plus" ]; then
     add_to_steam
     say "O Tyrian 2000+ já está na versão mais nova ($run_desc).${steam_msg:+ $steam_msg}"
@@ -258,6 +297,8 @@ if [ -f "$DEST/.versao" ] && [ "$(cat "$DEST/.versao")" = "$versao" ] && [ -x "$
 fi
 
 echo "Baixando a versão $run_desc ..."
+busy_stop
+busy_start "Baixando o Tyrian 2000+ $run_desc ..."
 if [ -n "$TOKEN" ]; then
     arts=$(api_ok "actions/runs/$versao/artifacts")
     read -r url digest < <(python3 -c '
@@ -348,6 +389,14 @@ Icon=$DEST/Tyrian2000Plus.png
 Categories=Game;
 EOF
 
+
+# A versão nova deste script pode saber mais (por exemplo, um atalho novo na
+# Steam): ela termina o trabalho, sem baixar nada de novo.
+if [ -z "${TYRIAN_REEXEC:-}" ] && [ -f "$DEST/atualizar-tyrian.sh" ] \
+    && [ "$(sha256sum < "$DEST/atualizar-tyrian.sh")" != "$SELF_SUM" ]; then
+    busy_stop
+    TYRIAN_REEXEC="$run_desc" exec bash "$DEST/atualizar-tyrian.sh"
+fi
 
 add_to_steam
 say "Tyrian 2000+ instalado na versão $run_desc, em $DEST.${steam_msg:+ $steam_msg}"

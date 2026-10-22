@@ -8,6 +8,12 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- Steam Deck: the installer script also puts "Tyrian 2000+ Update" in the
+  Steam library, so the game can be updated from Game Mode. When opened from
+  Steam, it shows its progress and results in windows.
+
 ## v1.6 (2026-10-22)
 
 - **Gallery**: Setup > "Gallery..." shows the ships, weapons, sidekicks,

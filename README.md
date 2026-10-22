@@ -138,12 +138,13 @@ The easiest way is the installer script, which also updates the game later:
    from the Releases page.
 2. Open Konsole and run `bash ~/Downloads/Tyrian2000Plus-*-instalar-steam-deck.sh`.
 3. It installs the game in `~/Jogos/Tyrian2000Plus` (with the game data),
-   adds menu shortcuts and puts "Tyrian 2000+" in your Steam library. For
-   that, Steam has to close for a few seconds; the script asks first and
-   opens Steam again.
+   adds menu shortcuts and puts "Tyrian 2000+" and "Tyrian 2000+ Update" in
+   your Steam library. For that, Steam has to close for a few seconds; the
+   script asks first and opens Steam again.
 4. Go back to Game Mode and start Tyrian 2000+ from your library.
 
-To update, use "Atualizar Tyrian 2000+" in the Desktop Mode menu (or run
+To update, open "Tyrian 2000+ Update" from your Steam library (also works in
+Game Mode), or use "Atualizar Tyrian 2000+" in the Desktop Mode menu (or run
 `~/Jogos/Tyrian2000Plus/atualizar-tyrian.sh`).
 
 Or by hand:

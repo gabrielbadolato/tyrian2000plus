@@ -23,6 +23,9 @@ change is in this repository's git log.
   every second, and when someone quits or the connection drops both go back
   to the title screen instead of the game closing. The README explains how
   to play over the internet.
+- Steam Deck: the installer script also puts "Tyrian 2000+ Update" in the
+  Steam library, so the game can be updated from Game Mode. When opened from
+  Steam, it shows its progress and results in windows.
 
 ## v1.6 (2026-10-22)
 

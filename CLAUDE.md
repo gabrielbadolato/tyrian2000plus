@@ -103,7 +103,11 @@ pequenas e podem seguir as regras acima normalmente.
   atualização grava a versão nova por cima dele enquanto ele roda. Também põe o jogo na Steam como jogo
   não-Steam (edita userdata/*/config/shortcuts.vdf, binário; guarda cópia
   .antes-tyrian), só no Modo Desktop e fechando a Steam com permissão;
-  atalho que já mencione "tyrian" conta como existente.
+  atalho que já mencione "tyrian" conta como existente. Põe dois atalhos: o
+  jogo e "Tyrian 2000+ Update" (o próprio script; nome em inglês a pedido do
+  Gabriel, 2026-10-22), que abre no Modo de Jogo e mostra janelas kdialog
+  (barra "Baixando..." e o resultado). Depois de instalar, se o script do
+  pacote é outro, ele roda o novo (`TYRIAN_REEXEC`) para pôr atalhos novos.
 - Os dados do jogo (freeware) ficam em `data/` ao lado do executável e não
   vão para o repositório.
 - Testes: `tests/run_tests.sh [pasta-do-jogo]` compila e roda

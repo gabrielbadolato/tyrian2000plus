@@ -24,12 +24,16 @@ that browser, and you can take them to the computer or back (see
     <td><img src="doc/screenshots/2-fase.png" width="400" alt="A level"></td>
   </tr>
   <tr>
-    <td><img src="doc/screenshots/3-loja.png" width="400" alt="Shop comparing each gun with the ship's (green is better)"></td>
-    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pause menu with Auto Fire, Controls and Graphics"></td>
+    <td><img src="doc/screenshots/3-galeria-inimigos.png" width="400" alt="Gallery: the enemies you have met, moving as in the levels"></td>
+    <td><img src="doc/screenshots/4-galeria-arma.png" width="400" alt="Gallery: a weapon firing, at any power"></td>
   </tr>
   <tr>
-    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map with Xbox button icons"></td>
-    <td><img src="doc/screenshots/6-estatisticas.png" width="400" alt="Statistics and level records"></td>
+    <td><img src="doc/screenshots/5-loja.png" width="400" alt="Shop comparing each gun with the ship's (green is better)"></td>
+    <td><img src="doc/screenshots/6-pausa.png" width="400" alt="Pause menu with Auto Fire, Controls and Graphics"></td>
+  </tr>
+  <tr>
+    <td><img src="doc/screenshots/7-controller-map.png" width="400" alt="Controller Map with Xbox button icons"></td>
+    <td><img src="doc/screenshots/8-estatisticas.png" width="400" alt="Statistics and level records, the last page of the Gallery"></td>
   </tr>
 </table>
 

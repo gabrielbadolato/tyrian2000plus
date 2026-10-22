@@ -24,12 +24,16 @@ naquele navegador, e dá para levá-los ao computador e trazer de volta (veja
     <td><img src="doc/screenshots/2-fase.png" width="400" alt="Uma fase"></td>
   </tr>
   <tr>
-    <td><img src="doc/screenshots/3-loja.png" width="400" alt="Loja comparando cada arma com a da nave (verde é melhor)"></td>
-    <td><img src="doc/screenshots/4-pausa-auto-fire-graphics.png" width="400" alt="Pausa com Auto Fire, Controls e Graphics"></td>
+    <td><img src="doc/screenshots/3-galeria-inimigos.png" width="400" alt="Galeria: os inimigos que você já encontrou, mexendo-se como nas fases"></td>
+    <td><img src="doc/screenshots/4-galeria-arma.png" width="400" alt="Galeria: uma arma atirando, em qualquer potência"></td>
   </tr>
   <tr>
-    <td><img src="doc/screenshots/5-controller-map.png" width="400" alt="Controller Map com os ícones dos botões do Xbox"></td>
-    <td><img src="doc/screenshots/6-estatisticas.png" width="400" alt="Estatísticas e recordes das fases"></td>
+    <td><img src="doc/screenshots/5-loja.png" width="400" alt="Loja comparando cada arma com a da nave (verde é melhor)"></td>
+    <td><img src="doc/screenshots/6-pausa.png" width="400" alt="Pausa com Auto Fire, Controls e Graphics"></td>
+  </tr>
+  <tr>
+    <td><img src="doc/screenshots/7-controller-map.png" width="400" alt="Controller Map com os ícones dos botões do Xbox"></td>
+    <td><img src="doc/screenshots/8-estatisticas.png" width="400" alt="Estatísticas e recordes das fases, a última página da Galeria"></td>
   </tr>
 </table>
 

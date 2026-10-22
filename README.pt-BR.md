@@ -61,6 +61,8 @@ versão de código aberto do Tyrian. O que esta versão acrescenta:
 - No menu de melhorias da nave, cada item mostra o dano (ou casco, escudo ou
   energia) em verde quando é melhor do que o da sua nave e em vermelho quando
   é pior.
+- Uma Galeria (Setup > Gallery) com as naves, armas, sidekicks e inimigos que
+  você já encontrou, desenhados com as imagens do próprio jogo.
 - Um segundo som de música para escolher em Setup > Sound: o emulador Nuked
   OPL3, próximo de uma placa Sound Blaster de 1995 de verdade (o som clássico
   continua sendo o padrão).
@@ -215,8 +217,8 @@ os controles de toque sumirem de novo.
   (Sound), controles (Controls), velocidade do jogo (Game Speed), idioma
   (Language), aviso de versão (Check Updates), jogos salvos (Saved Games),
   Jukebox, rever a
-  última fase (Replay Last Level), estatísticas (Statistics), novidades
-  (What's New) e About.
+  última fase (Replay Last Level), galeria (Gallery, com as estatísticas),
+  novidades (What's New) e About.
 - **Tela de título > Continue (Continuar):** carrega o último jogo salvo ou
   carregado (o jogo também salva "LAST LEVEL" ao chegar na nave depois de
   cada fase e ao começar cada fase). Só aparece quando existe um. Se o jogo
@@ -249,10 +251,24 @@ os controles de toque sumirem de novo.
 - **Durante a fase, Start ou Esc:** volume, velocidade, Auto Fire,
   Controls... (o mesmo Setup > Controls) e Graphics... (tela cheia, escala,
   Sharp Bilinear, VSync, movimento suave e brilho, aplicados na hora).
-- **Setup > Statistics (Estatísticas):** os totais de todos os seus jogos
-  (tempo nas fases, fases concluídas, inimigos destruídos, mortes, fases
-  secretas, datacubes, maior pontuação) e os recordes de cada fase: maior
-  pontuação, menor tempo e mais inimigos destruídos. Ficam no arquivo
+- **Setup > Gallery (Galeria):** as naves, armas, sidekicks, escudos,
+  geradores, armas especiais e inimigos que você já encontrou, com as imagens
+  do próprio jogo. O que você ainda não viu aparece como uma sombra escura
+  (com o nome "???"); o que os menus da nave nunca oferecem, como as naves
+  secretas, só aparece depois de achado. Cada item mostra os números dele
+  (dano, casco, preço); cada inimigo, a blindagem, quantos você destruiu e
+  onde o viu pela primeira vez. Os inimigos são uma lista de todos os do jogo
+  (cada um uma vez, as peças de um chefe ou de uma construção juntas; sem
+  tiros nem cenário), então dá para ver quantos faltam. Tab, ou LB e RB no controle, trocam a página; as setas
+  escolhem. Enter (A no controle, ou um clique na figura) mostra em
+  movimento: a arma atirando, na potência de 1 a 11 (cima/baixo), o sidekick
+  atirando, a nave voando. Os inimigos se mexem na própria figura, e o que aparece virado para mais de um lado mostra cada lado por vez. A lista de inimigos foi montada à mão por fãs e pode conter erros. Na página dos inimigos, E (Y no
+  controle) mostra um episódio de cada vez. Fica no arquivo gallery.cfg, junto dos saves, e vai se enchendo
+  enquanto você joga daqui para a frente.
+- **Setup > Gallery > Statistics (Estatísticas):** os totais de todos os
+  seus jogos (tempo nas fases, fases concluídas, inimigos destruídos, mortes,
+  fases secretas, datacubes, maior pontuação) e os recordes de cada fase:
+  maior pontuação, menor tempo e mais inimigos destruídos. Ficam no arquivo
   statistics.cfg, junto dos saves.
 - **Setup > Saved Games (Jogos salvos):** no Windows e no Linux, abre a
   pasta do tyrian.sav (seus jogos salvos) e mostra o caminho dela na linha

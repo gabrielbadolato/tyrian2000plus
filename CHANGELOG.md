@@ -8,6 +8,28 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Gallery**: Setup > "Gallery..." shows the ships, weapons, sidekicks,
+  shields, generators, special weapons and enemies you have come across,
+  drawn with the game's own pictures, with their numbers (damage, armor,
+  price) and, for the enemies, how many you destroyed and where you met them
+  first. The enemies are a fixed list of the game's own (about 200, each one
+  once, the pieces of a boss or of a building together, without names: the
+  game has none; shots and scenery such as rocks are left out), and what you have
+  not seen yet is a dark shape. It fills up as you play, in gallery.cfg next
+  to the saves (tyrian.sav does not change); keyboard, controller (LB/RB
+  change the page), mouse and touch. The statistics moved into it, as its
+  last page (Setup no longer has "Statistics...").
+  The enemies move in their pictures as they do in the levels, and one met
+  facing more than one way (or in a longer and a shorter form, or with wings
+  that open and close) shows each in turn. The enemy list was put together
+  by hand by fans and may have mistakes (the page says so).
+  Enter (A on a controller, or a click on the picture) shows the chosen
+  ship, weapon or sidekick in motion: a weapon fired by a ship, at any power from 1 to 11 (and in
+  both modes for rear weapons), a sidekick firing, a ship flying (smooth with Smooth Motion on). The enemies page can show one episode at a
+  time (E, or Y on a controller).
+
 ## v1.5 (2026-10-21)
 
 - **Smooth Motion is on by default.** If you turn it off in Setup > Graphics,

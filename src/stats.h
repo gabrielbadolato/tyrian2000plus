@@ -60,8 +60,10 @@ void stats_level_end(void);
 // set by stats_level_end() when the level beat one of its records
 extern bool stats_new_record;
 
-// full screen page with the totals and the records of each level; until
-// Esc, B or a right click
-void statisticsScreen(void);
+// the Statistics page of the Gallery (src/gallery.c): builds the lines with
+// the totals and the records of each level and returns how many there are,
+// then draws visibleLines of them from line top, the first at listY
+int stats_build_lines(void);
+void stats_draw_lines(int top, int listY, int visibleLines);
 
 #endif /* STATS_H */

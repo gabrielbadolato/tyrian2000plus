@@ -354,9 +354,7 @@ static int lineCount;
 enum
 {
 	TEXT_X = 14,
-	LIST_Y = 26,
 	LINE_HEIGHT = 11,
-	VISIBLE_LINES = 14,
 	SCORE_RIGHT = 196,
 	TIME_RIGHT = 248,
 	PERCENT_RIGHT = 300,
@@ -389,7 +387,7 @@ static void addValue(const char *label, unsigned long value)
 	snprintf(line->value, sizeof(line->value), "%lu", value);
 }
 
-static void buildLines(void)
+int stats_build_lines(void)
 {
 	lineCount = 0;
 
@@ -411,7 +409,7 @@ static void buildLines(void)
 	if (recordCount == 0)
 	{
 		addLine(LINE_VALUE, tr("Finish a level to set its records."));
-		return;
+		return lineCount;
 	}
 
 	// by episode, in the order the levels were first finished
@@ -452,18 +450,20 @@ static void buildLines(void)
 		formatTicks(line->time, sizeof(line->time), record->bestTicks);
 		snprintf(line->percent, sizeof(line->percent), "%d%%", record->bestPercent);
 	}
+
+	return lineCount;
 }
 
-static void drawLines(int top)
+void stats_draw_lines(int top, int listY, int visibleLines)
 {
 	// darken the background behind the text so it reads well
-	JE_barShade(VGAScreen, 4, LIST_Y - 3, 315, LIST_Y + VISIBLE_LINES * LINE_HEIGHT);
-	JE_barShade(VGAScreen, 4, LIST_Y - 3, 315, LIST_Y + VISIBLE_LINES * LINE_HEIGHT);
+	JE_barShade(VGAScreen, 4, listY - 3, 315, listY + visibleLines * LINE_HEIGHT);
+	JE_barShade(VGAScreen, 4, listY - 3, 315, listY + visibleLines * LINE_HEIGHT);
 
-	for (int i = 0; i < VISIBLE_LINES && top + i < lineCount; ++i)
+	for (int i = 0; i < visibleLines && top + i < lineCount; ++i)
 	{
 		const StatsLine *line = &lines[top + i];
-		const int y = LIST_Y + i * LINE_HEIGHT;
+		const int y = listY + i * LINE_HEIGHT;
 
 		switch (line->style)
 		{
@@ -492,106 +492,12 @@ static void drawLines(int top)
 	}
 
 	// scroll bar
-	if (lineCount > VISIBLE_LINES)
+	if (lineCount > visibleLines)
 	{
-		const int h = VISIBLE_LINES * LINE_HEIGHT;
-		const int barH = MAX(6, h * VISIBLE_LINES / lineCount);
-		const int barY = LIST_Y + (h - barH) * top / (lineCount - VISIBLE_LINES);
-		fill_rectangle_xy(VGAScreen, 312, LIST_Y, 313, LIST_Y + h - 1, 0);
+		const int h = visibleLines * LINE_HEIGHT;
+		const int barH = MAX(6, h * visibleLines / lineCount);
+		const int barY = listY + (h - barH) * top / (lineCount - visibleLines);
+		fill_rectangle_xy(VGAScreen, 312, listY, 313, listY + h - 1, 0);
 		fill_rectangle_xy(VGAScreen, 312, barY, 313, barY + barH - 1, 15 * 16 + 8);
-	}
-}
-
-void statisticsScreen(void)
-{
-	JE_loadPic(VGAScreen2, 2, false);
-	fill_rectangle_wh(VGAScreen2, 0, 192, 320, 8, 0);
-
-	buildLines();
-
-	const int maxTop = MAX(0, lineCount - VISIBLE_LINES);
-	bool fadeIn = true;
-	int top = 0;
-
-	for (; ; )
-	{
-		setFrameCount(2);
-
-		memcpy(VGAScreen->pixels, VGAScreen2->pixels, (size_t)VGAScreen->pitch * VGAScreen->h);
-
-		drawFontHvShadowAligned(VGAScreen, 160, 4, tr("Statistics"), FONT_LARGE, ALIGN_CENTER, 15, -3, false, 2);
-
-		drawLines(top);
-
-		const int j = joystick_first_gamepad();
-		char help[128];
-		snprintf(help, sizeof(help), tr("Up/Down: scroll. Left/Right: page. Esc (%s): back."), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_B));
-		JE_textShade(VGAScreen, TEXT_X, 190, help, 15, 4, PART_SHADE);
-
-		if (fadeIn)
-		{
-			fade_palette(colors, 10, 0, 255);
-			fadeIn = false;
-		}
-
-		JE_mouseStart();
-		JE_showVGA();
-		JE_mouseReplace();
-
-		waitUntilElapsed();
-
-		const int oldTop = top;
-		bool done = false;
-
-		KeyboardInput keyboardInput;
-		while (keyboardGetInput(&keyboardInput))
-		{
-			switch (keyboardInput.scancode)
-			{
-			case SDL_SCANCODE_UP:
-				top -= 1;
-				break;
-			case SDL_SCANCODE_DOWN:
-				top += 1;
-				break;
-			case SDL_SCANCODE_LEFT:
-			case SDL_SCANCODE_PAGEUP:
-				top -= VISIBLE_LINES - 1;
-				break;
-			case SDL_SCANCODE_RIGHT:
-			case SDL_SCANCODE_PAGEDOWN:
-				top += VISIBLE_LINES - 1;
-				break;
-			case SDL_SCANCODE_HOME:
-				top = 0;
-				break;
-			case SDL_SCANCODE_END:
-				top = maxTop;
-				break;
-			case SDL_SCANCODE_ESCAPE:
-			case SDL_SCANCODE_RETURN:
-				done = true;
-				break;
-			default:
-				break;
-			}
-		}
-
-		MouseInput mouseInput;
-		while (mouseGetInput(INPUT_NO_MOTION, &mouseInput))
-		{
-			if (mouseInput.button == SDL_BUTTON_RIGHT || mouseInput.button == SDL_BUTTON_LEFT)
-				done = true;
-		}
-
-		top = MAX(0, MIN(top, maxTop));
-		if (top != oldTop)
-			JE_playSampleNum(S_CURSOR);
-
-		if (done)
-		{
-			JE_playSampleNum(S_SPRING);
-			return;
-		}
 	}
 }

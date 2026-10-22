@@ -283,8 +283,9 @@ Janela: posição, tamanho e maximizado ficam em `window_*` na seção "video"
 abrir e ao sair da tela cheia; se o lugar não está em nenhuma tela, centraliza.
 Fechar a janela (SDL_QUIT) chama `JE_tyrianHalt(0)`, que salva as configurações.
 
-Estatísticas: Setup > "Statistics..." (`statisticsScreen()` em
-`src/stats.c`) mostra os totais de todos os jogos (tempo nas fases, fases
+Estatísticas: última aba da Galeria (Setup > "Gallery...", a pedido do
+Gabriel em 2026-10-21; antes era Setup > "Statistics...";
+`stats_build_lines()`/`stats_draw_lines()` em `src/stats.c`) mostra os totais de todos os jogos (tempo nas fases, fases
 concluídas, inimigos, mortes, fases secretas, datacubes, maior pontuação) e
 os recordes de cada fase (episódio + nome: pontos ganhos na fase, menor tempo,
 maior % destruída). Ficam em `statistics.cfg` na pasta do usuário (formato do
@@ -295,6 +296,87 @@ recordes. Demos, `-c`/`-k` e a invencibilidade (tecla C) não contam. Quando
 bate um recorde que já existia, a tela de fim de fase original
 (`JE_endLevelAni`) ganha a linha "New level record!". A tela de resultado
 nova (B3) foi descartada: o jogo já mostra % destruídos e datacubes ali.
+
+Galeria: Setup > "Gallery..." (`galleryScreen()` em `src/gallery.c`, ideia
+aprovada pelo Gabriel em 2026-10-21; inimigos SEM nome (Gabriel: nomes
+nossos podem infringir políticas). Versão maior (galeria-7): Enter / A /
+clique na figura abre o "palco" no lugar da grade (`demoFrame()`): arma
+atirando pela USP Talon com o código do próprio jogo (`player_shot_create`
+e `simulate_player_shots`, como `JE_weaponViewFrame`, numa tela própria
+trocando `VGAScreen`; `demoStart/demoEnd` guardam e devolvem `player[0]`,
+`power`, `shotRepeat`), potência 1-11 em cima/baixo, modo da arma de trás
+em Espaço/Y; sidekick atirando dos dois lados; nave voando com inclinação;
+lados passam ao próximo. Inimigos e a aba Other não abrem o palco
+(Gabriel, galeria-8/9: a figura do painel já é animada). Inimigos animados no
+painel (`partPicture()`, quadros de `catalogAnims`/`catalogFrames`, tirados
+do enemyDat por `test_gallery <data> frames=<arq>`; inimigo com animate 0 e
+vários quadros, como o tanquezinho, olha para onde a fase manda: o painel
+mostra cada direção por 1 s, `when` 3). Filtro por episódio na
+aba Enemies (E / Y / clique na contagem, `enemyEpisode`). Abas Ships/Weapons/Sidekicks/Other (escudos,
+geradores, especiais)/Enemies/Statistics, com as imagens do jogo (sprites desenhados
+num `Canvas` próprio, decodificador igual ao `blit_sprite2`). Itens: os que
+os menus da nave oferecem (a Galeria lê de novo as listas "]I" de
+levelsN.dat para saber quais existem; o que falta aparece como sombra "???")
+e os que os jogadores tiveram; o que nenhum menu oferece (naves secretas,
+especiais) só aparece depois de visto. Aberta da tela de título (sem
+episódio carregado) chama `JE_loadItemDat()`, senão os itens vêm vazios.
+Registro: `gallery_shop_items()` ao
+carregar o itemAvail (evento 'I' em `JE_loadMap`), itens dos jogadores no
+começo e fim da fase, `gallery_enemy_made(slot)` nos dois `JE_makeEnemy` e
+`gallery_enemy_killed(slot)` junto dos `enemyKilled++`. Inimigo = aparência
+(banco, sprite, tamanho), porque os dados dos episódios 4 e 5 são outros;
+no quadro seguinte (`gallery_level_frame`) as peças feitas juntas que se
+tocam, com o mesmo linknum ou ambas no mapa (slots 25-99: chão e "top"),
+viram uma "coisa" (`Thing`); peça do mapa que chega depois encostada numa
+peça do mapa que ainda está lá também entra (construção que vem fileira por
+fileira; inimigos ligados que chegam um a um são formação, não entram). A
+coisa só é gravada quando todas as peças somem (destruída se a última foi
+destruída) ou no fim da fase. Lista fixa (pedido do Gabriel, 2026-10-21):
+`src/gallery_catalog.h` tem os ~200 inimigos do jogo (aparência + índices do
+enemyDat das peças, por "dataset": 1 = episódios 1-3, 4, 5), gerado por
+`tests/make_gallery_catalog.py` a partir de `GALLERY_DUMP=<arq.tsv>` do
+`test_autoplay` (todos os episódios × dificuldades 1,2,3,4,6,8 × 2 caminhos;
+cada linha termina com `@quadro:x:y:ymapa`, quando e onde a coisa veio e,
+para peças do mapa, o y no mapa (`groundScroll`/`topScroll`); o script
+separa coisas que só se encostaram, junta tipos que vêm juntos em pelo menos
+metade das vezes e se tocam, coisas no céu do mesmo quadro sempre no mesmo
+lugar (braço de chefe sem linknum), metades lado a lado do mesmo quadro
+(braços, tentáculos; se passam de 260 px, fica uma só), peça cujas figuras
+estão todas noutra entrada, pedaços do mapa que sempre se encontram no
+mesmo lugar do mapa (`join_map`), tira repetidos e figuras vazias com
+`--drop=`). O que a revisão olho a olho achou fica em
+`tests/gallery_catalog_fix.txt` (`--fix=`: hide, split, rows, banks, once,
+into, join, stack; "stack" monta chefe que chega fileira por fileira no céu, como
+o da GYGES; "into" junta o mesmo inimigo repetido; "view a b" faz de b
+outro ângulo de a (virado, de lado, aberto/fechado: `catalogViews`, o painel
+mostra um por vez a cada 2 s, `enemyView()`; pedido do Gabriel 2026-10-22);
+"shape a peças..." dá a forma inteira de a (a nave roxa da TYRIAN com três
+fileiras de asas) e a antiga vira o último ângulo; "pose a peças..." é a
+mesma coisa um instante depois (as asas da nave roxa abrem e fecham 48 px,
+xcaccel/xrev do enemyDat); "join a b x y" põe b como parte de a), pela peça (dataset:índice), então vale para a próxima coleta.
+Fora da lista (escolha do Gabriel, 2026-10-21): tiros que outro inimigo lança,
+fogo/raios e cenário que só fica parado (pedras, placas, paredes, prédios
+que não atiram), com "hide". Variações de cor ficam: são inimigos com
+blindagem e armas diferentes. Para achar repetidos, comparar as figuras
+pixel a pixel (também espelhadas) e conferir olho a olho; `test_gallery
+<data> frames=` também escreve blindagem, armas, movimento e o que lança.
+Peça escondida vai na lista com `CATALOG_HIDDEN`: a Galeria não a mostra
+nem cria entrada para ela. Comando completo: `make_gallery_catalog.py
+--frames=<frames.tsv> --fix=tests/gallery_catalog_fix.txt
+src/gallery_catalog.h <tsv>...`.
+Inimigos não têm nome na ficha (pedido do Gabriel 2026-10-21); no lugar do nome, a
+ficha diz "Lista feita por fãs: pode conter erros." (pedido dele 2026-10-22). `catalogMatch()` marca cada entrada da lista que a coisa contém
+(duas construções lado a lado = duas); o que a lista não tem vira entrada
+pela aparência (`pieceOf` esconde pedaços). Inimigo novo/fase nova: rodar a
+coleta e gerar de novo. Inimigo lançado por outro (`gallery_enemy_launched`,
+em `JE_newEnemy`) é sempre coisa própria. Armadura 0 (cenário, não é alvo) e
+peça invisível ficam de fora. Fica em `gallery.cfg` na
+pasta do usuário (tyrian.sav não muda); só lê o jogo, não muda nada nem a
+gravação da fase. Demos, Replay e `-c` não gravam (os testes ligam
+`gallery_test_record`). Teste: `tests/test_gallery.c` (sem dados; com dados
+mostra a tela e tira prints: `test_gallery <data> wait shot=a.bmp Tab ...`,
+sem episódio carregado, como na tela de título; `ep=N` primeiro carrega um,
+como no menu da nave; `setup` para abrir o Setup).
 
 Controle desconectado no meio da fase: `check_joystick_hotplug()` marca a
 perda e `joystick_take_lost()` faz o jogo pausar (`src/mainint.c`).
@@ -504,6 +586,12 @@ nave (`JE_weaponViewFrame`) grava estrelas e tiros na tela (`smooth_sim_begin`
 JE_showVGA: dentro do retângulo 8,8-143,182, o pixel que nada desenhou por
 cima depois (moldura, nave, texto) vem da imagem intermediária, e o ponteiro
 do mouse é tirado (`mouse_pointer_remove`) e redesenhado onde o mouse está.
+O palco da Galeria faz o mesmo numa tela própria: `smooth_sim_begin_on(demoScreen)`
+e `smooth_sim_show_with(2, stageShowBetween, NULL)` (a função monta a imagem
+do meio: estrelas no meio do caminho + a tela do palco redesenhada; o que foi
+desenhado por cima, guardado em `stageDrawn`, fica). O balanço da nave anda um
+pouco a cada quadro (antes pulava a cada 6). `test_gallery` aceita
+`between=<prefixo>` para salvar as imagens do meio.
 Ponteiro nos menus: `JE_mouseReplace` marca que a tela foi mostrada com ele
 (`vga_shows` conta os JE_showVGA) e `waitUntilElapsed` chama
 `mouse_pointer_between()`, que mostra a tela (já sem ponteiro) com o ponteiro

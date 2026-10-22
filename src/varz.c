@@ -21,6 +21,7 @@
 #include "config.h"
 #include "editship.h"
 #include "episodes.h"
+#include "gallery.h"
 #include "joystick.h"
 #include "levelrec.h"
 #include "logging.h"
@@ -461,6 +462,7 @@ void JE_tyrianHalt(JE_byte code)
 
 	saveConfiguration();
 	saveSavesUnlessReplaced();  // saves copied in from another computer stay
+	gallery_save();
 
 	if (code == 5)
 		code = 0;

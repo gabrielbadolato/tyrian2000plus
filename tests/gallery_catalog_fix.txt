@@ -1,0 +1,286 @@
+# What a look at every entry of the Gallery's list found, for
+# tests/make_gallery_catalog.py --fix=: one fix per line, each piece by
+# "dataset:enemyDat index" (dataset 1 = episodes 1-3, 4, 5).
+#   hide  a        not shown
+#   split a        each group of pieces that touch is an enemy of its own
+#   rows  a        each row of pieces is one (things in a line, one over the other)
+#   banks a        each group of pieces from one sprite bank is one
+#   once  a        each picture once (the same enemy twice, side by side)
+#   into  a b      the enemy with b is a part of the one with a (or the same enemy)
+#   view  a b      b is a from another side: the Gallery shows them in turn
+#   shape a p ...  a as it looks whole, each piece bank:sprite:size:x:y:index
+#   pose  a p ...  a a moment later (same pieces as shape), shown in turn before
+#                  the look shape replaced
+#   join  a b x y  b is a part of a, drawn x right and y down of a's corner
+#   stack a b ...  rows that come one at a time, top to bottom: one enemy
+
+stack 1:366 1:369 1:372 1:377 1:383  # a boss that comes row by row (episode 2)
+rows 1:18     # spears in formation
+banks 1:326   # two signs that only came together
+once 1:228    # the same enemy twice
+split 4:37    # two domes apart
+rows 4:340    # an eye and a ball under it
+split 4:351   # two hands far apart
+rows 4:642    # a column of balls
+stack 1:243 1:241  # the two halves of a ball, one after the other
+stack 1:713 1:716  # the top of a column of fire
+rows 1:319    # a mine and a rock under it
+into 1:171 4:171   # the same enemy, its pieces a little apart
+rows 5:564    # a column of balls
+split 5:1024  # two buildings apart
+hide 5:1245   # dots too small to show
+hide 5:1261
+hide 5:1262
+
+# the same enemy twice (same pictures, or its animation started elsewhere)
+into 1:10 1:12
+into 1:5 1:11
+into 1:15 1:194
+into 1:266 1:286
+into 1:462 1:135
+into 1:543 1:592
+into 1:543 4:41
+into 1:826 4:826
+into 1:722 5:732
+into 4:255 4:724
+into 4:536 4:725
+into 4:640 4:722
+into 1:317 1:323
+into 1:317 5:1011
+into 1:35 1:32
+# the same enemy facing the other way: shown in turn
+view 1:24 1:25
+view 1:20 1:18
+view 1:232 1:228
+view 1:753 1:756
+view 1:670 1:662
+view 1:735 1:736
+view 4:203 4:206
+view 4:223 4:224
+view 4:260 4:265
+view 4:44 4:43
+view 4:66 4:68
+view 4:49 4:55
+view 4:345 4:347
+view 4:351 4:354
+view 4:527 4:526
+view 5:1205 5:1221
+view 5:1259 5:1260
+view 1:73 1:66
+view 1:792 1:793
+# the purple ship of TYRIAN: a nose (1:31) under rows of segments (1:30) with
+# a pair of arms each (1:28/1:29; 1:26/1:27 in the short one). The short one
+# (TYRIAN top layer, one row, its arms fly away) comes under the nose
+join 1:26 1:31 12 15
+# the long one: three rows of arms 22 px apart over the nose, each row's arms
+# swinging out (up to 48 px each side) 11 frames after the row below it, so the
+# rows are never alike: here 38, 22 and 6 px out (frame ~1599 of TYRIAN), the
+# widest that fits the panel whole
+shape 1:26 1:49:1:32:0:28 1:89:1:50:0:30 1:51:1:68:0:29 1:49:1:16:22:28 1:89:1:50:22:30 1:51:1:84:22:29 1:49:1:0:44:28 1:89:1:50:44:30 1:51:1:100:44:29 1:127:1:50:66:31
+# the arms all the way out (frame 1706: 48, 48 and 39 out)
+pose 1:26 1:49:1:1:0:28 1:89:1:60:0:30 1:51:1:119:0:29 1:49:1:0:22:28 1:89:1:60:22:30 1:51:1:120:22:29 1:49:1:9:44:28 1:89:1:60:44:30 1:51:1:111:44:29 1:127:1:60:66:31
+# just arrived, arms folded over the segments, the lowest row starting (frame 1661)
+pose 1:26 1:49:1:12:0:28 1:89:1:24:0:30 1:51:1:36:0:29 1:49:1:11:22:28 1:89:1:24:22:30 1:51:1:37:22:29 1:49:1:0:44:28 1:89:1:24:44:30 1:51:1:48:44:29 1:127:1:24:66:31
+# the short one (one row, arms folded, nose 15 px under the segment)
+pose 1:26 1:49:1:0:0:26 1:89:1:12:0:30 1:51:1:24:0:27 1:127:1:12:15:31
+# the same enemy from another side, or open and closed: shown in turn
+view 1:17 1:24
+view 1:100 1:91
+view 1:598 1:600
+view 1:129 1:134
+view 4:521 4:520
+view 1:245 1:252
+view 1:271 1:197
+view 1:158 1:154
+view 1:792 1:794
+# not enemies (Gabriel, 2026-10-21): shots other enemies launch, fire and lightning
+hide 1:2
+hide 1:199
+hide 1:454
+hide 1:455
+hide 1:458
+hide 1:460
+hide 1:463
+hide 1:479
+hide 1:501
+hide 1:511
+hide 1:515
+hide 1:532
+hide 1:543
+hide 1:556
+hide 1:592
+hide 1:596
+hide 1:709
+hide 1:710
+hide 1:752
+hide 4:41
+hide 4:182
+hide 4:257
+hide 4:337
+hide 4:640
+hide 5:799
+hide 1:678
+hide 1:713
+hide 4:713
+hide 5:1263
+# not enemies: scenery that only stands there (rocks, floor plates, walls, buildings that do not shoot)
+hide 1:121
+hide 1:125
+hide 1:516
+hide 1:32
+hide 1:35
+hide 1:42
+hide 1:73
+hide 1:66
+hide 1:313
+hide 1:272
+hide 1:573
+hide 1:269
+hide 1:275
+hide 1:287
+hide 1:309
+hide 1:338
+hide 1:343
+hide 1:326
+hide 1:145
+hide 1:332
+hide 1:768
+hide 1:745
+hide 1:750
+hide 1:764
+hide 1:422
+hide 1:276
+hide 1:780
+hide 1:586
+hide 1:434
+hide 1:106
+hide 1:109
+hide 1:289
+hide 1:293
+hide 1:631
+hide 1:87
+hide 1:80
+hide 4:215
+hide 4:221
+hide 4:251
+hide 4:33
+hide 4:37
+hide 4:39
+hide 4:319
+hide 4:289
+hide 4:784
+hide 1:440
+hide 1:138
+hide 1:444
+hide 5:1189
+hide 5:1187
+hide 5:1191
+hide 5:1160
+hide 5:1197
+hide 5:1201
+hide 5:1213
+hide 5:1199
+hide 5:1258
+hide 5:1256
+hide 1:317
+hide 1:321
+hide 1:323
+hide 5:1011
+hide 1:260
+hide 1:266
+hide 1:263
+hide 1:135
+hide 1:286
+hide 1:660
+hide 1:661
+# more of them, seen in the list: small missiles and fireballs, a wall of
+# fire, a column of water, plates and a piece of a wall
+hide 4:43
+hide 4:255
+hide 4:516
+hide 4:536
+hide 5:1172
+hide 5:1220
+hide 4:366
+hide 5:1218
+hide 1:142
+hide 1:737
+hide 4:225
+hide 4:249
+# a review (2026-10-22): an invisible blocker, a seed the plants drop, fire,
+# an indestructible spike that only slides down
+hide 1:426
+hide 1:427
+hide 1:428
+hide 1:429
+hide 4:426
+hide 4:427
+hide 4:428
+hide 4:429
+hide 5:1244
+hide 1:734
+hide 5:1056
+hide 1:679
+hide 1:680
+# the red crab of DELIANI with its two gun pods (armor 0, so not collected)
+shape 1:400 24:1:1:0:0:400 24:3:1:24:0:401 24:5:1:48:0:402 24:7:1:72:0:403 24:9:1:96:0:404 24:11:1:120:0:405 24:39:1:0:28:406 24:41:1:24:28:407 24:43:1:48:28:408 24:45:1:72:28:409 24:47:1:96:28:410 24:49:1:120:28:411
+# also out (Gabriel, 2026-10-22): a sliding barrier, fire, scenery on the
+# coral and plants, a parked missile, a piece of a building, a homing gem
+# another enemy launches, the drops of the BRAINIAC boss
+hide 1:18
+hide 1:19
+hide 1:20
+hide 1:21
+hide 1:22
+hide 1:23
+hide 1:779
+hide 4:779
+hide 5:564
+hide 5:1210
+hide 5:1211
+hide 5:1212
+hide 5:1246
+hide 5:1247
+hide 5:1248
+hide 5:1249
+hide 5:1071
+hide 4:642
+hide 1:545
+hide 5:545
+hide 4:40
+
+# levels the first collection never reached (BUBBLES, GEM WAR, MARKERS,
+# MISTAKES, LAVA EXIT...), 2026-10-22
+hide 1:464    # the bubbles: nothing destroys them
+hide 1:465
+hide 1:466
+hide 1:467
+hide 1:850    # shots other enemies launch
+hide 1:816
+hide 1:812
+hide 1:0      # no enemy of its own (enemyDat 0), takes any look
+banks 4:381   # a ring and lava balls that only came together
+
+
+# what a look at the bosses in the levels found (2026-10-22): pieces with
+# armor 0 or type 0 that the collection leaves out, and pieces that don't belong
+# TORM: the green body with the gray nose
+shape 1:772 14:153:1:0:0:772 14:155:1:24:0:772 14:157:1:48:0:772 14:159:1:72:0:772 14:191:1:0:28:772 14:193:1:24:28:772 14:195:1:48:28:773 14:197:1:72:28:772 14:229:1:0:56:772 14:241:1:24:56:774 14:243:1:48:56:775 14:235:1:72:56:772 14:267:1:12:84:772 14:269:1:36:84:772 14:271:1:60:84:772
+# MINERS: the body of the drilling machine
+shape 5:1180 17:191:1:16:0:1174 17:193:1:40:0:1175 17:271:1:40:0:1185 17:195:1:64:0:1176 17:235:1:20:6:1180 17:235:1:60:6:1180 17:275:1:0:19:1182 17:277:1:80:19:1183 17:229:1:16:24:1177 17:231:1:40:24:1178 17:233:1:64:24:1179 17:197:1:14:28:1181 17:267:1:40:28:1184 17:197:1:68:28:1181
+# CORAL: the whole flying disc (47 pieces)
+shape 5:1224 35:14:1:38:0:1224 35:14:1:156:0:1224 36:1:1:0:12:1224 36:3:1:24:12:1224 36:5:1:48:12:1224 36:7:1:72:12:1224 36:9:1:96:12:1224 36:11:1:120:12:1224 36:13:1:144:12:1224 36:15:1:168:12:1224 36:17:1:192:12:1224 35:52:1:38:28:1225 35:52:1:156:28:1225 36:39:1:0:40:1224 36:41:1:24:40:1224 36:43:1:48:40:1224 36:45:1:72:40:1224 36:47:1:96:40:1224 36:49:1:120:40:1224 36:51:1:144:40:1224 36:53:1:168:40:1224 36:55:1:192:40:1224 36:77:1:0:68:1224 36:79:1:24:68:1224 36:81:1:48:68:1224 36:83:1:72:68:1224 36:85:1:96:68:1224 36:87:1:120:68:1224 36:89:1:144:68:1224 36:91:1:168:68:1224 36:93:1:192:68:1224 36:115:1:0:96:1224 36:117:1:24:96:1224 36:119:1:48:96:1224 36:121:1:72:96:1224 36:123:1:96:96:1224 36:125:1:120:96:1224 36:127:1:144:96:1224 36:129:1:168:96:1224 36:131:1:192:96:1224 36:155:1:24:124:1224 36:157:1:48:124:1224 36:159:1:72:124:1224 36:161:1:96:124:1224 36:163:1:120:124:1224 36:165:1:144:124:1224 36:167:1:168:124:1224
+hide 5:0
+# GYGES: the points under its mouth
+shape 1:366 18:3:1:24:0:366 18:5:1:48:0:367 18:7:1:72:0:368 18:41:1:24:28:369 18:43:1:48:28:370 18:45:1:72:28:371 18:77:1:0:56:372 18:79:1:24:56:373 18:81:1:48:56:374 18:83:1:72:56:375 18:85:1:96:56:376 18:115:1:0:84:377 18:117:1:24:84:378 18:119:1:48:84:379 18:121:1:72:84:380 18:123:1:96:84:381 18:153:1:0:112:382 18:155:1:24:112:383 18:157:1:48:112:384 18:159:1:72:112:385 18:161:1:96:112:386
+# a tentacle of GYGES without the green balls it throws
+shape 1:412 12:79:1:12:0:416 12:85:1:0:28:414 12:87:1:24:28:415 12:123:1:0:56:412 12:125:1:24:56:413
+# the eye of LAVA RUN: its lower corners
+shape 4:327 34:153:1:0:0:327 34:155:1:24:0:328 34:157:1:48:0:329 34:191:1:0:28:330 34:193:1:24:28:331 34:195:1:48:28:332 34:210:1:0:42:333 34:212:1:24:42:334 34:214:1:48:42:335
+# ASSASSIN: the points of its claws
+shape 1:46 2:10:1:0:0:46 2:12:1:24:0:47 2:14:1:48:0:48 2:16:1:72:0:49 2:18:1:96:0:50 2:48:1:0:28:51 2:50:1:24:28:52 2:1:1:48:28:1 2:54:1:72:28:54 2:56:1:96:28:55 2:86:1:0:56:56 2:88:1:24:56:57 2:90:1:48:56:58 2:92:1:72:56:59 2:94:1:96:56:60 2:124:1:0:84:61 2:126:1:24:84:62 2:128:1:48:84:63 2:130:1:72:84:64 2:132:1:96:84:65
+# NOSE DRIP at one moment (whole eyes, one row of fire)
+shape 4:780 33:270:1:0:26:780 33:270:1:34:24:780 33:121:1:15:0:790 33:154:1:14:28:781 32:267:1:15:30:792 33:191:1:2:56:782 33:193:1:26:56:783 32:269:1:15:58:793 33:156:1:2:84:786 33:158:1:26:84:787
+# the pillars of IXMUCANE come one at a time; two equal lava balls
+once 1:93
+once 4:381

@@ -38,6 +38,7 @@ cc $CFLAGS -Isrc -o "$OUT/test_stats" tests/test_stats.c "$OUT"/obj/*.o $LIBS
 cc $CFLAGS -Isrc -o "$OUT/test_touch" tests/test_touch.c "$OUT"/obj/*.o $LIBS
 cc $CFLAGS -Isrc -o "$OUT/test_savefile" tests/test_savefile.c "$OUT"/obj/*.o $LIBS
 cc $CFLAGS -Isrc -o "$OUT/test_whatsnew" tests/test_whatsnew.c "$OUT"/obj/*.o $LIBS
+cc $CFLAGS -Isrc -o "$OUT/test_gallery" tests/test_gallery.c "$OUT"/obj/*.o $LIBS -Wl,--wrap=JE_showVGA,--wrap=video_present
 
 echo "== test_gamepad"
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$OUT/test_gamepad"
@@ -63,6 +64,11 @@ rm -rf "$tmp"
 echo "== test_savefile"
 tmp=$(mktemp -d)
 XDG_CONFIG_HOME="$tmp" "$OUT/test_savefile"
+rm -rf "$tmp"
+
+echo "== test_gallery"
+tmp=$(mktemp -d)
+XDG_CONFIG_HOME="$tmp" "$OUT/test_gallery"
 rm -rf "$tmp"
 
 echo "== test_touch"

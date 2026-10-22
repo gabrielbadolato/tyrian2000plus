@@ -28,6 +28,7 @@
 #include "file.h"
 #include "font.h"
 #include "fonthand.h"
+#include "gallery.h"
 #include "helptext.h"
 #include "joystick.h"
 #include "jukebox.h"
@@ -317,7 +318,7 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_DESTRUCT,
 		MENU_ITEM_ABOUT,
 		MENU_ITEM_WHATS_NEW,
-		MENU_ITEM_STATISTICS,
+		MENU_ITEM_GALLERY,
 		MENU_ITEM_SAVES,
 		MENU_ITEM_DISPLAY,
 		MENU_ITEM_SCALER,
@@ -416,7 +417,7 @@ void setupMenuPage(SetupPage page)
 #endif
 				{ MENU_ITEM_JUKEBOX, "Jukebox...", "Listen to the music of Tyrian." },
 				{ MENU_ITEM_REPLAY, "Replay Last Level...", "Watch the last level you played." },
-				{ MENU_ITEM_STATISTICS, "Statistics...", "Totals of all your games and the records of each level." },
+				{ MENU_ITEM_GALLERY, "Gallery...", "Ships, weapons and enemies found, and your statistics." },
 				{ MENU_ITEM_WHATS_NEW, "What's New...", "What changed in each version of the game." },
 				{ MENU_ITEM_ABOUT, "About...", "What this is, where it came from, and credits." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous screen." },
@@ -1217,13 +1218,13 @@ void setupMenuPage(SetupPage page)
 					currentMenu = MENU_NONE;
 					break;
 				}
-				case MENU_ITEM_STATISTICS:
+				case MENU_ITEM_GALLERY:
 				{
 					JE_playSampleNum(S_SELECT);
 
 					fade_black(10);
 
-					statisticsScreen();
+					galleryScreen();
 
 					fade_black(10);
 
@@ -1708,6 +1709,7 @@ int main(int argc, char *argv[])
 	loadConfiguration();
 	lang_set(lang_setting);
 	stats_load();
+	gallery_load();
 
 	xmas = xmas_time();  // arg handler may override
 

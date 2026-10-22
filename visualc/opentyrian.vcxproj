@@ -126,6 +126,7 @@
     <ClCompile Include="..\src\game_menu.c" />
     <ClCompile Include="..\src\helptext.c" />
     <ClCompile Include="..\src\inputdev.c" />
+    <ClCompile Include="..\src\netmenu.c" />
     <ClCompile Include="..\src\joystick.c" />
     <ClCompile Include="..\src\jukebox.c" />
     <ClCompile Include="..\src\keyboard.c" />
@@ -197,6 +198,7 @@
     <ClInclude Include="..\src\game_menu.h" />
     <ClInclude Include="..\src\helptext.h" />
     <ClInclude Include="..\src\inputdev.h" />
+    <ClInclude Include="..\src\netmenu.h" />
     <ClInclude Include="..\src\joystick.h" />
     <ClInclude Include="..\src\jukebox.h" />
     <ClInclude Include="..\src\keyboard.h" />

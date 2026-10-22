@@ -28,6 +28,7 @@
 #include "memreader.h"
 #include "memwriter.h"
 #include "mtrand.h"
+#include "netmenu.h"
 #include "oplchip.h"
 #include "nortsong.h"
 #include "opentyr.h"
@@ -458,6 +459,7 @@ static void loadOpenTyrianConfig(void)
 
 	loadKeySettings(config, "keyboard", keySettings);
 	loadKeySettings(config, "keyboard2", keySettings2);
+	netmenu_load_settings(config);
 
 	section = config_find_section(config, "mouse", NULL);
 	if (section != NULL)
@@ -550,6 +552,7 @@ static void saveOpenTyrianConfig(void)
 
 	saveKeySettings(config, "keyboard", keySettings);
 	saveKeySettings(config, "keyboard2", keySettings2);
+	netmenu_save_settings(config);
 
 	// Tyrian 2000 doesn't save mouse settings, so we do it ourselves
 	section = config_find_or_add_section(config, "mouse", NULL);

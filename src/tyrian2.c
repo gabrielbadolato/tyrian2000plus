@@ -1788,6 +1788,11 @@ draw_player_shot_loop_end:
 		if (player[i].is_alive && !endLevel)
 			JE_playerCollide(&player[i], i + 1);
 	
+#ifdef WITH_NETWORK
+	if (isNetworkGame)
+		network_frame_state(levelrec_state_checksum());  // Tyrian 2000+: compared with the other side's
+#endif
+
 	if (firstGameOver)
 		JE_mainGamePlayerFunctions();      /*--------PLAYER DRAW+MOVEMENT---------*/
 
@@ -3334,11 +3339,14 @@ void networkStartScreen(void)
 	JE_showVGA();
 	fade_palette(colors, 10, 0, 255);
 
-	network_connect();
+	if (!network_is_connected())  // the Network Game menu connects first
+		network_connect();
 
 	twoPlayerMode = true;
 	if (thisPlayerNum == 1)
 	{
+		network_measure_delay();  // Tyrian 2000+: the delay this connection needs
+
 		fade_black(10);
 
 		if (episodeSelect() && difficultySelect())
@@ -3350,7 +3358,8 @@ void networkStartScreen(void)
 			network_prepare(PACKET_DETAILS);
 			SDLNet_Write16(episodeNum, &packet_out_temp->data[4]);
 			SDLNet_Write16(difficultyLevel, &packet_out_temp->data[6]);
-			network_send(8);  // PACKET_DETAILS
+			SDLNet_Write16(network_delay, &packet_out_temp->data[8]);
+			network_send(10);  // PACKET_DETAILS
 		}
 		else
 		{
@@ -3381,6 +3390,8 @@ void networkStartScreen(void)
 
 		JE_initEpisode(SDLNet_Read16(&packet_in[0]->data[4]));
 		difficultyLevel = SDLNet_Read16(&packet_in[0]->data[6]);
+		if (packet_in[0]->len >= 10)
+			network_delay = SDLNet_Read16(&packet_in[0]->data[8]);  // Tyrian 2000+: measured by the host
 		initialDifficulty = difficultyLevel - 1;
 		fade_black(10);
 
@@ -3877,6 +3888,14 @@ bool newGame(void)
 {
 	if (gameplaySelect())
 	{
+#ifdef WITH_NETWORK
+		if (isNetworkGame)  // Tyrian 2000+: connected from the Network Game menu
+		{
+			networkStartScreen();
+			gameLoaded = true;
+			return true;
+		}
+#endif
 		if (timedBattleMode)
 		{
 			onePlayerAction = true;

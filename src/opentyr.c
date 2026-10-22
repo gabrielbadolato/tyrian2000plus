@@ -1825,6 +1825,20 @@ int main(int argc, char *argv[])
 #endif
 	}
 
+#ifdef WITH_NETWORK
+	// Tyrian 2000+: a network game started from the menu ends back at the title
+	// screen (network_tyrian_halt), wherever it was
+	static jmp_buf networkAbort;
+	if (setjmp(networkAbort) != 0)
+	{
+		VGAScreen = VGAScreenSeg;
+		mouseSetRelative(false);
+		twoPlayerMode = false;
+		stoppedDemo = true;  // no intro logos again
+	}
+	network_abort = &networkAbort;
+#endif
+
 	for (; ; )
 	{
 #ifdef NDEBUG

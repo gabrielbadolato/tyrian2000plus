@@ -1723,6 +1723,7 @@ level_loop:
 											enemy[temp2].animin = 1;
 											enemy[temp2].edamaged = true;
 											enemy[temp2].enemycycle = 1;
+											gallery_enemy_killed(temp2);  // Tyrian 2000+: left as a wreck
 										}
 										else
 										{

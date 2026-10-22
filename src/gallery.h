@@ -43,6 +43,9 @@ void gallery_enemy_made(unsigned int slot);
 void gallery_enemy_launched(unsigned int slot);
 void gallery_enemy_killed(unsigned int slot);
 
+// Writes gallery.cfg if something was seen since (on quitting the game).
+void gallery_save(void);
+
 // The items of the ship's upgrade menu (itemAvail) were loaded.
 void gallery_shop_items(void);
 

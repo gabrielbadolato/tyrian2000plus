@@ -1153,6 +1153,12 @@ void gallery_level_end(void)
 		saveGallery();
 }
 
+void gallery_save(void)
+{
+	if (dirty)
+		saveGallery();
+}
+
 /* -------- the items there are -------- */
 
 // Every item the upgrade menus of the levels offer (levelsN.dat); the items
@@ -1470,7 +1476,8 @@ static void drawEntryPicture(const Entry *entry, unsigned int tick)
 		int x1 = INT32_MAX, y1 = INT32_MAX, x2 = INT32_MIN, y2 = INT32_MIN;
 		for (unsigned int r = 0; r <= (rounds > 1 ? rounds : 0); ++r)
 		{
-			const unsigned int at = r < rounds && rounds > 1 ? r : tick;
+			// (a picture a second for the ways it faces: partPicture's when 3)
+			const unsigned int at = r < rounds && rounds > 1 ? r * 35 : tick;
 			canvasClear();
 			for (unsigned int i = 0; i < e->parts; ++i)
 			{
@@ -1806,6 +1813,9 @@ static void drawDetails(const Entry *entry)
 		{
 			char episode[40];
 			trimmedName(episode, sizeof(episode), episode_name[e->episode]);
+			char *colon = strchr(episode, ':');
+			if (colon != NULL && JE_textWidth(episode, FONT_SMALL) > PANEL_W - 6)
+				*colon = '\0';  // too long: "Episode 5" only
 			drawInfoLine(&y, episode, 0);
 		}
 		if (e->level[0] != '\0')
@@ -2450,7 +2460,9 @@ void galleryScreen(void)
 		}
 		else if (view && viewStep != 0)
 		{
-			const int next = cursor + viewStep;
+			int next = cursor + viewStep;
+			while (next >= 0 && next < (int)entryCount && !entries[next].seen)
+				next += viewStep;  // what is not found yet stays a shadow
 			if (next >= 0 && next < (int)entryCount)
 			{
 				cursor = next;

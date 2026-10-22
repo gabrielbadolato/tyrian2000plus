@@ -8,7 +8,7 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## Next version
+## v1.6 (2026-10-22)
 
 - **Gallery**: Setup > "Gallery..." shows the ships, weapons, sidekicks,
   shields, generators, special weapons and enemies you have come across,

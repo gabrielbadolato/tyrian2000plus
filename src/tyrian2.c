@@ -3394,7 +3394,7 @@ void networkStartScreen(void)
 		const Uint16 episode = packet_in[0]->len >= 8 ? SDLNet_Read16(&packet_in[0]->data[4]) : 0;
 		const Uint16 difficulty = packet_in[0]->len >= 8 ? SDLNet_Read16(&packet_in[0]->data[6]) : 0;
 		if (episode < 1 || episode > EPISODE_MAX || !episodeAvail[episode - 1] ||
-		    difficulty < DIFFICULTY_WIMP || difficulty > DIFFICULTY_ZINGLON)
+		    difficulty < DIFFICULTY_EASY || difficulty > DIFFICULTY_10)  // the host adds one to its choice
 		{
 			logError("Network: the host sent episode %u, difficulty %u.", episode, difficulty);
 			network_tyrian_halt(3, false);

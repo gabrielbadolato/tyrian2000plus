@@ -22,7 +22,8 @@ change is in this repository's git log.
   change the page), mouse and touch. The statistics moved into it, as its
   last page (Setup no longer has "Statistics...").
   The enemies move in their pictures as they do in the levels, and one met
-  facing more than one way (or in a longer and a shorter form) shows each in turn.
+  facing more than one way (or in a longer and a shorter form, or with wings
+  that open and close) shows each in turn.
   Enter (A on a controller, or a click on the picture) shows the chosen
   ship, weapon or sidekick in motion: a weapon fired by a ship, at any power from 1 to 11 (and in
   both modes for rear weapons), a sidekick firing, a ship flying. The enemies page can show one episode at a

@@ -411,6 +411,15 @@ def main():
                 v = [int(x) for x in line.split()]
                 if v[3] in (1, 2) and v[2] > 1:
                     anim[(v[0], v[1])] = (v[3], v[4:4 + min(v[2], 20)])
+                elif v[3] == 0 and v[2] > 1:
+                    # not animated: the level picks one of the pictures (the
+                    # way it faces), so the Gallery shows each in turn (3)
+                    seen = []
+                    for g in v[4:4 + min(v[2], 20)]:
+                        if g not in (0, 999) and g not in seen:
+                            seen.append(g)
+                    if len(seen) > 1:
+                        anim[(v[0], v[1])] = (3, seen)
     fixes = []
     if args[0].startswith('--fix='):
         # what a look at every entry found (tests/gallery_catalog_fix.txt):
@@ -584,8 +593,17 @@ def main():
             parts = [(ds, k[0], k[1], k[2], k[3], k[4], k[5], 0) for k in keys[1:]]
             del entries[e['look']]
             lk = look(clean([p[1:] for p in parts]))
-            entries[lk] = dict(e, look=lk, parts=parts, views=[e['parts']] + e.get('views', []),
+            entries[lk] = dict(e, look=lk, parts=parts, views=e.get('views', []),
+                               last_views=[e['parts']] + e.get('last_views', []),
                                types=e['types'] | {(ds, p[6]) for p in parts})
+        elif what == 'pose':
+            # "pose 1:66 1:49:1:0:0:28 ...": the same enemy as it looks a
+            # moment later (wings open), shown in turn before the looks
+            # "shape" replaced
+            ds = keys[0][0]
+            parts = [(ds, k[0], k[1], k[2], k[3], k[4], k[5], 0) for k in keys[1:]]
+            e['views'] = e.get('views', []) + [parts]
+            e['types'] = e['types'] | {(ds, p[6]) for p in parts}
         elif what == 'hide':
             e['hidden'] = True
         elif what == 'once':
@@ -665,7 +683,7 @@ def main():
     for i, e in enumerate(kept):
         enemies_out.append((e['episode'], len(e['look']), len(parts_out)))
         put(e['look'], e['parts'])
-        for v in e.get('views', []):
+        for v in e.get('views', []) + e.get('last_views', []):
             lk = look(clean([p[1:] for p in v]))
             views_out.append((i, len(lk), len(parts_out)))
             put(lk, v)
@@ -735,7 +753,7 @@ typedef struct
 
 typedef struct
 {
-	Uint8 when;    // 1: always, 2: when it fires (as enemyDat animate)
+	Uint8 when;    // 1: always, 2: when it fires (as enemyDat animate), 3: the ways it faces
 	Uint8 count;
 	Uint16 first;  // in catalogFrames: the pictures, one a frame (999: none)
 } CatalogAnim;

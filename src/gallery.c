@@ -1385,6 +1385,8 @@ static unsigned int partPicture(const Part *p, unsigned int tick)
 	unsigned int frame = tick % a->count;
 	if (a->when == 2)
 		frame = tick % 70 < a->count ? tick % 70 : 0;  // a round now and then
+	else if (a->when == 3)
+		frame = tick / 35 % a->count;  // each way it faces, for a second
 	return catalogFrames[a->first + frame];
 }
 

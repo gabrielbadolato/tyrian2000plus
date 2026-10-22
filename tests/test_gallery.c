@@ -40,7 +40,7 @@
  * tests/make_gallery_catalog.py --frames=): dataset, enemyDat index, ani,
  * animate, then the pictures (egraphic), and after them armor, the three
  * guns, xmove, ymove, xaccel, yaccel, xcaccel, ycaccel, elaunchfreq,
- * elaunchtype and value.
+ * elaunchtype, value, xrev and yrev.
  *
  *   XDG_CONFIG_HOME=<dir> test_gallery <data-dir> wait wait shot=a.bmp Tab shot=b.bmp
  */
@@ -221,10 +221,11 @@ static int showScreen(int argc, char **argv)
 				fprintf(f, "%d\t%d\t%u\t%u", datasets[d], i, enemyDat[i].ani, enemyDat[i].animate);
 				for (int k = 0; k < 20; ++k)
 					fprintf(f, "\t%u", enemyDat[i].egraphic[k]);
-				fprintf(f, "\t%u\t%u\t%u\t%u\t%d\t%d\t%d\t%d\t%d\t%d\t%u\t%u\t%d",
+				fprintf(f, "\t%u\t%u\t%u\t%u\t%d\t%d\t%d\t%d\t%d\t%d\t%u\t%u\t%d\t%d\t%d",
 				        enemyDat[i].armor, enemyDat[i].tur[0], enemyDat[i].tur[1], enemyDat[i].tur[2],
 				        enemyDat[i].xmove, enemyDat[i].ymove, enemyDat[i].xaccel, enemyDat[i].yaccel,
-				        enemyDat[i].xcaccel, enemyDat[i].ycaccel, enemyDat[i].elaunchfreq, enemyDat[i].elaunchtype, enemyDat[i].value);
+				        enemyDat[i].xcaccel, enemyDat[i].ycaccel, enemyDat[i].elaunchfreq, enemyDat[i].elaunchtype, enemyDat[i].value,
+				        enemyDat[i].xrev, enemyDat[i].yrev);
 				fputc('\n', f);
 			}
 		}

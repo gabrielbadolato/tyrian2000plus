@@ -309,7 +309,9 @@ em Espaço/Y; sidekick atirando dos dois lados; nave voando com inclinação;
 lados passam ao próximo. Inimigos e a aba Other não abrem o palco
 (Gabriel, galeria-8/9: a figura do painel já é animada). Inimigos animados no
 painel (`partPicture()`, quadros de `catalogAnims`/`catalogFrames`, tirados
-do enemyDat por `test_gallery <data> frames=<arq>`). Filtro por episódio na
+do enemyDat por `test_gallery <data> frames=<arq>`; inimigo com animate 0 e
+vários quadros, como o tanquezinho, olha para onde a fase manda: o painel
+mostra cada direção por 1 s, `when` 3). Filtro por episódio na
 aba Enemies (E / Y / clique na contagem, `enemyEpisode`). Abas Ships/Weapons/Sidekicks/Other (escudos,
 geradores, especiais)/Enemies/Statistics, com as imagens do jogo (sprites desenhados
 num `Canvas` próprio, decodificador igual ao `blit_sprite2`). Itens: os que
@@ -349,7 +351,9 @@ o da GYGES; "into" junta o mesmo inimigo repetido; "view a b" faz de b
 outro ângulo de a (virado, de lado, aberto/fechado: `catalogViews`, o painel
 mostra um por vez a cada 2 s, `enemyView()`; pedido do Gabriel 2026-10-22);
 "shape a peças..." dá a forma inteira de a (a nave roxa da TYRIAN com três
-fileiras de asas) e a antiga vira outro ângulo; "join a b x y" põe b como parte de a), pela peça (dataset:índice), então vale para a próxima coleta.
+fileiras de asas) e a antiga vira o último ângulo; "pose a peças..." é a
+mesma coisa um instante depois (as asas da nave roxa abrem e fecham 48 px,
+xcaccel/xrev do enemyDat); "join a b x y" põe b como parte de a), pela peça (dataset:índice), então vale para a próxima coleta.
 Fora da lista (escolha do Gabriel, 2026-10-21): tiros que outro inimigo lança,
 fogo/raios e cenário que só fica parado (pedras, placas, paredes, prédios
 que não atiram), com "hide". Variações de cor ficam: são inimigos com

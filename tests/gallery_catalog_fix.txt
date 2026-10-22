@@ -9,6 +9,8 @@
 #   into  a b      the enemy with b is a part of the one with a (or the same enemy)
 #   view  a b      b is a from another side: the Gallery shows them in turn
 #   shape a p ...  a as it looks whole, each piece bank:sprite:size:x:y:index
+#   pose  a p ...  a a moment later (same pieces as shape), shown in turn before
+#                  the look shape replaced
 #   join  a b x y  b is a part of a, drawn x right and y down of a's corner
 #   stack a b ...  rows that come one at a time, top to bottom: one enemy
 
@@ -69,8 +71,12 @@ view 1:792 1:793
 into 1:568 1:564   # the same balls around a core, one without it
 # a ship whose body comes under its wings on the ground
 join 1:26 1:31 12 15
-# the same ship longer: three rows of wings over the body (the short one is shown in turn)
-shape 1:26 1:49:1:0:0:28 1:89:1:12:0:30 1:51:1:24:0:29 1:49:1:0:22:28 1:89:1:12:22:30 1:51:1:24:22:29 1:49:1:0:44:28 1:89:1:12:44:30 1:51:1:24:44:29 1:127:1:12:66:31
+# the same ship longer: three rows of wings over the body, half open (the short one is shown in turn)
+shape 1:26 1:49:1:0:0:28 1:89:1:36:0:30 1:51:1:72:0:29 1:49:1:0:22:28 1:89:1:36:22:30 1:51:1:72:22:29 1:49:1:0:44:28 1:89:1:36:44:30 1:51:1:72:44:29 1:127:1:36:66:31
+# its wings swing out and back (enemyDat xcaccel), then the short one
+pose 1:26 1:49:1:0:0:28 1:89:1:60:0:30 1:51:1:120:0:29 1:49:1:0:22:28 1:89:1:60:22:30 1:51:1:120:22:29 1:49:1:0:44:28 1:89:1:60:44:30 1:51:1:120:44:29 1:127:1:60:66:31
+pose 1:26 1:49:1:0:0:28 1:89:1:36:0:30 1:51:1:72:0:29 1:49:1:0:22:28 1:89:1:36:22:30 1:51:1:72:22:29 1:49:1:0:44:28 1:89:1:36:44:30 1:51:1:72:44:29 1:127:1:36:66:31
+pose 1:26 1:49:1:0:0:28 1:89:1:12:0:30 1:51:1:24:0:29 1:49:1:0:22:28 1:89:1:12:22:30 1:51:1:24:22:29 1:49:1:0:44:28 1:89:1:12:44:30 1:51:1:24:44:29 1:127:1:12:66:31
 # the same enemy from another side, or open and closed: shown in turn
 view 1:17 1:24
 view 1:100 1:91

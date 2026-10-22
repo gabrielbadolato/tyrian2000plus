@@ -169,6 +169,12 @@ Uint32 smooth_refresh_ms(void);
 void smooth_sim_begin(void);
 void smooth_sim_drawn(void);
 bool smooth_sim_show(int frames);
+// The same for a simulator that draws on a screen of its own (the Gallery's
+// stage): compose(alpha, between, out, data) puts the picture in between
+// (`between`, the target drawn at alpha) into `out`, a copy of the screen.
+typedef void (*SmoothSimCompose)(Uint32 alpha, const SDL_Surface *between, SDL_Surface *out, void *data);
+void smooth_sim_begin_on(SDL_Surface *target);
+bool smooth_sim_show_with(int frames, SmoothSimCompose compose, void *data);
 
 // For the tests: record and check every frame even with smooth motion off,
 // and draw one picture in between at `alpha` (0..65536) each frame, without

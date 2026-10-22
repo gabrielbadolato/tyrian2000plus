@@ -94,6 +94,9 @@ static SDL_Surface *targets[2] = { NULL, NULL };
 static bool simFrame = false;
 static bool simRedraws = false;
 static Uint32 simLast = 0;
+static SDL_Surface *simTarget = NULL;  // where the simulator draws
+static SmoothSimCompose simCompose = NULL;  // NULL: the ship menu's
+static void *simComposeData = NULL;
 
 static SmoothTag curTag = SMOOTH_NONE;
 static Uint16 curId = 0, curPart = 0, curOccurrence = 0;
@@ -1203,13 +1206,19 @@ void smooth_picture_shown(void)
 
 void smooth_sim_begin(void)
 {
+	smooth_sim_begin_on(VGAScreen);
+}
+
+void smooth_sim_begin_on(SDL_Surface *target)
+{
 	// a frame of the simulator shortly after the last one goes on from it
 	const Uint32 now = SDL_GetTicks();
 	const bool goingOn = simFrame && now - simLast < 250;
 	simLast = now;
 
+	simTarget = target;
 	simFrame = menuWanted() && ensureBuffers() &&
-	           (size_t)VGAScreen->pitch * VGAScreen->h == snapshotSize &&
+	           (size_t)target->pitch * target->h == snapshotSize &&
 	           (size_t)compose->pitch * compose->h == snapshotSize;
 	if (!simFrame)
 		return;
@@ -1226,9 +1235,9 @@ void smooth_sim_begin(void)
 		indexPrev();
 
 	// the list of this frame starts from the screen as it is
-	targets[0] = VGAScreen;
+	targets[0] = target;
 	targets[1] = NULL;
-	memcpy(snapshot[0], VGAScreen->pixels, snapshotSize);
+	memcpy(snapshot[0], target->pixels, snapshotSize);
 	haveSnapshot = true;
 	simRedraws = false;
 
@@ -1244,7 +1253,7 @@ void smooth_sim_drawn(void)
 	smooth_recording = false;
 	smooth_untag();
 
-	memcpy(snapshot[1], VGAScreen->pixels, snapshotSize);
+	memcpy(snapshot[1], simTarget->pixels, snapshotSize);
 	if (cur->incomplete)
 		return;
 
@@ -1265,13 +1274,20 @@ static void showSimPicture(Uint32 alpha, const void *data)
 	Uint8 *const out = compose->pixels;
 	memcpy(out, VGAScreen->pixels, snapshotSize);
 	mouse_pointer_remove(compose);
-	for (int y = SIM_Y1; y <= SIM_Y2; ++y)
+	if (simCompose != NULL)
 	{
-		for (int x = SIM_X1; x <= SIM_X2; ++x)
+		simCompose(alpha, scratch[0], compose, simComposeData);
+	}
+	else
+	{
+		for (int y = SIM_Y1; y <= SIM_Y2; ++y)
 		{
-			const size_t i = (size_t)y * compose->pitch + x;
-			if (out[i] == drawn[i])
-				out[i] = between[i];
+			for (int x = SIM_X1; x <= SIM_X2; ++x)
+			{
+				const size_t i = (size_t)y * compose->pitch + x;
+				if (out[i] == drawn[i])
+					out[i] = between[i];
+			}
 		}
 	}
 	handleSdlEvents();
@@ -1288,6 +1304,16 @@ bool smooth_sim_show(int frames)
 	const Sint32 refresh = refreshPeriod();
 	const bool shown = showUntilDue(frames * frame_period(), refresh, showSimPicture, NULL);
 	countFrame(refresh);
+	return shown;
+}
+
+bool smooth_sim_show_with(int frames, SmoothSimCompose compose_, void *data)
+{
+	simCompose = compose_;
+	simComposeData = data;
+	const bool shown = smooth_sim_show(frames);
+	simCompose = NULL;
+	simComposeData = NULL;
 	return shown;
 }
 

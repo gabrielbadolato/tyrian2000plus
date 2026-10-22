@@ -58,6 +58,7 @@
 #include "player.h"
 #include "shopstats.h"
 #include "shots.h"
+#include "smooth.h"
 #include "sndmast.h"
 #include "sprite.h"
 #include "stats.h"
@@ -1849,6 +1850,8 @@ enum
 };
 
 static SDL_Surface *demoScreen;
+static SDL_Surface *stageDrawn, *stageBetween;  // with smooth motion (stageShowBetween)
+static unsigned int stageTick;
 static Player demoSavedPlayer;
 static uint demoSavedPower;
 static JE_byte demoSavedRepeat[11], demoSavedMulti[11];
@@ -1858,7 +1861,11 @@ static bool demoStart(void)
 {
 	if (demoScreen == NULL)
 		demoScreen = SDL_CreateRGBSurface(0, VGAScreen->w, VGAScreen->h, 8, 0, 0, 0, 0);
-	if (demoScreen == NULL)
+	if (stageDrawn == NULL)
+		stageDrawn = SDL_CreateRGBSurface(0, VGAScreen->w, VGAScreen->h, 8, 0, 0, 0, 0);
+	if (stageBetween == NULL)
+		stageBetween = SDL_CreateRGBSurface(0, VGAScreen->w, VGAScreen->h, 8, 0, 0, 0, 0);
+	if (demoScreen == NULL || stageDrawn == NULL || stageBetween == NULL)
 		return false;
 
 	demoSavedPlayer = player[0];
@@ -1925,28 +1932,69 @@ static void demoDrawShip(SDL_Surface *surface, unsigned int ship, int x, int y, 
 
 // One frame of the stage for `entry`, `tick` frames since it was chosen;
 // weapons at `level` 1..11, in `mode` (rear weapons with two).
-static void demoFrame(const Entry *entry, unsigned int tick, unsigned int level, unsigned int mode)
+// The stage on `dst`: the stars as at `tick` and alpha (0..65536) of the way
+// from the frame before, and the demo screen over them.
+static void stageCompose(SDL_Surface *dst, const SDL_Surface *demo, unsigned int tick, Uint32 alpha)
 {
 	const int w = STAGE_X2 - STAGE_X1, h = STAGE_Y2 - STAGE_Y1;
 
-	fill_rectangle_xy(VGAScreen, STAGE_X1, STAGE_Y1, STAGE_X2 - 1, STAGE_Y2 - 1, 0);
+	fill_rectangle_xy(dst, STAGE_X1, STAGE_Y1, STAGE_X2 - 1, STAGE_Y2 - 1, 0);
+	const Uint64 at = tick > 0 ? (Uint64)(tick - 1) * 65536 + alpha : 0;
 	for (int i = 0; i < DEMO_STARS; ++i)
 	{
-		const int y = (demoStar[i][1] + (int)(tick * (unsigned)demoStar[i][2])) % h;
-		((Uint8 *)VGAScreen->pixels)[(STAGE_Y1 + y) * VGAScreen->pitch + STAGE_X1 + demoStar[i][0]] = demoStar[i][2] == 3 ? 0x0e : demoStar[i][2] == 2 ? 0x0a : 0x07;
+		const int y = (int)(((Uint64)demoStar[i][1] * 65536 + at * (unsigned)demoStar[i][2]) / 65536 % (unsigned)h);
+		((Uint8 *)dst->pixels)[(STAGE_Y1 + y) * dst->pitch + STAGE_X1 + demoStar[i][0]] = demoStar[i][2] == 3 ? 0x0e : demoStar[i][2] == 2 ? 0x0a : 0x07;
 	}
 
+	for (int v = 0; v < h; ++v)
+	{
+		const int sy = DEMO_TOP + v;
+		if (sy < 0 || sy >= demo->h)
+			continue;
+		const Uint8 *src = (const Uint8 *)demo->pixels + sy * demo->pitch;
+		Uint8 *out = (Uint8 *)dst->pixels + (STAGE_Y1 + v) * dst->pitch + STAGE_X1;
+		for (int u = 0; u < w; ++u)
+		{
+			const int sx = DEMO_LEFT + u;
+			if (sx >= 0 && sx < demo->w && src[sx] != 0)
+				out[u] = src[sx];
+		}
+	}
+}
+
+// Smooth motion: a picture in between of the stage; what was drawn over the
+// stage after it (the power, the frame) stays
+static void stageShowBetween(Uint32 alpha, const SDL_Surface *between, SDL_Surface *out, void *data)
+{
+	(void)data;
+	stageCompose(stageBetween, between, stageTick, alpha);
+	for (int y = STAGE_Y1; y < STAGE_Y2; ++y)
+	{
+		const Uint8 *drawn = (const Uint8 *)stageDrawn->pixels + y * stageDrawn->pitch;
+		const Uint8 *src = (const Uint8 *)stageBetween->pixels + y * stageBetween->pitch;
+		Uint8 *dst = (Uint8 *)out->pixels + y * out->pitch;
+		for (int x = STAGE_X1; x < STAGE_X2; ++x)
+			if (dst[x] == drawn[x])
+				dst[x] = src[x];
+	}
+}
+
+static void demoFrame(const Entry *entry, unsigned int tick, unsigned int level, unsigned int mode)
+{
 	// a ship that sways, the others are shown by the USP Talon
 	const unsigned int ship = entry->kind == KIND_SHIP ? entry->id : 1;
 	const int sway = entry->kind == KIND_SHIP ? 40 : 0;
 	static const Sint8 wave[16] = { 0, 4, 7, 9, 10, 9, 7, 4, 0, -4, -7, -9, -10, -9, -7, -4 };
 	const unsigned int phase = tick / 6;
-	const int x = DEMO_X + wave[phase % 16] * sway / 10;
+	// between two points of the wave a bit each frame (smooth motion slides it)
+	const int step = (int)(tick % 6), at = wave[phase % 16] * (6 - step) + wave[(phase + 1) % 16] * step;
+	const int x = DEMO_X + (at * sway + (at < 0 ? -30 : 30)) / 60;
 	const int banking = sway == 0 ? 0 : wave[(phase + 4) % 16] / 5;
 
 	SDL_Surface *const screen = VGAScreen;
 	SDL_FillRect(demoScreen, NULL, 0);
 	VGAScreen = demoScreen;
+	smooth_sim_begin_on(demoScreen);
 
 	player[0].x = x;
 	player[0].y = DEMO_Y;
@@ -1994,10 +2042,16 @@ static void demoFrame(const Entry *entry, unsigned int tick, unsigned int level,
 			continue;
 		const unsigned int frame = shot->shotGr + (shot->shotAni > 0 ? shot->shotAni : shot->shotAniMax) - 1;
 		if (frame > 60000)
+		{
+			smooth_tag(SMOOTH_PLAYER_SHOT, (unsigned int)z, 1);
 			blit_sprite_blend(demoScreen, shot->shotX + 1, shot->shotY, OPTION_SHAPES, frame - 60001);
+		}
 	}
+	smooth_untag();
 
+	smooth_tag(SMOOTH_PLAYER, 0, 0);
 	demoDrawShip(demoScreen, ship, x, DEMO_Y, banking);
+	smooth_untag();
 	if (entry->kind == KIND_SIDEKICK)
 	{
 		const JE_OptionType *o = &options[entry->id];
@@ -2005,29 +2059,19 @@ static void demoFrame(const Entry *entry, unsigned int tick, unsigned int level,
 		for (unsigned int i = 0; i < 2; ++i)
 		{
 			const int sx = x + (i == 0 ? -22 : 24), sy = DEMO_Y + 6;
+			smooth_tag(SMOOTH_SIDEKICK, i, 0);
 			if (o->tr == 1 || o->tr == 2)
 				blit_sprite2x2(demoScreen, sx - 6, sy, spriteSheet10, sprite);
 			else
 				blit_sprite2(demoScreen, sx, sy, spriteSheet9, sprite);
 		}
 	}
+	smooth_untag();
+	smooth_sim_drawn();
 	VGAScreen = screen;
 
-	// the stage: the demo screen over the stars
-	for (int v = 0; v < h; ++v)
-	{
-		const int sy = DEMO_TOP + v;
-		if (sy < 0 || sy >= demoScreen->h)
-			continue;
-		const Uint8 *src = (const Uint8 *)demoScreen->pixels + sy * demoScreen->pitch;
-		Uint8 *dst = (Uint8 *)VGAScreen->pixels + (STAGE_Y1 + v) * VGAScreen->pitch + STAGE_X1;
-		for (int u = 0; u < w; ++u)
-		{
-			const int sx = DEMO_LEFT + u;
-			if (sx >= 0 && sx < demoScreen->w && src[sx] != 0)
-				dst[u] = src[sx];
-		}
-	}
+	stageCompose(VGAScreen, demoScreen, tick, 65536);
+	stageTick = tick;
 }
 
 // A page up (-1) or down: the rows shown move a whole page, so none is shown again
@@ -2208,8 +2252,12 @@ void galleryScreen(void)
 			fadeIn = false;
 		}
 
+		// smooth motion: pictures in between of the stage, the rest stays
+		if (view)
+			SDL_BlitSurface(VGAScreen, NULL, stageDrawn, NULL);
 		JE_mouseStart();
-		JE_showVGA();
+		if (!(view && smooth_sim_show_with(2, stageShowBetween, NULL)))
+			JE_showVGA();
 		JE_mouseReplace();
 
 		waitUntilElapsed();
@@ -2517,5 +2565,9 @@ void galleryScreen(void)
 		SDL_FreeSurface(demoScreen);
 		demoScreen = NULL;
 	}
+	SDL_FreeSurface(stageDrawn);
+	stageDrawn = NULL;
+	SDL_FreeSurface(stageBetween);
+	stageBetween = NULL;
 	freeBankSheets();
 }

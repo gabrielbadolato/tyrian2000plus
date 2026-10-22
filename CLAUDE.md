@@ -586,6 +586,12 @@ nave (`JE_weaponViewFrame`) grava estrelas e tiros na tela (`smooth_sim_begin`
 JE_showVGA: dentro do retângulo 8,8-143,182, o pixel que nada desenhou por
 cima depois (moldura, nave, texto) vem da imagem intermediária, e o ponteiro
 do mouse é tirado (`mouse_pointer_remove`) e redesenhado onde o mouse está.
+O palco da Galeria faz o mesmo numa tela própria: `smooth_sim_begin_on(demoScreen)`
+e `smooth_sim_show_with(2, stageShowBetween, NULL)` (a função monta a imagem
+do meio: estrelas no meio do caminho + a tela do palco redesenhada; o que foi
+desenhado por cima, guardado em `stageDrawn`, fica). O balanço da nave anda um
+pouco a cada quadro (antes pulava a cada 6). `test_gallery` aceita
+`between=<prefixo>` para salvar as imagens do meio.
 Ponteiro nos menus: `JE_mouseReplace` marca que a tela foi mostrada com ele
 (`vga_shows` conta os JE_showVGA) e `waitUntilElapsed` chama
 `mouse_pointer_between()`, que mostra a tela (já sem ponteiro) com o ponteiro

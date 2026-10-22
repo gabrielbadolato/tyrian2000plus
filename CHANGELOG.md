@@ -27,7 +27,7 @@ change is in this repository's git log.
   by hand by fans and may have mistakes (the page says so).
   Enter (A on a controller, or a click on the picture) shows the chosen
   ship, weapon or sidekick in motion: a weapon fired by a ship, at any power from 1 to 11 (and in
-  both modes for rear weapons), a sidekick firing, a ship flying. The enemies page can show one episode at a
+  both modes for rear weapons), a sidekick firing, a ship flying (smooth with Smooth Motion on). The enemies page can show one episode at a
   time (E, or Y on a controller).
 
 ## v1.5 (2026-10-21)

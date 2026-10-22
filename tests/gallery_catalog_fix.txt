@@ -217,3 +217,27 @@ hide 1:679
 hide 1:680
 # the red crab of DELIANI with its two gun pods (armor 0, so not collected)
 shape 1:400 24:1:1:0:0:400 24:3:1:24:0:401 24:5:1:48:0:402 24:7:1:72:0:403 24:9:1:96:0:404 24:11:1:120:0:405 24:39:1:0:28:406 24:41:1:24:28:407 24:43:1:48:28:408 24:45:1:72:28:409 24:47:1:96:28:410 24:49:1:120:28:411
+# also out (Gabriel, 2026-10-22): a sliding barrier, fire, scenery on the
+# coral and plants, a parked missile, a piece of a building, a homing gem
+# another enemy launches, the drops of the BRAINIAC boss
+hide 1:18
+hide 1:19
+hide 1:20
+hide 1:21
+hide 1:22
+hide 1:23
+hide 1:779
+hide 4:779
+hide 5:564
+hide 5:1210
+hide 5:1211
+hide 5:1212
+hide 5:1246
+hide 5:1247
+hide 5:1248
+hide 5:1249
+hide 5:1071
+hide 4:642
+hide 1:545
+hide 5:545
+hide 4:40

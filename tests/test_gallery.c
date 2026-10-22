@@ -29,8 +29,9 @@
  * user folder and saves pictures of it.  Each argument after the data folder
  * is done when the screen is shown: a key (an SDL scancode name, such as
  * Right or Tab), "click=<x>,<y>" (on the game's 320x200 screen), "wait" (a
- * frame), or "shot=<file.bmp>".  Built with
- * --wrap=JE_showVGA (see run_tests.sh).  No episode is loaded, as on the
+ * frame), "shot=<file.bmp>" or "between=<prefix>" (saves the next 12
+ * pictures in between of smooth motion).  Built with --wrap=JE_showVGA and
+ * --wrap=video_present (see run_tests.sh).  No episode is loaded, as on the
  * title screen; "ep=<n>" right after the data folder loads one, as in the
  * ship's menu.  With "setup" (after it) it starts at the Setup menu instead
  * (Gallery... is there).
@@ -80,13 +81,49 @@ static void check(bool ok, const char *what)
 static char **script;
 static int scriptLeft;
 
+static void runScript(void);
+
 void __real_JE_showVGA(void);
 void __wrap_JE_showVGA(void);
 
 void __wrap_JE_showVGA(void)
 {
 	__real_JE_showVGA();
+	runScript();
+}
 
+// A picture in between of smooth motion counts as a frame shown too;
+// with `between=<prefix>` the next ones are saved as <prefix>N.bmp
+static const char *betweenPrefix = NULL;
+static int betweenLeft = 0, betweenCount = 0;
+
+void __real_video_present(SDL_Surface *surface);
+void __wrap_video_present(SDL_Surface *surface);
+
+void __wrap_video_present(SDL_Surface *surface)
+{
+	__real_video_present(surface);
+	if (surface == VGAScreen)
+		return;
+
+	if (betweenPrefix != NULL && betweenLeft > 0)
+	{
+		char name[512];
+		snprintf(name, sizeof(name), "%s%02d.bmp", betweenPrefix, betweenCount++);
+		SDL_Surface *shot = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h, 8, SDL_PIXELFORMAT_INDEX8);
+		SDL_SetPaletteColors(shot->format->palette, colors, 0, 256);
+		for (int y = 0; y < surface->h; ++y)
+			memcpy((Uint8 *)shot->pixels + y * shot->pitch, (Uint8 *)surface->pixels + y * surface->pitch, surface->w);
+		SDL_SaveBMP(shot, name);
+		SDL_FreeSurface(shot);
+		--betweenLeft;
+		return;
+	}
+	runScript();
+}
+
+static void runScript(void)
+{
 	while (scriptLeft > 0)
 	{
 		const char *step = *script++;
@@ -94,6 +131,14 @@ void __wrap_JE_showVGA(void)
 
 		if (strcmp(step, "wait") == 0)
 			return;
+
+		if (strncmp(step, "between=", 8) == 0)
+		{
+			betweenPrefix = step + 8;
+			betweenLeft = 12;
+			betweenCount = 0;
+			continue;
+		}
 
 		if (strncmp(step, "shot=", 5) == 0)
 		{

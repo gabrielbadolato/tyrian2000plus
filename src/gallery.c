@@ -1968,12 +1968,24 @@ static void demoFrame(const Entry *entry, unsigned int tick, unsigned int level,
 			const unsigned int bay = i == 0 ? SHOT_LEFT_SIDEKICK : SHOT_RIGHT_SIDEKICK;
 			if (shotRepeat[bay] > 0)
 				--shotRepeat[bay];
-			else
-				player_shot_create(options[entry->id].wport, bay, x + (i == 0 ? -22 : 24), DEMO_Y + 6, player[0].mouseX, player[0].mouseY, options[entry->id].wpnum, 1);
+			else if (player_shot_create(options[entry->id].wport, bay, x + (i == 0 ? -22 : 24), DEMO_Y + 6, player[0].mouseX, player[0].mouseY, options[entry->id].wpnum, 1) < MAX_PWEAPON &&
+			         weapons[options[entry->id].wpnum].sg[0] > 60000)
+				shotRepeat[bay] = 40;  // a storm that fills the screen: one now and then
 		}
 	}
 	simulate_player_shots();
 	memset(soundQueue, 0, sizeof(soundQueue));
+	// the shots it skips: drawn from the sidekick shapes, blended (a storm of
+	// plasma), as the level draws them (player_shot_move_and_draw)
+	for (int z = 0; z < MAX_PWEAPON - 1; ++z)
+	{
+		const PlayerShotDataType *shot = &playerShotData[z];
+		if (shotAvail[z] == 0)
+			continue;
+		const unsigned int frame = shot->shotGr + (shot->shotAni > 0 ? shot->shotAni : shot->shotAniMax) - 1;
+		if (frame > 60000)
+			blit_sprite_blend(demoScreen, shot->shotX + 1, shot->shotY, OPTION_SHAPES, frame - 60001);
+	}
 
 	demoDrawShip(demoScreen, ship, x, DEMO_Y, banking);
 	if (entry->kind == KIND_SIDEKICK)

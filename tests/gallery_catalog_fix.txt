@@ -68,7 +68,6 @@ view 5:1205 5:1221
 view 5:1259 5:1260
 view 1:73 1:66
 view 1:792 1:793
-into 1:568 1:564   # the same balls around a core, one without it
 # a ship whose body comes under its wings on the ground
 join 1:26 1:31 12 15
 # the same ship longer: three rows of wings over the body, half open (the short one is shown in turn)
@@ -201,3 +200,20 @@ hide 1:142
 hide 1:737
 hide 4:225
 hide 4:249
+# a review (2026-10-22): an invisible blocker, a seed the plants drop, fire,
+# an indestructible spike that only slides down
+hide 1:426
+hide 1:427
+hide 1:428
+hide 1:429
+hide 4:426
+hide 4:427
+hide 4:428
+hide 4:429
+hide 5:1244
+hide 1:734
+hide 5:1056
+hide 1:679
+hide 1:680
+# the red crab of DELIANI with its two gun pods (armor 0, so not collected)
+shape 1:400 24:1:1:0:0:400 24:3:1:24:0:401 24:5:1:48:0:402 24:7:1:72:0:403 24:9:1:96:0:404 24:11:1:120:0:405 24:39:1:0:28:406 24:41:1:24:28:407 24:43:1:48:28:408 24:45:1:72:28:409 24:47:1:96:28:410 24:49:1:120:28:411

@@ -593,8 +593,10 @@ def main():
             parts = [(ds, k[0], k[1], k[2], k[3], k[4], k[5], 0) for k in keys[1:]]
             del entries[e['look']]
             lk = look(clean([p[1:] for p in parts]))
+            # (a look that only missed pieces is not kept)
+            whole = {(p[1], p[2]) for p in parts} >= {(p[1], p[2]) for p in e['parts']}
             entries[lk] = dict(e, look=lk, parts=parts, views=e.get('views', []),
-                               last_views=[e['parts']] + e.get('last_views', []),
+                               last_views=([] if whole else [e['parts']]) + e.get('last_views', []),
                                types=e['types'] | {(ds, p[6]) for p in parts})
         elif what == 'pose':
             # "pose 1:66 1:49:1:0:0:28 ...": the same enemy as it looks a

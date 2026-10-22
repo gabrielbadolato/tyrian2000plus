@@ -212,6 +212,7 @@ const LangEntry lang_pt_br[] =
 	{ "EXIT HELP", "SAIR DA AJUDA" },
 
 	// ---- short help in the menus, at most 65 characters ----
+	{ "Press %s on your controller to take it, or left/right.", "Aperte %s no seu controle para usá-lo, ou esquerda/direita." },
 	{ "Communications : Read incoming messages", "Comunicações: leia as mensagens recebidas" },
 	{ "Purchase new weapons and ship components.", "Compre armas e peças novas para a nave." },
 	{ "Configuration and Load/Save game", "Configurações e carregar/salvar jogo" },
@@ -270,6 +271,7 @@ const LangEntry lang_pt_br[] =
 	{ "Music", "Música" },
 	{ "Sound", "Som" },
 	{ "Keyboard", "Teclado" },
+	{ "Keyboard 2", "Teclado 2" },
 	{ "Setup...", "Configurar..." },
 	{ "Player 1 Input", "Controle J1" },
 	{ "Player 2 Input", "Controle J2" },
@@ -589,6 +591,10 @@ const LangEntry lang_pt_br[] =
 	{ "Brightness:", "Brilho:" },
 	{ "Brighten the levels (F11 also works in game).", "Clareia as fases (na fase, F11 também muda)." },
 	{ "Keyboard...", "Teclado..." },
+	{ "Keyboard 2...", "Teclado 2..." },
+	{ "Keys of a second player on the same keyboard.", "Teclas de um segundo jogador no mesmo teclado." },
+	{ "Second Player", "Segundo Jogador" },
+	{ "For two players on one keyboard.", "Para dois jogadores num só teclado." },
 	{ "Change the keyboard keys.", "Muda as teclas do teclado." },
 	{ "Controller...", "Controle..." },
 	{ "Change the controller (gamepad) settings.", "Muda as opções do controle (gamepad)." },

@@ -27,6 +27,7 @@
 #include "fonthand.h"
 #include "gallery.h"
 #include "game_menu.h"
+#include "inputdev.h"
 #include "joystick.h"
 #include "keyboard.h"
 #include "lang.h"
@@ -3902,8 +3903,7 @@ bool newGame(void)
 
 			difficultyLevel++;  // Make it one step harder for 2-player mode!
 
-			inputDevice[0] = 1;
-			inputDevice[1] = 2;
+			input_devices_default();  // Tyrian 2000+: the original always chose keyboard and mouse
 		}
 		else if (richMode)
 		{

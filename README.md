@@ -206,36 +206,6 @@ game itself: the ship follows it, firing. In menus, tap an item, or use the
 stick and FIRE (OK) / MENU (back). A key or a controller hides the touch
 controls again.
 
-## Two players
-
-**Same computer:** title screen > Start New Game > "2 Player Arcade". The game
-chooses the controls by itself: with two controllers, one each; with one,
-keyboard for player 1 and the controller for player 2 (on a Steam Deck, the
-Deck's own controls for player 1 and a keyboard for player 2); with none,
-keyboard and mouse. In the ship menu, the player rows show each one's
-control by name ("1: Xbox", "Keyboard 2"...); press A on a controller to take
-that row, or left/right to change it (the chosen controller vibrates). Two
-players can also share one keyboard: player 2 then uses "Keyboard 2" (W A S D
-move, Left Shift fires, R changes the rear weapon, Q and E fire the sidekicks;
-change them in Setup > Controls > Keyboard 2...).
-
-**Two computers (Network Game):** Start New Game > "Modem/Network Game". One
-player chooses **Host Game** and waits; the screen shows that computer's
-address. The other types it in **Address** and chooses **Join Game** (with a
-controller, a keyboard shows up on the screen). Both need the same version of
-the game. The game measures the connection and adjusts itself so it runs at
-full speed; when someone quits or the connection drops, both go back to the
-title screen.
-
-- In the same house (same Wi-Fi or router), that is all.
-- Over the internet, the host must let UDP port 1333 in: either forward that
-  port in the router to the host's computer (the other player then types the
-  host's public address), or, simpler, both install a free virtual network
-  such as [Tailscale](https://tailscale.com) or [ZeroTier](https://www.zerotier.com)
-  and use the address it gives the host's computer. On Windows, allow the
-  game when the firewall asks. A connection with a lot of lag makes the
-  controls feel slower.
-
 ## Where each option is
 
 - **Title screen > Setup:** Graphics, Sound,

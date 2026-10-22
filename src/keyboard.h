@@ -35,7 +35,6 @@ typedef struct KeyboardInput
 	Uint16 scancode;  // SDL_Scancode; used for non-text input.
 	Uint16 mod;  // SDL_Keymod
 	Uint8 ch;  // CP437 character; used for text input (ex. save file name).
-	Uint8 pad;  // 1 + the controller that pushed the key (push_pad_key), or 0
 } KeyboardInput;
 
 typedef struct MouseInput

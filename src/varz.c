@@ -22,7 +22,6 @@
 #include "editship.h"
 #include "episodes.h"
 #include "gallery.h"
-#include "inputdev.h"
 #include "joystick.h"
 #include "levelrec.h"
 #include "logging.h"
@@ -1029,7 +1028,7 @@ static void rumble_player(const Player *this_player, Uint16 low, Uint16 high, Ui
 	JE_byte device = inputDevice[this_player == &player[1] ? 1 : 0];
 	if (device == 0)
 		joysticks_rumble_all(low, high, duration_ms);
-	else if (input_device_is_joystick(device))
+	else if (device >= 3)
 		joystick_rumble(device - 3, low, high, duration_ms);
 }
 

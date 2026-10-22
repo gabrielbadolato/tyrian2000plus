@@ -364,7 +364,8 @@ Peça escondida vai na lista com `CATALOG_HIDDEN`: a Galeria não a mostra
 nem cria entrada para ela. Comando completo: `make_gallery_catalog.py
 --frames=<frames.tsv> --fix=tests/gallery_catalog_fix.txt
 src/gallery_catalog.h <tsv>...`.
-Inimigos não têm nome na ficha (pedido do Gabriel 2026-10-21). `catalogMatch()` marca cada entrada da lista que a coisa contém
+Inimigos não têm nome na ficha (pedido do Gabriel 2026-10-21); no lugar do nome, a
+ficha diz "Lista feita por fãs: pode conter erros." (pedido dele 2026-10-22). `catalogMatch()` marca cada entrada da lista que a coisa contém
 (duas construções lado a lado = duas); o que a lista não tem vira entrada
 pela aparência (`pieceOf` esconde pedaços). Inimigo novo/fase nova: rodar a
 coleta e gerar de novo. Inimigo lançado por outro (`gallery_enemy_launched`,

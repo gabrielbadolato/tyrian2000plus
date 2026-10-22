@@ -1715,6 +1715,13 @@ static void drawDetails(const Entry *entry)
 		break;
 	}
 
+	// the enemies: a list put together by hand from the levels
+	if (entry->kind == KIND_ENEMY)
+	{
+		drawInfoLine(&y, tr("List made by fans:"), 0);
+		drawInfoLine(&y, tr("it may have mistakes."), 0);
+	}
+
 	// the picture, down to where the numbers start
 	const int picY = y, infoY = GRID_Y + 2 + 19 + 84 + 3;
 	drawEntryPicture(entry, animTick);

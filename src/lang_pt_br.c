@@ -802,6 +802,8 @@ const LangEntry lang_pt_br[] =
 	{ "%s%s: page. %s: back.", "%s%s: página. %s: voltar." },
 	{ "Tab: page. Enter: see it. Esc: back.", "Tab: página. Enter: ver. Esc: voltar." },
 	{ "Tab: page. Arrows: choose. Esc: back.", "Tab: página. Setas: escolher. Esc: voltar." },
+	{ "List made by fans:", "Lista feita por fãs:" },
+	{ "it may have mistakes.", "pode conter erros." },
 	{ "Tab: page. Arrows: choose. E: episode. Esc: back.", "Tab: página. Setas: escolher. E: episódio. Esc: voltar." },
 	{ "%s%s: page. %s: see it. %s: back.", "%s%s: página. %s: ver. %s: voltar." },
 	{ "%s%s: page. %s: episode. %s: back.", "%s%s: página. %s: episódio. %s: voltar." },

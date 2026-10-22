@@ -262,7 +262,7 @@ os controles de toque sumirem de novo.
   tiros nem cenário), então dá para ver quantos faltam. Tab, ou LB e RB no controle, trocam a página; as setas
   escolhem. Enter (A no controle, ou um clique na figura) mostra em
   movimento: a arma atirando, na potência de 1 a 11 (cima/baixo), o sidekick
-  atirando, a nave voando. Os inimigos se mexem na própria figura, e o que aparece virado para mais de um lado mostra cada lado por vez. Na página dos inimigos, E (Y no
+  atirando, a nave voando. Os inimigos se mexem na própria figura, e o que aparece virado para mais de um lado mostra cada lado por vez. A lista de inimigos foi montada à mão por fãs e pode conter erros. Na página dos inimigos, E (Y no
   controle) mostra um episódio de cada vez. Fica no arquivo gallery.cfg, junto dos saves, e vai se enchendo
   enquanto você joga daqui para a frente.
 - **Setup > Gallery > Statistics (Estatísticas):** os totais de todos os

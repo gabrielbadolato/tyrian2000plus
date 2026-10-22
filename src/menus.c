@@ -24,7 +24,6 @@
 #include "fonthand.h"
 #include "keyboard.h"
 #include "mouse.h"
-#include "netmenu.h"
 #include "nortsong.h"
 #include "opentyr.h"
 #include "palette.h"
@@ -88,11 +87,7 @@ bool gameplaySelect(void)
 			const int y = yMenuItems + dyMenuItems * i;
 
 			const bool selected = i == selectedIndex;
-#ifdef WITH_NETWORK
-			const bool disabled = false;
-#else
 			const bool disabled = i == MENU_ITEM_NETWORK;
-#endif
 
 			drawFontHvShadow(VGAScreen, x, y, text, FONT_NORMAL, 15, -4 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 		}
@@ -218,21 +213,7 @@ bool gameplaySelect(void)
 			}
 			case MENU_ITEM_NETWORK:
 			{
-#ifdef WITH_NETWORK
-				// Tyrian 2000+: the network game, which only started with --net
-				JE_playSampleNum(S_SELECT);
-				fade_black(10);
-				if (networkMenu())
-				{
-					onePlayerAction = false;
-					timedBattleMode = false;
-					twoPlayerMode = true;
-					return true;
-				}
-				restart = true;
-#else
 				JE_playSampleNum(S_SPRING);
-#endif
 				break;
 			}
 			default:

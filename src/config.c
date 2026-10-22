@@ -20,7 +20,6 @@
 
 #include "episodes.h"
 #include "file.h"
-#include "inputdev.h"
 #include "joystick.h"
 #include "lang.h"
 #include "logging.h"
@@ -28,7 +27,6 @@
 #include "memreader.h"
 #include "memwriter.h"
 #include "mtrand.h"
-#include "netmenu.h"
 #include "oplchip.h"
 #include "nortsong.h"
 #include "opentyr.h"
@@ -60,21 +58,6 @@ const KeySettings defaultKeySettings =
 	SDL_SCANCODE_RETURN,
 	SDL_SCANCODE_LCTRL,
 	SDL_SCANCODE_LALT,
-};
-
-// Tyrian 2000+: the second player's keys, for two players on one keyboard;
-// away from the first player's (in two-player games, the first player's
-// sidekick keys also unlink the ships)
-const KeySettings defaultKeySettings2 =
-{
-	SDL_SCANCODE_W,
-	SDL_SCANCODE_S,
-	SDL_SCANCODE_A,
-	SDL_SCANCODE_D,
-	SDL_SCANCODE_LSHIFT,
-	SDL_SCANCODE_R,
-	SDL_SCANCODE_Q,
-	SDL_SCANCODE_E,
 };
 
 static const char *const keySettingNames[] =
@@ -164,7 +147,6 @@ JE_byte mainLevel, nextLevel, saveLevel;   /*Current Level #*/
 
 /* Keyboard Junk */
 KeySettings keySettings;
-KeySettings keySettings2;  // second keyboard player (INPUT_DEVICE_KEYBOARD2)
 
 /* Mouse settings */
 MouseSettings mouseSettings;
@@ -243,7 +225,7 @@ static Uint8 dosKeySettings[8] = { 0 };  // FKA keySettings
 static const char *const opentyrianConfigFilename = "opentyrian.cfg";
 
 // SteamOS sets SteamDeck=1 for what Steam starts; the board name covers the Desktop Mode terminal
-bool running_on_steam_deck(void)
+static bool running_on_steam_deck(void)
 {
 	const char *deck = SDL_getenv("SteamDeck");
 	if (deck != NULL && SDL_strcmp(deck, "1") == 0)
@@ -262,46 +244,12 @@ bool running_on_steam_deck(void)
 #endif
 }
 
-static void loadKeySettings(Config *config, const char *sectionName, KeySettings keys)
-{
-	ConfigSection *section = config_find_section(config, sectionName, NULL);
-	if (section == NULL)
-		return;
-
-	for (size_t i = 0; i < COUNTOF(keySettingNames); ++i)
-	{
-		const char *keyName;
-		if (config_get_string_option(section, keySettingNames[i], &keyName))
-		{
-			SDL_Scancode scancode = SDL_GetScancodeFromName(keyName);
-			if (scancode != SDL_SCANCODE_UNKNOWN)
-				keys[i] = scancode;
-		}
-	}
-}
-
-static void saveKeySettings(Config *config, const char *sectionName, const KeySettings keys)
-{
-	ConfigSection *section = config_find_or_add_section(config, sectionName, NULL);
-	if (section == NULL)
-		exit(EXIT_FAILURE);  // out of memory
-
-	for (size_t i = 0; i < COUNTOF(keySettingNames); ++i)
-	{
-		const char *keyName = SDL_GetScancodeName(keys[i]);
-		if (keyName[0] == '\0')
-			keyName = NULL;
-		config_set_string_option(section, keySettingNames[i], keyName);
-	}
-}
-
 static void loadOpenTyrianConfig(void)
 {
 	// defaults
 	fullscreen_display = -1;
 	set_scaler_by_name("None");
 	memcpy(keySettings, defaultKeySettings, sizeof(keySettings));
-	memcpy(keySettings2, defaultKeySettings2, sizeof(keySettings2));
 	memcpy(mouseSettings, defaultMouseSettings, sizeof(mouseSettings));
 	
 	Config *config = &opentyrian_config;
@@ -457,9 +405,20 @@ static void loadOpenTyrianConfig(void)
 			SDL_strlcpy(whatsnew_seen, seen, sizeof(whatsnew_seen));
 	}
 
-	loadKeySettings(config, "keyboard", keySettings);
-	loadKeySettings(config, "keyboard2", keySettings2);
-	netmenu_load_settings(config);
+	section = config_find_section(config, "keyboard", NULL);
+	if (section != NULL)
+	{
+		for (size_t i = 0; i < COUNTOF(keySettings); ++i)
+		{
+			const char *keyName;
+			if (config_get_string_option(section, keySettingNames[i], &keyName))
+			{
+				SDL_Scancode scancode = SDL_GetScancodeFromName(keyName);
+				if (scancode != SDL_SCANCODE_UNKNOWN)
+					keySettings[i] = scancode;
+			}
+		}
+	}
 
 	section = config_find_section(config, "mouse", NULL);
 	if (section != NULL)
@@ -550,9 +509,17 @@ static void saveOpenTyrianConfig(void)
 	if (whatsnew_seen[0] != '\0')
 		config_set_string_option(section, "notes_seen", whatsnew_seen);
 
-	saveKeySettings(config, "keyboard", keySettings);
-	saveKeySettings(config, "keyboard2", keySettings2);
-	netmenu_save_settings(config);
+	section = config_find_or_add_section(config, "keyboard", NULL);
+	if (section == NULL)
+		exit(EXIT_FAILURE);  // out of memory
+
+	for (size_t i = 0; i < COUNTOF(keySettings); ++i)
+	{
+		const char *keyName = SDL_GetScancodeName(keySettings[i]);
+		if (keyName[0] == '\0')
+			keyName = NULL;
+		config_set_string_option(section, keySettingNames[i], keyName);
+	}
 
 	// Tyrian 2000 doesn't save mouse settings, so we do it ourselves
 	section = config_find_or_add_section(config, "mouse", NULL);
@@ -735,15 +702,6 @@ void JE_loadGame(JE_byte slot)
 	secretHint = saveFiles[slot-1].secretHint;
 	inputDevice[0] = saveFiles[slot-1].input1;
 	inputDevice[1] = saveFiles[slot-1].input2;
-	if (twoPlayerMode)
-	{
-		// Tyrian 2000+: keyboard and mouse were the only choice of a new game
-		// before; with controllers connected, they are probably not wanted
-		if (inputDevice[0] == INPUT_DEVICE_KEYBOARD && inputDevice[1] == INPUT_DEVICE_MOUSE &&
-		    joysticks > 0)
-			input_devices_default();
-		input_devices_check();
-	}
 
 	for (uint port = 0; port < 2; ++port)
 	{

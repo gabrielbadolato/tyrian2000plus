@@ -241,12 +241,9 @@ static Pad_family pad_family(const Joystick *js)
 	if (js->controller == NULL)
 		return FAMILY_XBOX;
 
-	const char *name = SDL_GameControllerName(js->controller);
-	if (name != NULL && SDL_strstr(name, "Steam Deck") != NULL)
+	if (is_steam_deck(js))
 		return FAMILY_STEAM_DECK;
 
-	// on the Deck, Steam shows every controller as its own virtual pad, but
-	// SDL tells a PlayStation or Nintendo controller apart by its real type
 	switch (SDL_GameControllerGetType(js->controller))
 	{
 	case SDL_CONTROLLER_TYPE_PS3:
@@ -265,7 +262,7 @@ static Pad_family pad_family(const Joystick *js)
 		return FAMILY_NINTENDO;
 
 	default:
-		return is_steam_deck(js) ? FAMILY_STEAM_DECK : FAMILY_XBOX;  // Xbox, Steam Controller, generic XInput
+		return FAMILY_XBOX;  // Xbox, Steam Controller, generic XInput
 	}
 }
 
@@ -506,19 +503,11 @@ void poll_joysticks(void)
 // sends SDL KEYDOWN and KEYUP events for a key
 void push_key(SDL_Scancode key)
 {
-	push_pad_key(key, -1);
-}
-
-// the key says which controller pushed it (KeyboardInput.pad), so a menu can
-// tell the players' controllers apart
-void push_pad_key(SDL_Scancode key, int j)
-{
 	SDL_Event e;
 
 	memset(&e.key.keysym, 0, sizeof(e.key.keysym));
 
 	e.key.keysym.scancode = key;
-	e.key.keysym.unused = (Uint32)(j + 1);
 	e.key.state = SDL_RELEASED;
 
 	e.type = SDL_KEYDOWN;
@@ -543,14 +532,14 @@ void push_joysticks_as_keyboard(void)
 			continue;
 
 		if (joystick[j].confirm)
-			push_pad_key(confirm, j);
+			push_key(confirm);
 		if (joystick[j].cancel)
-			push_pad_key(cancel, j);
+			push_key(cancel);
 
 		for (uint d = 0; d < COUNTOF(joystick[j].direction_pressed); d++)
 		{
 			if (joystick[j].direction_pressed[d])
-				push_pad_key(direction[d], j);
+				push_key(direction[d]);
 		}
 	}
 }

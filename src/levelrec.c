@@ -495,7 +495,7 @@ static Uint32 mix(Uint32 hash, Uint32 value)
 
 // What a replay that went differently would show soon: the random numbers,
 // the ships, the level script, the enemies and the shots.
-Uint32 levelrec_state_checksum(void)
+static Uint32 stateChecksum(void)
 {
 	Uint32 hash = 2166136261u;
 #ifdef LEVELREC_DEBUG
@@ -901,7 +901,7 @@ void levelrec_frame(void)
 		if (frame % CHECK_INTERVAL == 0)
 		{
 			putU8(TOKEN_CHECK);
-			putU32(levelrec_state_checksum());
+			putU32(stateChecksum());
 		}
 		++frame;
 		writeOut();
@@ -918,7 +918,7 @@ void levelrec_frame(void)
 			}
 			const Uint32 recorded = getU32(&buf[pos + 1]);
 			pos += 5;
-			if (recorded != levelrec_state_checksum())
+			if (recorded != stateChecksum())
 			{
 				fail("the replay went differently");
 				return;

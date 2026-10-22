@@ -23,7 +23,6 @@
 #include "episodes.h"
 #include "file.h"
 #include "fonthand.h"
-#include "inputdev.h"
 #include "joystick.h"
 #include "keyboard.h"
 #include "lang.h"
@@ -104,7 +103,6 @@ static JE_byte curItemType, curItem, cursor;
 static JE_boolean leftPower, rightPower, rightPowerAfford;
 static JE_byte currentCube;
 static JE_byte weaponSimTime;
-static JE_byte menuSelectDevice;  // the controller whose button selected the item (inputdev.h), or 0
 
 static JE_byte planetAni, planetAniWait;
 static JE_byte currentDotNum, currentDotWait;
@@ -834,11 +832,16 @@ void JE_itemScreen(void)
 		/* 2 player input devices */
 		if (curMenu == MENU_2_PLAYER_ARCADE)
 		{
-			input_devices_check();  // a controller may have gone away
 			for (uint i = 0; i < COUNTOF(inputDevice); i++)
 			{
+				if (inputDevice[i] > 2 + joysticks)
+					inputDevice[i] = inputDevice[i == 0 ? 1 : 0] == 1 ? 2 : 1;
+
 				char temp[64];
-				input_device_name(inputDevice[i], temp, sizeof(temp));
+				if (joysticks > 1 && inputDevice[i] > 2)
+					sprintf(temp, "%s %d", inputDevices[2], inputDevice[i] - 2);
+				else
+					sprintf(temp, "%s", inputDevices[inputDevice[i] - 1]);
 				JE_dString(VGAScreen, 186, 38 + 2 * (i + 1) * 16, temp, SMALL_FONT_SHAPES);
 			}
 		}
@@ -1301,9 +1304,7 @@ void JE_itemScreen(void)
 				if (curMenu == MENU_UPGRADE_SUB && (curSel[MENU_UPGRADES] == 3 || curSel[MENU_UPGRADES] == 4))
 					temp_weapon_power[itemAvailMax[itemAvailMap[curSel[MENU_UPGRADES]-2]-1]] = player[0].items.weapon[curSel[MENU_UPGRADES]-3].power;
 
-				menuSelectDevice = keyboardInput.pad != 0 ? INPUT_DEVICE_JOYSTICK + keyboardInput.pad - 1 : 0;
 				JE_menuFunction(curSel[curMenu]);
-				menuSelectDevice = 0;
 				break;
 
 			case SDL_SCANCODE_ESCAPE:
@@ -1458,8 +1459,16 @@ void JE_itemScreen(void)
 					case 4:
 						JE_playSampleNum(S_CURSOR);
 
-						input_device_step(curSel[curMenu] - 3, -1);
-						input_device_feedback(curSel[curMenu] - 3);
+						int temp = curSel[curMenu] - 3;
+						do
+						{
+							if (joysticks == 0)
+								inputDevice[temp == 0 ? 1 : 0] = inputDevice[temp]; // swap controllers
+							if (inputDevice[temp] <= 1)
+								inputDevice[temp] = 2 + joysticks;
+							else
+								inputDevice[temp]--;
+						} while (inputDevice[temp] == inputDevice[temp == 0 ? 1 : 0]);
 						break;
 					}
 				}
@@ -1543,8 +1552,16 @@ void JE_itemScreen(void)
 					case 4:
 						JE_playSampleNum(S_CURSOR);
 
-						input_device_step(curSel[curMenu] - 3, +1);
-						input_device_feedback(curSel[curMenu] - 3);
+						int temp = curSel[curMenu] - 3;
+						do
+						{
+							if (joysticks == 0)
+								inputDevice[temp == 0 ? 1 : 0] = inputDevice[temp]; // swap controllers
+							if (inputDevice[temp] >= 2 + joysticks)
+								inputDevice[temp] = 1;
+							else
+								inputDevice[temp]++;
+						} while (inputDevice[temp] == inputDevice[temp == 0 ? 1 : 0]);
 						break;
 					}
 				}
@@ -2395,13 +2412,6 @@ void JE_drawMainMenuHelpText(void)
 		const int help[17] = { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 24, 11 };
 		SDL_strlcpy(tempStr, mainMenuHelp[help[curSel[curMenu] - 2]], sizeof(tempStr));
 	}
-	else if (curMenu == MENU_2_PLAYER_ARCADE && (curSel[curMenu] == 3 || curSel[curMenu] == 4) &&
-	         joystick_first_gamepad() >= 0 && !ignore_joystick)
-	{
-		// Tyrian 2000+: a player's own controller takes the row (JE_menuFunction)
-		const int j = joystick_first_gamepad();
-		snprintf(tempStr, sizeof(tempStr), tr("Press %s on your controller to take it, or left/right."), joystick_button_icon(j, SDL_CONTROLLER_BUTTON_A));
-	}
 	else if (curMenu == MENU_OPTIONS && curSel[curMenu] == 9)  // Setup... (Tyrian2000 Plus)
 	{
 		SDL_strlcpy(tempStr, tr("Graphics, sound and all control settings."), sizeof(tempStr));
@@ -2988,13 +2998,16 @@ void JE_menuFunction(JE_byte select)
 		case 4:
 			JE_playSampleNum(S_CURSOR);
 
-			// Tyrian 2000+: selected with a controller (or the mouse), the
-			// player takes it; with the keyboard, the next device, as before
-			if (menuSelectDevice != 0)
-				input_device_take(curSel[curMenu] - 3, menuSelectDevice);
-			else
-				input_device_step(curSel[curMenu] - 3, +1);
-			input_device_feedback(curSel[curMenu] - 3);
+			int temp = curSel[curMenu] - 3;
+			do
+			{
+				if (joysticks == 0)
+					inputDevice[temp == 0 ? 1 : 0] = inputDevice[temp]; // swap controllers
+				if (inputDevice[temp] >= 2 + joysticks)
+					inputDevice[temp] = 1;
+				else
+					inputDevice[temp]++;
+			} while (inputDevice[temp] == inputDevice[temp == 0 ? 1 : 0]);
 			break;
 		case 5:
 			curMenu = MENU_OPTIONS;

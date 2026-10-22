@@ -52,7 +52,6 @@
 
 #define NET_PACKET_SIZE   256
 #define NET_STATE_SIZE    36           // state packets: 28 as in OpenTyrian, then the state checksum
-#define NET_PACKET_QUEUE  16
 
 #define NET_RETRY         640          // ticks to wait for packet acknowledgment before resending
 #define NET_RESEND        320          // ticks to wait before requesting unreceived game packet
@@ -303,6 +302,24 @@ int network_check(void)
 
 			if (packet_temp->channel == 0 && packet_temp->len >= 4)
 			{
+				// Tyrian 2000+: a packet shorter than its type needs is dropped
+				// (its data would be read from whatever the buffer held before)
+				int minLen = 4;
+				switch (SDLNet_Read16(&packet_temp->data[0]))
+				{
+					case PACKET_CONNECT:   minLen = 12; break;  // the name and version after it are read with their length checked
+					case PACKET_DETAILS:   minLen = 8; break;
+					case PACKET_STATE:
+					case PACKET_STATE_XOR: minLen = NET_STATE_SIZE; break;
+					case PACKET_PONG:      minLen = 8; break;
+					default: break;
+				}
+				if (packet_temp->len < minLen)
+				{
+					logWarn("Received a packet of type %d with %d bytes; ignored.", SDLNet_Read16(&packet_temp->data[0]), packet_temp->len);
+					return 0;
+				}
+
 				switch (SDLNet_Read16(&packet_temp->data[0]))
 				{
 					case PACKET_ACKNOWLEDGE:

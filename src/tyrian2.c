@@ -3389,10 +3389,24 @@ void networkStartScreen(void)
 			waitUntilElapsed();
 		}
 
-		JE_initEpisode(SDLNet_Read16(&packet_in[0]->data[4]));
-		difficultyLevel = SDLNet_Read16(&packet_in[0]->data[6]);
+		// Tyrian 2000+: what the host sends is checked before it is used, so a
+		// bad packet (or another version of the game) cannot crash this side
+		const Uint16 episode = packet_in[0]->len >= 8 ? SDLNet_Read16(&packet_in[0]->data[4]) : 0;
+		const Uint16 difficulty = packet_in[0]->len >= 8 ? SDLNet_Read16(&packet_in[0]->data[6]) : 0;
+		if (episode < 1 || episode > EPISODE_MAX || !episodeAvail[episode - 1] ||
+		    difficulty < DIFFICULTY_WIMP || difficulty > DIFFICULTY_ZINGLON)
+		{
+			logError("Network: the host sent episode %u, difficulty %u.", episode, difficulty);
+			network_tyrian_halt(3, false);
+		}
+		JE_initEpisode((JE_byte)episode);
+		difficultyLevel = difficulty;
 		if (packet_in[0]->len >= 10)
+		{
 			network_delay = SDLNet_Read16(&packet_in[0]->data[8]);  // Tyrian 2000+: measured by the host
+			if (network_delay < 1 || network_delay * 2 > NET_PACKET_QUEUE - 2)
+				network_delay = 1 + 1;
+		}
 		initialDifficulty = difficultyLevel - 1;
 		fade_black(10);
 

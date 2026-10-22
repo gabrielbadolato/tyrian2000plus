@@ -1767,10 +1767,14 @@ void draw_ship_illustration(void)
 
 		const int rear_weapon_x[7] = { 41, 27,  49,  43, 51, 39, 41 };
 		const int rear_weapon_y[7] = { 92, 92, 113, 102, 97, 96, 76 };
-		const int x = rear_weapon_x[rear_weapon_xy_list[player[0].items.weapon[REAR_WEAPON].id]],
-		          y = rear_weapon_y[rear_weapon_xy_list[player[0].items.weapon[REAR_WEAPON].id]];
-
-		blit_sprite(VGAScreenSeg, x, y, WEAPON_SHAPES, weapon_sprites[player[0].items.weapon[REAR_WEAPON].id]);
+		// a save with a weapon that is not a rear one (-1 in the list) draws nothing
+		const int id = player[0].items.weapon[REAR_WEAPON].id;
+		const int xy = id < (int)COUNTOF(rear_weapon_xy_list) ? rear_weapon_xy_list[id] : -1;
+		if (xy >= 0)
+		{
+			const int x = rear_weapon_x[xy], y = rear_weapon_y[xy];
+			blit_sprite(VGAScreenSeg, x, y, WEAPON_SHAPES, weapon_sprites[id]);
+		}
 	}
 
 	// sidekicks

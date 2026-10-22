@@ -1622,7 +1622,7 @@ JE_boolean JE_inGameSetup(void)
 	const int dyMenuItems = 13;  // 14 in the original, 13 fits the items Tyrian 2000+ added
 	const int xMenuItem = 10;
 	const int xMenuItemName = xMenuItem;
-	const int wMenuItemName = 110;
+	const int wMenuItemName = 118;  // "Smooth Motion" is the widest name
 	const int xMenuItemValue = xMenuItemName + wMenuItemName;
 	const int wMenuItemValue = 90;
 	const int wMenuItem = wMenuItemName + wMenuItemValue;
@@ -1969,13 +1969,15 @@ JE_boolean JE_inGameSetup(void)
 				memcpy(levelColors, colors, sizeof(levelColors));
 				const size_t backgroundSize = (size_t)VGAScreen2->pitch * VGAScreen2->h;
 				Uint8 *const background = malloc(backgroundSize);
-				memcpy(background, VGAScreen2->pixels, backgroundSize);
+				if (background != NULL)
+					memcpy(background, VGAScreen2->pixels, backgroundSize);
 
 				fade_black(10);
 
 				controlsMenu();  // ends faded to black
 
-				memcpy(VGAScreen2->pixels, background, backgroundSize);
+				if (background != NULL)
+					memcpy(VGAScreen2->pixels, background, backgroundSize);
 				free(background);
 				memcpy(colors, levelColors, sizeof(colors));
 				fadeInAfterControls = true;

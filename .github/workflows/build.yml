@@ -16,6 +16,10 @@ name: Build
 
 on:
   push:
+    # Pushes to other branches are built by their pull request (one build
+    # per change, not two).
+    branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
   release:

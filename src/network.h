@@ -96,6 +96,8 @@ bool network_is_connected(void);
 
 extern bool network_peer_local;
 
+#define NET_PACKET_QUEUE  16  // Tyrian 2000+: also the limit of the delay (network.c)
+
 int network_init(void);
 
 void JE_clearSpecialRequests(void);

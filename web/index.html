@@ -473,6 +473,11 @@
   document.addEventListener("visibilitychange", function () {
     if (document.hidden && Module.FS) syncSaves();
   });
+  // Closing the tab right after saving: the copy to IndexedDB waits 0.5 s
+  // (syncSoon), so it is started at once here.
+  window.addEventListener("pagehide", function () {
+    if (Module.FS) { clearTimeout(syncTimer); syncSaves(); }
+  });
 
   window.Module = {
     canvas: canvas,

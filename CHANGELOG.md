@@ -10,6 +10,12 @@ change is in this repository's git log.
 
 ## Next version
 
+- Fixed: in the pause menu, Graphics page, the name "Smooth Motion" ran into
+  its value. The game joining a network game now checks what the host sends
+  (episode, difficulty, delay) and ignores packets that are too short, so a
+  bad packet cannot crash it; the saved display number and a save with an
+  odd rear weapon are checked too; in the browser the saves are copied to
+  the storage as soon as the tab closes.
 - Steam Deck: the installer script also puts "Tyrian 2000+ Update" in the
   Steam library, so the game can be updated from Game Mode. When opened from
   Steam, it shows its progress and results in windows.

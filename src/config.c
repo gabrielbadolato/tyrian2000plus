@@ -343,6 +343,8 @@ static void loadOpenTyrianConfig(void)
 	if (section != NULL)
 	{
 		config_get_int_option(section, "fullscreen", &fullscreen_display);
+		if (fullscreen_display < -1)
+			fullscreen_display = -1;  // -1 is a window; a display is 0 or more (checked against the count in reinit_fullscreen)
 		
 		// Scale2x was the default up to v1.3 and was saved for everyone, so it only counts
 		// when the player picked it in a menu; any other saved scaler was a choice.

@@ -1274,7 +1274,7 @@ static void code_to_assignment(Joystick_assignment *assignment, const char *buff
  */
 static const char *assignment_to_code(const Joystick_assignment *assignment)
 {
-	static char name[7];
+	static char name[16];  // "BTN 99" fits in 7; the rest keeps the compiler from warning about larger numbers
 
 	switch (assignment->type)
 	{

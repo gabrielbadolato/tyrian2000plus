@@ -104,6 +104,7 @@ typedef struct
 extern T2KHighScoreType t2kHighScores[20][3];
 
 extern const KeySettings defaultKeySettings;
+extern const KeySettings defaultKeySettings2;
 extern const MouseSettings defaultMouseSettings;
 extern char defaultHighScoreNames[39][23];
 extern char defaultTeamNames[10][25];
@@ -137,6 +138,7 @@ extern JE_boolean portConfigChange, portConfigDone;
 extern char lastLevelName[11], levelName[11];
 extern JE_byte mainLevel, nextLevel, saveLevel;
 extern KeySettings keySettings;
+extern KeySettings keySettings2;
 extern MouseSettings mouseSettings;
 extern bool autoFireToggle;
 extern int lastSaveSlot;
@@ -167,6 +169,8 @@ extern Config opentyrian_config;
 
 void JE_initProcessorType(void);
 void JE_setNewGameSpeed(void);
+
+bool running_on_steam_deck(void);
 
 void loadConfiguration(void);
 void saveConfiguration(void);

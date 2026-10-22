@@ -8,6 +8,22 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- **Two players**: on the same computer, a new 2-player game gives each
+  player a controller by itself (with one controller, keyboard and controller;
+  on a Steam Deck, the Deck and a keyboard), the ship menu shows whose control
+  is whose by name (press A on a controller to take a row; the chosen one
+  vibrates), and two players can share one keyboard ("Keyboard 2", W A S D,
+  keys in Setup > Controls > Keyboard 2...).
+- **Network Game** works from the menu: one player hosts (the screen shows
+  the computer's address), the other types the address and joins, also with
+  the keyboard on the screen. The game measures the connection and sets the
+  delay itself, both need the same version, the two games check each other
+  every second, and when someone quits or the connection drops both go back
+  to the title screen instead of the game closing. The README explains how
+  to play over the internet.
+
 ## v1.6 (2026-10-22)
 
 - **Gallery**: Setup > "Gallery..." shows the ships, weapons, sidekicks,

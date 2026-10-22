@@ -1388,6 +1388,37 @@ static unsigned int partPicture(const Part *p, unsigned int tick)
 	return catalogFrames[a->first + frame];
 }
 
+// An enemy of the list seen from its other sides too (catalogViews): each
+// shown in turn, for two seconds.
+static const SeenEnemy *enemyView(unsigned int id, unsigned int tick)
+{
+	if (id >= COUNTOF(catalogEnemies) || !enemies[id].listed)
+		return &enemies[id];
+
+	unsigned int views = 1;
+	for (size_t k = 0; k < COUNTOF(catalogViews); ++k)
+		views += catalogViews[k].enemy == id;
+	unsigned int which = tick / 70 % views;
+	if (which == 0)
+		return &enemies[id];
+
+	static SeenEnemy view;
+	for (size_t k = 0; k < COUNTOF(catalogViews); ++k)
+	{
+		if (catalogViews[k].enemy != id || --which != 0)
+			continue;
+		const CatalogView *c = &catalogViews[k];
+		view.parts = 0;
+		for (unsigned int p = 0; p < c->parts && p < MAX_PARTS; ++p)
+		{
+			const CatalogPart *cp = &catalogParts[c->first + p];
+			view.part[view.parts++] = (Part){ .bank = cp->bank, .size = cp->size, .gr = cp->gr, .x = cp->x, .y = cp->y, .anim = cp->anim };
+		}
+		break;
+	}
+	return &view;
+}
+
 static void drawEntryPicture(const Entry *entry, unsigned int tick)
 {
 	canvasClear();
@@ -1429,7 +1460,7 @@ static void drawEntryPicture(const Entry *entry, unsigned int tick)
 	{
 		// an animated one in the place all its pictures take, so it does not
 		// move about nor change size
-		const SeenEnemy *e = &enemies[entry->id];
+		const SeenEnemy *e = enemyView(entry->id, tick);
 		unsigned int rounds = 1;
 		for (unsigned int i = 0; i < e->parts; ++i)
 			if (e->part[i].anim != 0 && e->part[i].anim < COUNTOF(catalogAnims))

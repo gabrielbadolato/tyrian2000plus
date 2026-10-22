@@ -415,7 +415,8 @@ def main():
     if args[0].startswith('--fix='):
         # what a look at every entry found (tests/gallery_catalog_fix.txt):
         # "hide 1:66" (not shown), "split 1:66" (each group of pieces that
-        # touch is an enemy of its own), "rows", "into", "join", "stack" (see below),
+        # touch is an enemy of its own), "rows", "into", "join", "view", "shape",
+        # "stack" (see below),
         # by the enemyDat index of a piece
         with open(args.pop(0)[6:]) as f:
             for line in f:
@@ -563,6 +564,28 @@ def main():
             lk = look(clean([p[1:] for p in parts]))
             entries[lk] = dict(e, look=lk, parts=parts, types=e['types'] | b['types'],
                                order=min(e['order'], b['order']))
+        elif what == 'view':
+            # "view 1:66 1:70": the enemy with 1:70 is the one with 1:66 seen
+            # from another side; the Gallery shows them in turn
+            b = next((r for r in entries.values() if keys[1] in r['types']), None)
+            if b is None or b is e:
+                print('fix: cannot show %d:%d as %d:%d' % (keys[1] + keys[0]))
+                continue
+            del entries[b['look']]
+            e['types'] |= b['types']
+            e['views'] = e.get('views', []) + [b['parts']] + b.get('views', [])
+            if b['order'] < e['order']:
+                e['order'], e['episode'] = b['order'], b['episode']
+        elif what == 'shape':
+            # "shape 1:66 1:49:1:0:0:28 ...": the enemy with 1:66 as it looks
+            # whole (bank:sprite:size:x:y:enemyDat index each piece); the
+            # look it had is shown in turn
+            ds = keys[0][0]
+            parts = [(ds, k[0], k[1], k[2], k[3], k[4], k[5], 0) for k in keys[1:]]
+            del entries[e['look']]
+            lk = look(clean([p[1:] for p in parts]))
+            entries[lk] = dict(e, look=lk, parts=parts, views=[e['parts']] + e.get('views', []),
+                               types=e['types'] | {(ds, p[6]) for p in parts})
         elif what == 'hide':
             e['hidden'] = True
         elif what == 'once':
@@ -622,13 +645,13 @@ def main():
     hidden = {t for e in entries.values() if e.get('hidden') for t in e['types']} - \
         {t for e in kept for t in e['types']}
     kept.sort(key=lambda e: (e['episode'], e['order']))
-    parts_out, enemies_out, types_out = [], [], []
+    parts_out, enemies_out, types_out, views_out = [], [], [], []
     frames_out = [(0, [])]  # 0: not animated
-    for i, e in enumerate(kept):
-        enemies_out.append((e['episode'], len(e['look']), len(parts_out)))
-        for lp in e['look']:
+
+    def put(lk, parts):
+        for lp in lk:
             # its animation: the pictures of its enemyDat entry, from the one it shows
-            src = next((p for p in e['parts'] if (p[1], p[2], p[3]) == lp[:3]), None)
+            src = next((p for p in parts if (p[1], p[2], p[3]) == lp[:3]), None)
             a = anim.get((src[0], src[6])) if src is not None else None
             n = 0
             if a is not None and lp[1] in a[1]:
@@ -638,6 +661,14 @@ def main():
                     frames_out.append(seq)
                 n = frames_out.index(seq)
             parts_out.append(lp + (n,))
+
+    for i, e in enumerate(kept):
+        enemies_out.append((e['episode'], len(e['look']), len(parts_out)))
+        put(e['look'], e['parts'])
+        for v in e.get('views', []):
+            lk = look(clean([p[1:] for p in v]))
+            views_out.append((i, len(lk), len(parts_out)))
+            put(lk, v)
         for ds, t in sorted(e['types']):
             types_out.append((ds, t, i))
     types_out += [(ds, t, 0xFFFF) for ds, t in hidden]
@@ -697,6 +728,13 @@ typedef struct
 
 typedef struct
 {
+	Uint16 enemy;   // in catalogEnemies: the same enemy from another side
+	Uint8 parts;
+	Uint16 first;   // in catalogParts
+} CatalogView;
+
+typedef struct
+{
 	Uint8 when;    // 1: always, 2: when it fires (as enemyDat animate)
 	Uint8 count;
 	Uint16 first;  // in catalogFrames: the pictures, one a frame (999: none)
@@ -709,6 +747,11 @@ typedef struct
         f.write('};\n\nstatic const CatalogEnemy catalogEnemies[] =\n{\n')
         for e in enemies_out:
             f.write('\t{ %d, %d, %d },\n' % e)
+        f.write('};\n\nstatic const CatalogView catalogViews[] =\n{\n')
+        for v in views_out:
+            f.write('\t{ %d, %d, %d },\n' % v)
+        if not views_out:
+            f.write('\t{ 0xFFFF, 0, 0 },\n')
         f.write('};\n\nstatic const CatalogType catalogTypes[] =\n{\n')
         for t in types_out:
             f.write('\t{ %d, %d, %d },\n' % t)

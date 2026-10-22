@@ -345,8 +345,11 @@ mesmo lugar do mapa (`join_map`), tira repetidos e figuras vazias com
 `--drop=`). O que a revisão olho a olho achou fica em
 `tests/gallery_catalog_fix.txt` (`--fix=`: hide, split, rows, banks, once,
 into, join, stack; "stack" monta chefe que chega fileira por fileira no céu, como
-o da GYGES; "into" também junta o mesmo inimigo repetido ou virado para o
-outro lado; "join a b x y" põe b como parte de a), pela peça (dataset:índice), então vale para a próxima coleta.
+o da GYGES; "into" junta o mesmo inimigo repetido; "view a b" faz de b
+outro ângulo de a (virado, de lado, aberto/fechado: `catalogViews`, o painel
+mostra um por vez a cada 2 s, `enemyView()`; pedido do Gabriel 2026-10-22);
+"shape a peças..." dá a forma inteira de a (a nave roxa da TYRIAN com três
+fileiras de asas) e a antiga vira outro ângulo; "join a b x y" põe b como parte de a), pela peça (dataset:índice), então vale para a próxima coleta.
 Fora da lista (escolha do Gabriel, 2026-10-21): tiros que outro inimigo lança,
 fogo/raios e cenário que só fica parado (pedras, placas, paredes, prédios
 que não atiram), com "hide". Variações de cor ficam: são inimigos com

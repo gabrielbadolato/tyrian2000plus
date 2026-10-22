@@ -7,6 +7,8 @@
 #   banks a        each group of pieces from one sprite bank is one
 #   once  a        each picture once (the same enemy twice, side by side)
 #   into  a b      the enemy with b is a part of the one with a (or the same enemy)
+#   view  a b      b is a from another side: the Gallery shows them in turn
+#   shape a p ...  a as it looks whole, each piece bank:sprite:size:x:y:index
 #   join  a b x y  b is a part of a, drawn x right and y down of a's corner
 #   stack a b ...  rows that come one at a time, top to bottom: one enemy
 
@@ -44,29 +46,41 @@ into 4:640 4:722
 into 1:317 1:323
 into 1:317 5:1011
 into 1:35 1:32
-# the same enemy facing the other way: once
-into 1:24 1:25
-into 1:20 1:18
-into 1:232 1:228
-into 1:753 1:756
-into 1:670 1:662
-into 1:735 1:736
-into 4:203 4:207
-into 4:223 4:224
-into 4:260 4:265
-into 4:44 4:43
-into 4:66 4:68
-into 4:49 4:55
-into 4:345 4:347
-into 4:351 4:354
-into 4:527 4:526
-into 5:1205 5:1221
-into 5:1259 5:1260
-into 1:73 1:66
-into 1:792 1:793
+# the same enemy facing the other way: shown in turn
+view 1:24 1:25
+view 1:20 1:18
+view 1:232 1:228
+view 1:753 1:756
+view 1:670 1:662
+view 1:735 1:736
+view 4:203 4:206
+view 4:223 4:224
+view 4:260 4:265
+view 4:44 4:43
+view 4:66 4:68
+view 4:49 4:55
+view 4:345 4:347
+view 4:351 4:354
+view 4:527 4:526
+view 5:1205 5:1221
+view 5:1259 5:1260
+view 1:73 1:66
+view 1:792 1:793
 into 1:568 1:564   # the same balls around a core, one without it
 # a ship whose body comes under its wings on the ground
 join 1:26 1:31 12 15
+# the same ship longer: three rows of wings over the body (the short one is shown in turn)
+shape 1:26 1:49:1:0:0:28 1:89:1:12:0:30 1:51:1:24:0:29 1:49:1:0:22:28 1:89:1:12:22:30 1:51:1:24:22:29 1:49:1:0:44:28 1:89:1:12:44:30 1:51:1:24:44:29 1:127:1:12:66:31
+# the same enemy from another side, or open and closed: shown in turn
+view 1:17 1:24
+view 1:100 1:91
+view 1:598 1:600
+view 1:129 1:134
+view 4:521 4:520
+view 1:245 1:252
+view 1:271 1:197
+view 1:158 1:154
+view 1:792 1:794
 # not enemies (Gabriel, 2026-10-21): shots other enemies launch, fire and lightning
 hide 1:2
 hide 1:199

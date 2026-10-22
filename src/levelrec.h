@@ -81,4 +81,8 @@ bool levelrec_failed(void);     // the last replay came out different (for the t
 bool levelrec_fast_frame_due(void);
 void levelrec_draw_progress(SDL_Surface *surface);
 
+// a checksum of the game state that matters (random numbers, ships, level
+// script, enemies, shots); also compared by the two sides of a network game
+Uint32 levelrec_state_checksum(void);
+
 #endif /* LEVELREC_H */

@@ -463,6 +463,25 @@ hash do arquivo: se outro tyrian.sav for posto na pasta com o jogo aberto,
 a tela de título relê (`reloadSavesIfReplaced`) e o fechamento não grava por
 cima (`saveSavesUnlessReplaced`). Teste: `tests/test_savefile.c`.
 
+Dois jogadores (2026-10, `src/inputdev.c`): `inputDevice[]` 1 teclado, 2 mouse,
+3+j controle da vaga j e 255 = "Keyboard 2" (`keySettings2`, seção
+"keyboard2"; Setup > Controls > Keyboard 2...). Jogo novo de 2 jogadores
+chama `input_devices_default()`; no menu da nave A num controle pega a linha
+(`KeyboardInput.pad`, marcado por `push_pad_key`).
+
+Jogo em rede pelo menu (`src/netmenu.c`, item "Modem/Network Game" de
+`gameplaySelect`): Host espera na porta 1333 (seção "network" do cfg: name,
+address, port) e aprende o endereço do outro pelo 1º PACKET_CONNECT; quem
+entra abre porta qualquer. NET_VERSION 0x2001 + versão do release (`git
+describe` sem o -N-gxxx) no connect: versões diferentes recusam. O host mede
+o ping (PACKET_PING/PONG, `network_measure_delay`) e manda o atraso no
+PACKET_DETAILS (--net-delay fixa). Pacote de estado tem 36 bytes: a cada 35
+quadros leva o `levelrec_state_checksum()` do quadro (`network_frame_state`);
+diferente = halt(7). Com `network_from_menu`, `network_tyrian_halt` faz
+longjmp para o laço de `main` (`network_abort`) e volta à tela de título; pelo
+--net continua fechando o programa. Teste: duas cópias no Xvfb e um relay UDP
+com atraso/perda (ver thread do multiplayer; não há script no repo).
+
 ## Tradução
 
 Idiomas: Setup > "Language" (`lang_setting`; seção "language", `language` =

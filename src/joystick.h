@@ -110,6 +110,7 @@ int joystick_take_low_battery(void);
 const char *joystick_battery_name(int j);
 
 void push_key(SDL_Scancode key);
+void push_pad_key(SDL_Scancode key, int j);
 void push_joysticks_as_keyboard(void);
 
 void init_joysticks(void);

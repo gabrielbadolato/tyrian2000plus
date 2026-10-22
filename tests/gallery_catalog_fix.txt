@@ -241,3 +241,15 @@ hide 4:642
 hide 1:545
 hide 5:545
 hide 4:40
+
+# levels the first collection never reached (BUBBLES, GEM WAR, MARKERS,
+# MISTAKES, LAVA EXIT...), 2026-10-22
+hide 1:464    # the bubbles: nothing destroys them
+hide 1:465
+hide 1:466
+hide 1:467
+hide 1:850    # shots other enemies launch
+hide 1:816
+hide 1:812
+hide 1:0      # no enemy of its own (enemyDat 0), takes any look
+banks 4:381   # a ring and lava balls that only came together

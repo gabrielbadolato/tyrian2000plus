@@ -90,7 +90,7 @@ static bool seenShield[SHIELD_NUM + 1];
 static bool seenGenerator[POWER_NUM + 1];
 static bool seenSpecial[SPECIAL_NUM + 1];
 
-#define MAX_PARTS 32
+#define MAX_PARTS 48
 #define MAX_ENEMIES 2000
 
 typedef struct

@@ -183,7 +183,10 @@ void JE_paramCheck(int argc, char *argv[])
 		{
 			int temp;
 			if (sscanf(option.arg, "%d", &temp) == 1)
+			{
 				network_delay = 1 + temp;
+				network_delay_fixed = true;
+			}
 			else
 			{
 				logError("%s: invalid network delay value", argv[0]);

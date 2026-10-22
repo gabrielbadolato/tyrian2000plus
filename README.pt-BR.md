@@ -216,6 +216,37 @@ sobre o próprio jogo: a nave vai junto, atirando. Nos menus, toque no item,
 ou use o direcional e TIRO (OK) / MENU (voltar). Teclado ou controle fazem
 os controles de toque sumirem de novo.
 
+## Dois jogadores
+
+**No mesmo computador:** tela de título > Novo jogo > "2 jogadores: arcade". O
+jogo escolhe os controles sozinho: com dois controles, um para cada; com um,
+teclado para o jogador 1 e o controle para o jogador 2 (no Steam Deck, os
+controles do próprio Deck para o jogador 1 e um teclado para o jogador 2); sem
+nenhum, teclado e mouse. No menu da nave, as linhas dos jogadores mostram o
+controle de cada um pelo nome ("1: Xbox", "Teclado 2"...); aperte A num
+controle para ficar com aquela linha, ou esquerda/direita para trocar (o
+controle escolhido vibra). Dois jogadores também podem dividir um teclado: o
+jogador 2 usa então o "Teclado 2" (W A S D movem, Shift esquerdo atira, R
+troca a arma traseira, Q e E disparam os sidekicks; dá para mudar em
+Configurações > Controles > Teclado 2...).
+
+**Em dois computadores (Jogo em rede):** Novo jogo > "Jogo em rede". Um
+jogador escolhe **Criar partida** e espera; a tela mostra o endereço daquele
+computador. O outro digita esse endereço em **Endereço** e escolhe **Entrar
+na partida** (com controle, aparece um teclado na tela). Os dois precisam da
+mesma versão do jogo. O jogo mede a conexão e se ajusta para rodar na
+velocidade certa; quando alguém sai ou a conexão cai, os dois voltam para a
+tela de título.
+
+- Na mesma casa (mesmo Wi-Fi ou roteador), é só isso.
+- Pela internet, quem cria a partida precisa deixar entrar a porta UDP 1333:
+  ou redireciona essa porta no roteador para o computador dele (o outro
+  jogador digita então o endereço público dele), ou, mais fácil, os dois
+  instalam uma rede virtual grátis como o [Tailscale](https://tailscale.com)
+  ou o [ZeroTier](https://www.zerotier.com) e usam o endereço que ela dá ao
+  computador de quem criou. No Windows, permita o jogo quando o firewall
+  perguntar. Conexão com muito atraso deixa os controles mais lentos.
+
 ## Onde fica cada opção
 
 - **Tela de título > Setup:** vídeo (Graphics), som

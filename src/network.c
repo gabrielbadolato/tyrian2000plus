@@ -20,7 +20,9 @@
 
 #include "episodes.h"
 #include "fonthand.h"
+#include "joystick.h"
 #include "keyboard.h"
+#include "lang.h"
 #include "logging.h"
 #include "nortsong.h"
 #include "opentyr.h"
@@ -31,6 +33,8 @@
 #include "video.h"
 
 #include <assert.h>
+#include <setjmp.h>
+#include <string.h>
 
 /*                              HERE BE DRAGONS!
  *
@@ -40,10 +44,14 @@
  * Hopefully it'll be rewritten some day.
  */
 
-#define NET_VERSION       2            // increment whenever networking changes might create incompatibility
+// increment whenever networking changes might create incompatibility; Tyrian 2000+
+// has its own numbers (its games differ from OpenTyrian2000's, and the connect
+// packet carries the game's version too), so the two refuse to play together
+#define NET_VERSION       0x2001
 #define NET_PORT          1333         // UDP
 
 #define NET_PACKET_SIZE   256
+#define NET_STATE_SIZE    36           // state packets: 28 as in OpenTyrian, then the state checksum
 #define NET_PACKET_QUEUE  16
 
 #define NET_RETRY         640          // ticks to wait for packet acknowledgment before resending
@@ -67,6 +75,23 @@ char *network_player_name = empty_string,
 static UDPsocket socket;
 static IPaddress ip;
 
+// Tyrian 2000+: the other player is a second copy of the game on this computer
+bool network_peer_local = false;
+
+// Tyrian 2000+: 127.x.x.x or one of this computer's own addresses
+static bool address_is_local(const IPaddress *address)
+{
+	if ((SDLNet_Read32(&address->host) >> 24) == 127)
+		return true;
+
+	IPaddress addresses[16];
+	const int n = SDLNet_GetLocalAddresses(addresses, (int)COUNTOF(addresses));
+	for (int i = 0; i < n; i++)
+		if (addresses[i].host == address->host)
+			return true;
+	return false;
+}
+
 UDPpacket *packet_out_temp;
 static UDPpacket *packet_temp;
 
@@ -85,7 +110,30 @@ static Uint32 last_state_in_tick = 0;
 
 static bool net_initialized = false;
 static bool connected = false, quit = false;
+
+// Tyrian 2000+: the host (player 1 from the Network Game menu) learns the
+// other player's address from the first connect packet
+static bool waiting_for_opponent = false;
+
+// Tyrian 2000+: the round trips measured with PACKET_PING, in ms
+#define NET_PINGS 12
+static Uint32 ping_ms[NET_PINGS];
+static int pings_received = 0;
+
+// Tyrian 2000+: a checksum of each frame's game state, by state sync number;
+// every NET_CHECK_INTERVAL-th state packet carries one, so that games that
+// went different ways stop instead of going on unseen
+#define NET_CHECK_INTERVAL 35
+#define NET_CHECK_RING     64
+static Uint32 frame_checksum[NET_CHECK_RING];
 #endif
+
+bool network_delay_fixed = false;  // --net-delay given: do not measure
+bool network_from_menu = false;    // started from the Network Game menu (not --net)
+char network_opponent_version[32] = "";
+
+// where the game goes back to after a network game ends (opentyr.c); NULL: the program closes
+jmp_buf *network_abort = NULL;
 
 uint thisPlayerNum = 0;  /* Player number on this PC (1 or 2) */
 
@@ -242,6 +290,17 @@ int network_check(void)
 		case 0:
 			break;
 		default:
+			// the host takes the address of whoever connects first
+			if (waiting_for_opponent && packet_temp->channel == -1 && packet_temp->len >= 4 &&
+			    SDLNet_Read16(&packet_temp->data[0]) == PACKET_CONNECT)
+			{
+				ip = packet_temp->address;
+				SDLNet_UDP_Bind(socket, 0, &ip);
+				packet_temp->channel = 0;
+				waiting_for_opponent = false;
+				network_peer_local = address_is_local(&ip);
+			}
+
 			if (packet_temp->channel == 0 && packet_temp->len >= 4)
 			{
 				switch (SDLNet_Read16(&packet_temp->data[0]))
@@ -381,6 +440,20 @@ int network_check(void)
 						}
 						break;
 
+					case PACKET_PING:
+						SDLNet_Write16(PACKET_PONG, &packet_temp->data[0]);
+						packet_temp->len = 8;
+						if (!SDLNet_UDP_Send(socket, 0, packet_temp))
+							logError("SDLNet_UDP_Send: %s", SDLNet_GetError());
+						last_in_tick = SDL_GetTicks();
+						break;
+
+					case PACKET_PONG:
+						if (packet_temp->len >= 8 && pings_received < NET_PINGS)
+							ping_ms[pings_received++] = SDL_GetTicks() - SDLNet_Read32(&packet_temp->data[4]);
+						last_in_tick = SDL_GetTicks();
+						break;
+
 					default:
 						logWarn("Received unknown packet type %d.", SDLNet_Read16(&packet_temp->data[0]));
 						return 0;
@@ -426,12 +499,41 @@ void network_state_prepare(void)
 	else
 	{
 		packet_state_out[0] = SDLNet_AllocPacket(NET_PACKET_SIZE);
-		packet_state_out[0]->len = 28;
+		packet_state_out[0]->len = NET_STATE_SIZE;
 	}
 
 	SDLNet_Write16(PACKET_STATE, &packet_state_out[0]->data[0]);
 	SDLNet_Write16(last_state_out_sync, &packet_state_out[0]->data[2]);
-	memset(&packet_state_out[0]->data[4], 0, 28 - 4);
+	memset(&packet_state_out[0]->data[4], 0, NET_STATE_SIZE - 4);
+
+	// Tyrian 2000+: now and then, the state this frame started from
+	if (last_state_out_sync % NET_CHECK_INTERVAL == 0)
+	{
+		SDLNet_Write32(frame_checksum[last_state_out_sync % NET_CHECK_RING], &packet_state_out[0]->data[28]);
+		packet_state_out[0]->data[32] = 1;
+	}
+}
+
+void network_frame_state(Uint32 checksum)
+{
+	frame_checksum[last_state_out_sync % NET_CHECK_RING] = checksum;
+}
+
+// the other player's game started a frame from a different state than ours?
+// (sync: the packet's number; not data[2], which a packet rebuilt from the xor
+// packets has wrong)
+static void check_frame_state(const UDPpacket *packet, Uint16 sync)
+{
+	if (packet->len < NET_STATE_SIZE || packet->data[32] != 1)
+		return;
+
+	const Uint32 theirs = SDLNet_Read32(&packet->data[28]);
+	const Uint32 ours = frame_checksum[sync % NET_CHECK_RING];
+	if (theirs != ours)
+	{
+		logError("Network game out of sync at frame %u: checksum %08x here, %08x there.", sync, ours, theirs);
+		network_tyrian_halt(7, false);
+	}
 }
 
 // send state packet, xor packet if applicable
@@ -542,6 +644,8 @@ bool network_state_update(void)
 		}
 
 		last_state_in_tick = SDL_GetTicks();
+
+		check_frame_state(packet_state_in[0], (Uint16)(last_state_in_sync - 1));
 	}
 
 	return 1;
@@ -586,13 +690,64 @@ void network_state_reset(void)
 	last_state_in_tick = SDL_GetTicks();
 }
 
+// the release the game is ("v1.6" of "v1.6-3-gabcdef"): two players need the
+// same one, since a later version may play a level differently
+static void release_version(char *buffer, size_t size)
+{
+	SDL_strlcpy(buffer, opentyrian_version, size);
+	char *dash = strchr(buffer, '-');
+	if (dash != NULL)
+		*dash = '\0';
+}
+
+static int connect_packet(Uint16 episodes)
+{
+	char version[32];
+	release_version(version, sizeof(version));
+
+	network_prepare(PACKET_CONNECT);
+	SDLNet_Write16(NET_VERSION,   &packet_out_temp->data[4]);
+	SDLNet_Write16(network_delay, &packet_out_temp->data[6]);
+	SDLNet_Write16(episodes,      &packet_out_temp->data[8]);
+	SDLNet_Write16(thisPlayerNum, &packet_out_temp->data[10]);
+	const size_t nameLen = strlen(network_player_name);
+	memcpy(&packet_out_temp->data[12], network_player_name, nameLen + 1);
+	memcpy(&packet_out_temp->data[12 + nameLen + 1], version, strlen(version) + 1);
+	return 12 + (int)nameLen + 1 + (int)strlen(version) + 1;
+}
+
+// Esc (or B) while connecting?
+static bool connect_canceled(void)
+{
+	push_joysticks_as_keyboard();
+	handleSdlEvents();
+
+	KeyboardInput keyboardInput;
+	while (keyboardGetInput(&keyboardInput))
+		if (keyboardInput.scancode == SDL_SCANCODE_ESCAPE)
+			return true;
+	return false;
+}
+
 // attempt to punch through firewall by firing off UDP packets at the opponent
 // exchange game information
+// Tyrian 2000+: without network_opponent_host, waits for anyone to connect
+// (the host); returns -1 if the player pressed Esc meanwhile
 int network_connect(void)
 {
-	SDLNet_ResolveHost(&ip, network_opponent_host, network_opponent_port);
+	waiting_for_opponent = network_opponent_host == NULL;
+	if (!waiting_for_opponent)
+	{
+		if (SDLNet_ResolveHost(&ip, network_opponent_host, network_opponent_port) != 0)
+		{
+			logError("SDLNet_ResolveHost: %s", SDLNet_GetError());
+			network_tyrian_halt(3, false);
+			return -1;
+		}
 
-	SDLNet_UDP_Bind(socket, 0, &ip);
+		SDLNet_UDP_Bind(socket, 0, &ip);
+		network_peer_local = address_is_local(&ip);
+	}
 
 	Uint16 episodes = 0, episodes_local = 0;
 	assert(EPISODE_MAX <= 16);
@@ -603,28 +758,28 @@ int network_connect(void)
 	}
 	episodes_local = episodes;
 
-	assert(NET_PACKET_SIZE - 12 >= 20 + 1);
+	assert(NET_PACKET_SIZE - 12 >= 20 + 1 + 32);
 	if (strlen(network_player_name) > 20)
 		network_player_name[20] = '\0';
 
-connect_reset:
-	network_prepare(PACKET_CONNECT);
-	SDLNet_Write16(NET_VERSION, &packet_out_temp->data[4]);
-	SDLNet_Write16(network_delay,   &packet_out_temp->data[6]);
-	SDLNet_Write16(episodes_local,  &packet_out_temp->data[8]);
-	SDLNet_Write16(thisPlayerNum,   &packet_out_temp->data[10]);
-	strcpy((char *)&packet_out_temp->data[12], network_player_name);
-	network_send(12 + strlen(network_player_name) + 1); // PACKET_CONNECT
+	if (waiting_for_opponent)
+		goto connect_wait;
 
+connect_reset:
+	network_send(connect_packet(episodes_local)); // PACKET_CONNECT
+
+connect_wait:
 	// until opponent sends connect packet
 	while (true)
 	{
 		setFrameCount(1);
 
-		KeyboardInput keyboardInput;
-
-		if (keyboardGetInput(&keyboardInput) && keyboardInput.scancode == SDL_SCANCODE_ESCAPE)
-			network_tyrian_halt(0, false);
+		if (connect_canceled())
+		{
+			if (!network_from_menu)
+				network_tyrian_halt(0, false);
+			return -1;
+		}
 
 		// never timeout
 		last_in_tick = SDL_GetTicks();
@@ -637,21 +792,60 @@ connect_reset:
 		waitUntilElapsed();
 	}
 
+	// the host answers once it knows where to
+	if (last_out_sync == 0)
+		network_send(connect_packet(episodes_local)); // PACKET_CONNECT
+
 connect_again:
 	if (SDLNet_Read16(&packet_in[0]->data[4]) != NET_VERSION)
 	{
 		logError("Network version did not match opponent's.");
 		network_tyrian_halt(4, true);
+		return -1;
 	}
-	if (SDLNet_Read16(&packet_in[0]->data[6]) != network_delay)
+	if (thisPlayerNum == 2)
 	{
-		logError("Network delay did not match opponent's.");
-		network_tyrian_halt(5, true);
+		// the host chooses the delay (Tyrian 2000+: it measures the connection
+		// before the first level and sends the delay with the episode)
+		network_delay = SDLNet_Read16(&packet_in[0]->data[6]);
+		if (network_delay < 1 || network_delay * 2 > NET_PACKET_QUEUE - 2)
+			network_delay = 1 + 1;
 	}
 	if (SDLNet_Read16(&packet_in[0]->data[10]) == thisPlayerNum)
 	{
 		logError("Player number conflicts with opponent's.");
 		network_tyrian_halt(6, true);
+		return -1;
+	}
+
+	{
+		// after the name: the version, each ending with '\0'
+		const int len = packet_in[0]->len;
+		const char *name = (const char *)&packet_in[0]->data[12];
+		const size_t space = (size_t)(len > 12 ? len - 12 : 0);
+		const char *nameEnd = memchr(name, '\0', space);
+		const size_t nameLen = MIN(nameEnd != NULL ? (size_t)(nameEnd - name) : space, 20);
+		char theirVersion[32] = "";
+		if (nameEnd != NULL)
+		{
+			const size_t versionSpace = space - (size_t)(nameEnd + 1 - name);
+			memcpy(theirVersion, nameEnd + 1, MIN(versionSpace, sizeof(theirVersion) - 1));
+		}
+		char version[32];
+		release_version(version, sizeof(version));
+		if (strcmp(theirVersion, version) != 0)
+		{
+			logError("Game version %s did not match opponent's (%.31s).", version, theirVersion);
+			SDL_strlcpy(network_opponent_version, theirVersion, sizeof(network_opponent_version));
+			network_tyrian_halt(8, true);
+			return -1;
+		}
+
+		if (network_opponent_name != empty_string)
+			free(network_opponent_name);
+		network_opponent_name = malloc(nameLen + 1);
+		memcpy(network_opponent_name, name, nameLen);
+		network_opponent_name[nameLen] = '\0';
 	}
 
 	episodes = SDLNet_Read16(&packet_in[0]->data[8]);
@@ -659,9 +853,6 @@ connect_again:
 		episodeAvail[i] &= (episodes & 1);
 		episodes >>= 1;
 	}
-
-	network_opponent_name = malloc(packet_in[0]->len - 12 + 1);
-	strcpy(network_opponent_name, (char *)&packet_in[0]->data[12]);
 
 	network_update();
 
@@ -683,17 +874,96 @@ connect_again:
 
 	// send another packet since sometimes the network syncs without both connect packets exchanged
 	// there should be a better way to handle this
-	network_prepare(PACKET_CONNECT);
-	SDLNet_Write16(NET_VERSION, &packet_out_temp->data[4]);
-	SDLNet_Write16(network_delay,   &packet_out_temp->data[6]);
-	SDLNet_Write16(episodes_local,  &packet_out_temp->data[8]);
-	SDLNet_Write16(thisPlayerNum,   &packet_out_temp->data[10]);
-	strcpy((char *)&packet_out_temp->data[12], network_player_name);
-	network_send(12 + strlen(network_player_name) + 1); // PACKET_CONNECT
+	network_send(connect_packet(episodes_local)); // PACKET_CONNECT
 
 	connected = true;
 
 	return 0;
+}
+
+// Tyrian 2000+: the host times a few round trips and chooses the delay that
+// keeps the game at full speed: a player's input must arrive within the delay,
+// in frames of 1/35 s; the other side answers from any of its waiting loops
+void network_measure_delay(void)
+{
+	if (network_delay_fixed)
+		return;
+
+	pings_received = 0;
+	const Uint32 start = SDL_GetTicks();
+	for (int sent = 0; SDL_GetTicks() - start < 2000 && pings_received < NET_PINGS; )
+	{
+		if (sent < NET_PINGS && SDL_GetTicks() - start >= (Uint32)sent * 100)
+		{
+			SDLNet_Write16(PACKET_PING, &packet_out_temp->data[0]);
+			SDLNet_Write16(0, &packet_out_temp->data[2]);
+			SDLNet_Write32(SDL_GetTicks(), &packet_out_temp->data[4]);
+			network_send_no_ack(8);
+			sent++;
+		}
+
+		if (network_check() == 0)
+			SDL_Delay(1);
+	}
+
+	if (pings_received == 0)
+		return;  // keep the delay
+
+	// the second slowest trip (one may be a fluke), half of it each way, with room for jitter
+	Uint32 sorted[NET_PINGS];
+	memcpy(sorted, ping_ms, sizeof(Uint32) * pings_received);
+	for (int i = 1; i < pings_received; i++)
+		for (int j = i; j > 0 && sorted[j - 1] > sorted[j]; j--)
+		{
+			const Uint32 t = sorted[j - 1];
+			sorted[j - 1] = sorted[j];
+			sorted[j] = t;
+		}
+	const Uint32 rtt = sorted[pings_received >= 2 ? pings_received - 2 : 0];
+
+	int delay = 1 + (int)((rtt / 2 + 15 + 28) / 29);  // 1000 / 35 = 28.6 ms a frame
+	const int maxDelay = (NET_PACKET_QUEUE - 2) / 2;
+	if (delay < 1 + 1)
+		delay = 1 + 1;
+	if (delay > maxDelay)
+		delay = maxDelay;
+
+	logInfo("Network: round trip %u ms (%d measured), delay %d frames.", rtt, pings_received, delay - 1);
+	network_delay = delay;
+}
+
+// the network game is over: back to the title screen (or the program closes,
+// if the game was started with --net); the socket is closed and the queues emptied
+bool network_is_connected(void)
+{
+	return connected;
+}
+
+void network_close(void)
+{
+	for (int i = 0; i < NET_PACKET_QUEUE; i++)
+	{
+		SDLNet_FreePacket(packet_in[i]);
+		SDLNet_FreePacket(packet_out[i]);
+		packet_in[i] = packet_out[i] = NULL;
+	}
+	network_state_reset();
+	SDLNet_FreePacket(packet_temp);
+	SDLNet_FreePacket(packet_out_temp);
+	packet_temp = packet_out_temp = NULL;
+
+	if (socket != NULL)
+		SDLNet_UDP_Close(socket);
+	socket = NULL;
+
+	last_out_sync = queue_in_sync = queue_out_sync = last_ack_sync = 0;
+	last_in_tick = last_out_tick = 0;
+	net_initialized = connected = quit = waiting_for_opponent = false;
+	isNetworkGame = false;
+	network_from_menu = false;
+	thisPlayerNum = 0;
+
+	SDLNet_Quit();
 }
 
 // something has gone wrong :(
@@ -707,6 +977,8 @@ void network_tyrian_halt(unsigned int err, bool attempt_sync)
 		"Network version mismatch.",
 		"Network delay mismatch.",
 		"Network player number conflict.",
+		"The two games went out of step.",
+		"The other player has another version (%s).",
 	};
 
 	quit = true;
@@ -714,12 +986,15 @@ void network_tyrian_halt(unsigned int err, bool attempt_sync)
 	if (err >= COUNTOF(err_msg))
 		err = 0;
 
+	char text[128];
+	snprintf(text, sizeof(text), tr(err_msg[err]), network_opponent_version);
+
 	fade_black(10);
 
 	VGAScreen = VGAScreenSeg;
 
 	JE_loadPic(VGAScreen, 2, false);
-	JE_dString(VGAScreen, JE_fontCenter(err_msg[err], SMALL_FONT_SHAPES), 140, err_msg[err], SMALL_FONT_SHAPES);
+	JE_dString(VGAScreen, JE_fontCenter(text, SMALL_FONT_SHAPES), 140, text, SMALL_FONT_SHAPES);
 
 	JE_showVGA();
 	fade_palette(colors, 10, 0, 255);
@@ -738,6 +1013,12 @@ void network_tyrian_halt(unsigned int err, bool attempt_sync)
 		waitUntilGetInput();
 
 	fade_black(10);
+
+	if (network_abort != NULL && network_from_menu)
+	{
+		network_close();
+		longjmp(*network_abort, 1);
+	}
 
 	SDLNet_Quit();
 
@@ -760,10 +1041,12 @@ int network_init(void)
 		return -1;
 	}
 
-	socket = SDLNet_UDP_Open(network_player_port);
+	// the one joining takes any free port: the host answers wherever it came from
+	socket = SDLNet_UDP_Open(network_from_menu && network_opponent_host != NULL ? 0 : network_player_port);
 	if (!socket)
 	{
 		logError("SDLNet_UDP_Open: %s", SDLNet_GetError());
+		SDLNet_Quit();
 		return -2;
 	}
 

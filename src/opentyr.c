@@ -211,9 +211,9 @@ static const char *getLanguagePickerItem(size_t i, char *buffer, size_t bufferSi
 	return lang_setting_name(i);
 }
 
-// waits for a key press and assigns it to keySettings[i], swapping with the
-// action that used it before; the value being changed is at (x, y)
-static void captureKeySetting(size_t i, int x, int y, int w, int xStatus, const char *status)
+// waits for a key press and assigns it to keys[i] (keySettings or keySettings2),
+// swapping with the action that used it before; the value being changed is at (x, y)
+static void captureKeySetting(SDL_Scancode *keys, size_t i, int x, int y, int w, int xStatus, const char *status)
 {
 	// replace the status text
 	memcpy((Uint8 *)VGAScreen->pixels + VGAScreen->pitch * 188, (Uint8 *)VGAScreen2->pixels + VGAScreen2->pitch * 188, (size_t)VGAScreen->pitch * 12);
@@ -265,15 +265,15 @@ static void captureKeySetting(size_t i, int x, int y, int w, int xStatus, const 
 	// already used? then swap
 	for (size_t j = 0; j < COUNTOF(keySettings); ++j)
 	{
-		if (keySettings[j] == scancode)
+		if (keys[j] == scancode)
 		{
-			keySettings[j] = keySettings[i];
+			keys[j] = keys[i];
 			break;
 		}
 	}
 
 	JE_playSampleNum(S_CLICK);
-	keySettings[i] = scancode;
+	keys[i] = scancode;
 }
 
 // opens on the given page and leaves when backing out of it
@@ -335,6 +335,7 @@ void setupMenuPage(SetupPage page)
 		MENU_ITEM_UPDATE_CHECK,
 		MENU_ITEM_LANGUAGE,
 		MENU_ITEM_KEYBOARD,
+		MENU_ITEM_KEYBOARD2,
 		MENU_ITEM_JOYSTICK,
 		MENU_ITEM_CONTROLLER_MAP,
 		MENU_ITEM_MOUSE,
@@ -373,6 +374,7 @@ void setupMenuPage(SetupPage page)
 		MENU_SOUND,
 		MENU_CONTROLS,
 		MENU_KEYBOARD,
+		MENU_KEYBOARD2,
 		MENU_JOYSTICK,
 		MENU_JOYSTICK_BUTTONS,
 		MENU_MOUSE,
@@ -452,6 +454,7 @@ void setupMenuPage(SetupPage page)
 			.header = "Controls",
 			.items = {
 				{ MENU_ITEM_KEYBOARD, "Keyboard...", "Change the keyboard keys." },
+				{ MENU_ITEM_KEYBOARD2, "Keyboard 2...", "Keys of a second player on the same keyboard." },
 				{ MENU_ITEM_JOYSTICK, "Controller...", "Change the controller (gamepad) settings." },
 				{ MENU_ITEM_CONTROLLER_MAP, "Controller Map...", "See what each controller button does." },
 				{ MENU_ITEM_MOUSE, "Mouse...", "Change the mouse buttons." },
@@ -474,6 +477,24 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_KEY + 5, "Change Fire", "Press Enter, then the new key." },
 				{ MENU_ITEM_KEY + 6, "Left Sidekick", "Press Enter, then the new key." },
 				{ MENU_ITEM_KEY + 7, "Right Sidekick", "Press Enter, then the new key." },
+				{ MENU_ITEM_KEYS_RESET, "Reset to Defaults", "Restore the default keys." },
+				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
+				{ -1 }
+			},
+		},
+		// Tyrian 2000+: the keys of "Keyboard 2", a device of 2-player games
+		[MENU_KEYBOARD2] = {
+			.header = "Second Player",
+			.compact = true,
+			.items = {
+				{ MENU_ITEM_KEY + 0, "Up", "For two players on one keyboard." },
+				{ MENU_ITEM_KEY + 1, "Down", "For two players on one keyboard." },
+				{ MENU_ITEM_KEY + 2, "Left", "For two players on one keyboard." },
+				{ MENU_ITEM_KEY + 3, "Right", "For two players on one keyboard." },
+				{ MENU_ITEM_KEY + 4, "Fire", "For two players on one keyboard." },
+				{ MENU_ITEM_KEY + 5, "Change Fire", "For two players on one keyboard." },
+				{ MENU_ITEM_KEY + 6, "Left Sidekick", "For two players on one keyboard." },
+				{ MENU_ITEM_KEY + 7, "Right Sidekick", "For two players on one keyboard." },
 				{ MENU_ITEM_KEYS_RESET, "Reset to Defaults", "Restore the default keys." },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
@@ -725,7 +746,7 @@ void setupMenuPage(SetupPage page)
 				break;
 
 			case MENU_ITEM_KEY:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, SDL_GetScancodeName(keySettings[menuItem->id - MENU_ITEM_KEY]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, SDL_GetScancodeName((currentMenu == MENU_KEYBOARD2 ? keySettings2 : keySettings)[menuItem->id - MENU_ITEM_KEY]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
 
 			case MENU_ITEM_JOYSTICK_NUMBER:
@@ -1061,6 +1082,9 @@ void setupMenuPage(SetupPage page)
 				case MENU_ITEM_KEYBOARD:
 					subMenu = MENU_KEYBOARD;
 					break;
+				case MENU_ITEM_KEYBOARD2:
+					subMenu = MENU_KEYBOARD2;
+					break;
 				case MENU_ITEM_JOYSTICK:
 					subMenu = MENU_JOYSTICK;
 					break;
@@ -1091,14 +1115,17 @@ void setupMenuPage(SetupPage page)
 				{
 					JE_playSampleNum(S_CLICK);
 
-					captureKeySetting(selectedMenuItemId - MENU_ITEM_KEY, xMenuItemValue, ySelected, wMenuItemValue, xMenuItemName, "Press the new key (Esc to cancel).");
+					captureKeySetting(currentMenu == MENU_KEYBOARD2 ? keySettings2 : keySettings, selectedMenuItemId - MENU_ITEM_KEY, xMenuItemValue, ySelected, wMenuItemValue, xMenuItemName, "Press the new key (Esc to cancel).");
 					break;
 				}
 				case MENU_ITEM_KEYS_RESET:
 				{
 					JE_playSampleNum(S_CLICK);
 
-					memcpy(keySettings, defaultKeySettings, sizeof(keySettings));
+					if (currentMenu == MENU_KEYBOARD2)
+						memcpy(keySettings2, defaultKeySettings2, sizeof(keySettings2));
+					else
+						memcpy(keySettings, defaultKeySettings, sizeof(keySettings));
 					break;
 				}
 				case MENU_ITEM_JOYSTICK_NUMBER:
@@ -1797,6 +1824,20 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 #endif
 	}
+
+#ifdef WITH_NETWORK
+	// Tyrian 2000+: a network game started from the menu ends back at the title
+	// screen (network_tyrian_halt), wherever it was
+	static jmp_buf networkAbort;
+	if (setjmp(networkAbort) != 0)
+	{
+		VGAScreen = VGAScreenSeg;
+		mouseSetRelative(false);
+		twoPlayerMode = false;
+		stoppedDemo = true;  // no intro logos again
+	}
+	network_abort = &networkAbort;
+#endif
 
 	for (; ; )
 	{

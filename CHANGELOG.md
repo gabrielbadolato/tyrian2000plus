@@ -8,7 +8,7 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## Next version
+## v1.7 (2026-10-23)
 
 - Fixed: in the pause menu, Graphics page, the name "Smooth Motion" ran into
   its value. The game joining a network game now checks what the host sends

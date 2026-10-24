@@ -39,6 +39,11 @@ that browser, and you can take them to the computer or back (see
 
 What changed in each version is in [CHANGELOG.md](CHANGELOG.md).
 
+**Project status:** version 1.7 is the last big update for a while. Fixes
+will still be looked at when needed: if something goes wrong, please report
+it on the [Issues page](https://github.com/gabrielbadolato/tyrian2000plus/issues)
+or in the itch.io comments.
+
 ## What it is
 
 Tyrian is a vertical scrolling shooter released in 1995. It is set in the year

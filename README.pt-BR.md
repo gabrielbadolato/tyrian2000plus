@@ -39,6 +39,11 @@ naquele navegador, e dá para levá-los ao computador e trazer de volta (veja
 
 O que mudou em cada versão está no [CHANGELOG.md](CHANGELOG.md) (em inglês).
 
+**Situação do projeto:** a versão 1.7 é a última grande atualização por um
+tempo. Correções continuam sendo vistas quando for preciso: se algo der
+errado, avise na [página de Issues](https://github.com/gabrielbadolato/tyrian2000plus/issues)
+ou nos comentários do itch.io.
+
 ## O que é
 
 Tyrian é um jogo de nave com rolagem vertical, lançado em 1995. A história se

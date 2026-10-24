@@ -8,7 +8,7 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## Next version
+## v1.7.1 (2026-10-24)
 
 - Fixed: two players, ship menu: Enter on the keyboard could be taken for a
   controller's button on the Player 1/2 Input rows. Loading a 2-player saved

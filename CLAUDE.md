@@ -536,6 +536,11 @@ None é só 320x200): a maior altura múltipla de 200 em 85% da área livre, lar
 em 4:3 (1067x800 em 1080p), no mínimo 640x400. Janela salva com 640x400 (o
 tamanho de antes da v1.5, nunca mexido) conta como não salva.
 
+Opções de vídeo: Setup > Graphics (`src/opentyr.c`) e a página Graphics da
+pausa (`src/mainint.c`) mostram e mudam as opções pelo mesmo código
+(`src/gfxopts.c`: valores, nomes e o que cada escolha faz). Opção nova de
+vídeo entra lá e nas duas listas de itens.
+
 Brilho: Setup > Graphics > Brightness é o mesmo `gammaCorrection` da tecla
 F11 (salvo no tyrian.cfg); só vale dentro das fases.
 

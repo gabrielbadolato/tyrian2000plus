@@ -8,7 +8,7 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
-## v1.7 (2026-10-23)
+## v1.7 (2026-10-24)
 
 - Fixed: in the pause menu, Graphics page, the name "Smooth Motion" ran into
   its value. The game joining a network game now checks what the host sends
@@ -31,7 +31,8 @@ change is in this repository's git log.
   delay itself, both need the same version, the two games check each other
   every second, and when someone quits or the connection drops both go back
   to the title screen instead of the game closing. The README explains how
-  to play over the internet. Two copies on the same computer keep playing
+  to play over the internet (there is no password, so open the port only
+  while playing). Two copies on the same computer keep playing
   when the window loses focus.
 
 ## v1.6 (2026-10-22)

@@ -246,6 +246,9 @@ tela de título.
   ou o [ZeroTier](https://www.zerotier.com) e usam o endereço que ela dá ao
   computador de quem criou. No Windows, permita o jogo quando o firewall
   perguntar. Conexão com muito atraso deixa os controles mais lentos.
+- Não há senha: enquanto você espera com a porta aberta para a internet,
+  quem chegar primeiro vira o outro jogador. Abra a porta só na hora de
+  jogar, ou use a rede virtual, que só os seus amigos alcançam.
 
 ## Onde fica cada opção
 

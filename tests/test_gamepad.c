@@ -6,6 +6,7 @@
 #include "padglyph.h"
 #include "config.h"
 #include "osk.h"
+#include "keyboard.h"
 #include "SDL.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -517,6 +518,35 @@ int main(int argc, char *argv[])
 		advance(600);
 		poll();
 		SDL_FreeSurface(screen);
+	}
+
+	printf("[10] which controller pushed a key (menus of two players)\n");
+	{
+		KeyboardInput in;
+		handleSdlEvents();
+		while (keyboardGetInput(&in)) { }
+
+		// a key of the real keyboard: SDL leaves keysym.unused as whatever
+		// was on the stack, here a small number like a controller's
+		SDL_Event e;
+		memset(&e, 0, sizeof(e));
+		e.type = SDL_KEYDOWN;
+		e.key.state = SDL_PRESSED;
+		e.key.keysym.scancode = SDL_SCANCODE_RETURN;
+		e.key.keysym.sym = SDLK_RETURN;
+		e.key.keysym.unused = 2;
+		SDL_PushEvent(&e);
+		handleSdlEvents();
+		CHECK(keyboardGetInput(&in) && in.scancode == SDL_SCANCODE_RETURN && in.pad == 0);
+
+		push_pad_key(SDL_SCANCODE_RETURN, 1);
+		handleSdlEvents();
+		CHECK(keyboardGetInput(&in) && in.scancode == SDL_SCANCODE_RETURN && in.pad == 2);
+
+		push_key(SDL_SCANCODE_ESCAPE);  // the touch screen: no controller
+		handleSdlEvents();
+		CHECK(keyboardGetInput(&in) && in.scancode == SDL_SCANCODE_ESCAPE && in.pad == 0);
+		while (keyboardGetInput(&in)) { }
 	}
 
 	deinit_joysticks();

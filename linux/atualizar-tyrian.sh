@@ -395,6 +395,7 @@ EOF
 if [ -z "${TYRIAN_REEXEC:-}" ] && [ -f "$DEST/atualizar-tyrian.sh" ] \
     && [ "$(sha256sum < "$DEST/atualizar-tyrian.sh")" != "$SELF_SUM" ]; then
     busy_stop
+    rm -rf "$TMP"  # o exec não passa pelo trap de saída, que apagaria a pasta
     TYRIAN_REEXEC="$run_desc" exec bash "$DEST/atualizar-tyrian.sh"
 fi
 

@@ -17,8 +17,16 @@ mkdir -p "$OUT/obj"
 if [ -f build/sdl/lib/pkgconfig/sdl2.pc ]; then
     export PKG_CONFIG_PATH="$PWD/build/sdl/lib/pkgconfig"
 fi
-CFLAGS="-std=iso9899:1999 -O1 -g -DTARGET_UNIX $(pkg-config --cflags sdl2)"
-LIBS="$(pkg-config --static --libs sdl2) -lm"
+# The network game too, as the Makefile builds it when SDL2_net is there
+# (make_linux.sh builds it into build/sdl); without it the tests skip it.
+SDL_PKGS=sdl2
+NET_FLAGS=""
+if pkg-config --exists SDL2_net; then
+    SDL_PKGS="SDL2_net sdl2"
+    NET_FLAGS="-DWITH_NETWORK"
+fi
+CFLAGS="-std=iso9899:1999 -O1 -g -DTARGET_UNIX $NET_FLAGS $(pkg-config --cflags $SDL_PKGS)"
+LIBS="$(pkg-config --static --libs $SDL_PKGS) -lm"
 
 # CHANGELOG.md as the Makefile builds it into the program (What's New)
 sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/?/\\?/g' -e 's/\r$//' -e 's/^/"/' -e 's/$/",/' CHANGELOG.md > "$OUT/changelog.inc"

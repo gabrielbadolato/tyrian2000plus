@@ -111,6 +111,11 @@ const char *joystick_battery_name(int j);
 
 void push_key(SDL_Scancode key);
 void push_pad_key(SDL_Scancode key, int j);
+
+// Keys pushed by push_pad_key carry this in keysym.unused, plus 1 + the
+// controller: SDL leaves that field as it was on the stack for the keys of a
+// real keyboard, so a key counts as a controller's only with the mark.
+#define PAD_KEY_MARK 0x50AD0000u
 void push_joysticks_as_keyboard(void);
 
 void init_joysticks(void);

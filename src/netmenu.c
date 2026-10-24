@@ -143,9 +143,16 @@ static void drawItems(int selected, int *widths)
 	{
 		char line[96];
 		itemText(i, line, sizeof(line));
-		widths[i] = JE_textWidth(line, FONT_NORMAL);
+		// a long address (a host name) in the small font, so it stays on the screen
+		Font font = FONT_NORMAL;
+		widths[i] = JE_textWidth(line, font);
+		if (widths[i] > 320 - 2 * 8)
+		{
+			font = FONT_SMALL;
+			widths[i] = JE_textWidth(line, font);
+		}
 		const bool disabled = i == ITEM_JOIN && joinAddress[0] == '\0';
-		drawFontHvShadow(VGAScreen, xCenter - widths[i] / 2, yItems + dyItems * i, line, FONT_NORMAL, 15, -4 + (i == selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+		drawFontHvShadow(VGAScreen, xCenter - widths[i] / 2, yItems + dyItems * i + (font == FONT_SMALL ? 3 : 0), line, font, 15, (font == FONT_SMALL ? 0 : -4) + (i == selected ? (font == FONT_SMALL ? 4 : 2) : 0) + (disabled ? -4 : 0), false, font == FONT_SMALL ? 1 : 2);
 	}
 }
 

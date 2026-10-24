@@ -10,6 +10,8 @@ change is in this repository's git log.
 
 ## v1.7 (2026-10-24)
 
+- Title screen: while "Continue" is selected, a line at the bottom shows
+  which saved game it loads (name, episode and last level finished).
 - Fixed: in the pause menu, Graphics page, the name "Smooth Motion" ran into
   its value. The game joining a network game now checks what the host sends
   (episode, difficulty, delay) and ignores packets that are too short, so a

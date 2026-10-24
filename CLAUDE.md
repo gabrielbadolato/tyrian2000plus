@@ -251,7 +251,13 @@ ao Gabriel para testar no Deck.
 
 Continuar: item "Continue" na tela de título (`menuText[0]`, escondido sem
 jogo salvo), carrega `lastSaveSlot` (último slot salvo ou carregado,
-`last_save` na seção "gameplay"; sem ele, o "LAST LEVEL" do slot 11).
+`last_save` na seção "gameplay"; sem ele, o "LAST LEVEL" do slot 11). Com o
+Continue marcado, o rodapé mostra qual save ele abre ("Teste - Episode 1 -
+SAVARA", a fase é a última terminada, como no Load Game;
+`drawContinueSave()` em `src/tyrian2.c`), no lugar dos avisos de versão
+(que agora são desenhados a cada quadro e voltam com outro item marcado).
+Para caber sem encostar no "Quit", o menu com Continue começa em y=96
+(pedido do Gabriel em 2026-10-24: não mexer no menu nem sobrepor texto).
 
 Salvamento automático: o slot "LAST LEVEL" (11, ou 22 em dois jogadores; o
 jogador não salva nele) é gravado também ao chegar na nave (evento 'I' em

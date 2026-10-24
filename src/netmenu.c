@@ -152,7 +152,7 @@ static void drawItems(int selected, int *widths)
 			widths[i] = JE_textWidth(line, font);
 		}
 		const bool disabled = i == ITEM_JOIN && joinAddress[0] == '\0';
-		drawFontHvShadow(VGAScreen, xCenter - widths[i] / 2, yItems + dyItems * i + (font == FONT_SMALL ? 3 : 0), line, font, 15, -4 + (i == selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+		drawFontHvShadow(VGAScreen, xCenter - widths[i] / 2, yItems + dyItems * i + (font == FONT_SMALL ? 3 : 0), line, font, 15, (font == FONT_SMALL ? 0 : -4) + (i == selected ? (font == FONT_SMALL ? 4 : 2) : 0) + (disabled ? -4 : 0), false, font == FONT_SMALL ? 1 : 2);
 	}
 }
 

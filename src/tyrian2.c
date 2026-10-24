@@ -3469,6 +3469,36 @@ static int continueSaveSlot(void)
 	return 0;
 }
 
+// the line at the bottom of the title screen while Continue is selected, saying
+// which saved game it loads: "Last Level - Episode 2 - SAVARA" (the level is the
+// last one finished, as in Load Game).  It goes below the menu, clear of the
+// version at the left.
+static void drawContinueSave(SDL_Surface *surface, int slot, int xVersionEnd)
+{
+	const JE_SaveFileType *const save = &saveFiles[slot - 1];
+
+	char name[16];
+	if (slot == 11 || slot == 22)
+		SDL_strlcpy(name, tr("Last Level"), sizeof(name));
+	else
+		SDL_strlcpy(name, save->name, sizeof(name));
+	for (int i = (int)strlen(name) - 1; i >= 0 && name[i] == ' '; --i)
+		name[i] = '\0';
+
+	char episode[24];
+	snprintf(episode, sizeof(episode), tr("Episode %d"), save->episode);
+
+	char text[64];
+	snprintf(text, sizeof(text), "%s - %s - %s", name, episode, tr(save->levelName));
+
+	const int w = JE_textWidth(text, FONT_SMALL);
+	int x = surface->w / 2 - w / 2;
+	if (x < xVersionEnd + 8)
+		x = xVersionEnd + 8;
+
+	drawFontHvShadow(surface, x, 192, text, FONT_SMALL, 15, 4, true, 1);
+}
+
 static void draw_logo(int yLogo, int y2K)
 {
 	memcpy(VGAScreen->pixels, VGAScreen2->pixels, VGAScreen->pitch * VGAScreen->h);
@@ -3537,8 +3567,9 @@ bool titleScreen(void)
 			if (!shown[selectedIndex])
 				selectedIndex = MENU_ITEM_NEW_GAME;
 
-			// the original spacing; with Continue the list closes up a little
-			yMenuItems = rows > 7 ? 98 : 104;
+			// the original spacing; with Continue the list closes up a little and
+			// goes up a little, leaving room for the Continue line below it
+			yMenuItems = rows > 7 ? 96 : 104;
 			hMenuItem = rows > 7 ? 12 : 13;
 
 			play_song(SONG_TITLE);
@@ -3546,8 +3577,10 @@ bool titleScreen(void)
 			JE_loadPic(VGAScreen, 4, false);
 
 			drawFontHvShadow(VGAScreen, 2, 192, opentyrian_version, FONT_SMALL, 15, 0, false, 1);
-			updateNoticeShown = drawUpdateNotice(VGAScreen, 192);
-			whatsNewNoticeShown = !updateNoticeShown && drawWhatsNewNotice(VGAScreen);
+			// the notices are drawn over the menu each time (not here) because the
+			// Continue line takes their place while Continue is selected
+			updateNoticeShown = update_check_newer_version() != NULL;
+			whatsNewNoticeShown = !updateNoticeShown && whatsnew_notice_version() != NULL;
 
 			if (moveTyrianLogoUp)
 			{
@@ -3627,6 +3660,18 @@ bool titleScreen(void)
 		// Highlight selected menu item.
 		drawFontHvAligned(VGAScreen, VGAScreen->w / 2, yMenuItems + hMenuItem * row[selectedIndex], menuText[selectedIndex], FONT_NORMAL, ALIGN_CENTER, 15, -1);
 
+		if (selectedIndex == MENU_ITEM_CONTINUE)
+		{
+			drawContinueSave(VGAScreen, continueSlot, 2 + JE_textWidth(opentyrian_version, FONT_SMALL));
+		}
+		else
+		{
+			if (whatsNewNoticeShown)
+				drawWhatsNewNotice(VGAScreen);
+			if (updateNoticeShown)
+				drawUpdateNotice(VGAScreen, whatsNewNoticeShown ? 182 : 192);
+		}
+
 		JE_mouseStartFilter(0xF0);
 		JE_showVGA();
 		JE_mouseReplace();
@@ -3639,7 +3684,7 @@ bool titleScreen(void)
 			// The update check answered after the screen was drawn.
 			if (!updateNoticeShown && update_check_newer_version() != NULL)
 			{
-				updateNoticeShown = drawUpdateNotice(VGAScreen2, whatsNewNoticeShown ? 182 : 192);
+				updateNoticeShown = true;
 				redraw = true;
 				break;
 			}

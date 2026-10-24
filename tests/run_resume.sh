@@ -31,8 +31,16 @@ mkdir -p "$OUT/obj" "$RUNS"
 if [ -f build/sdl/lib/pkgconfig/sdl2.pc ]; then
     export PKG_CONFIG_PATH="$PWD/build/sdl/lib/pkgconfig"
 fi
-CFLAGS="${EXTRA_CFLAGS:-} -std=iso9899:1999 -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -DTARGET_UNIX $(pkg-config --cflags sdl2)"
-LIBS="$(pkg-config --static --libs sdl2) -lm"
+# The network game too, as the Makefile builds it when SDL2_net is there
+# (make_linux.sh builds it into build/sdl); without it the tests skip it.
+SDL_PKGS=sdl2
+NET_FLAGS=""
+if pkg-config --exists SDL2_net; then
+    SDL_PKGS="SDL2_net sdl2"
+    NET_FLAGS="-DWITH_NETWORK"
+fi
+CFLAGS="${EXTRA_CFLAGS:-} -std=iso9899:1999 -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -DTARGET_UNIX $NET_FLAGS $(pkg-config --cflags $SDL_PKGS)"
+LIBS="$(pkg-config --static --libs $SDL_PKGS) -lm"
 
 # SKIP_BUILD=1: use the program built by the last run
 if [ "${SKIP_BUILD:-0}" != 1 ]; then

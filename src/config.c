@@ -739,11 +739,9 @@ void JE_loadGame(JE_byte slot)
 	inputDevice[1] = saveFiles[slot-1].input2;
 	if (twoPlayerMode)
 	{
-		// Tyrian 2000+: keyboard and mouse were the only choice of a new game
-		// before; with controllers connected, they are probably not wanted
-		if (inputDevice[0] == INPUT_DEVICE_KEYBOARD && inputDevice[1] == INPUT_DEVICE_MOUSE &&
-		    joysticks > 0)
-			input_devices_default();
+		// Tyrian 2000+: the devices saved stay (keyboard and mouse may be a
+		// choice); only one that is not there now, such as a controller
+		// unplugged, is replaced.  On the ship menu, A on a controller takes a row.
 		input_devices_check();
 	}
 

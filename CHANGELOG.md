@@ -8,6 +8,15 @@ Tyrian 2000+ is a modified version of
 its source files have been changed by this project; the full history of every
 change is in this repository's git log.
 
+## Next version
+
+- Fixed: two players, ship menu: Enter on the keyboard could be taken for a
+  controller's button on the Player 1/2 Input rows. Loading a 2-player saved
+  game keeps the keyboard and mouse if that is what was saved. In the
+  Network Game menu, a long address fits on the screen.
+- Steam Deck: the installer script no longer leaves its download in a
+  temporary folder when it updates itself.
+
 ## v1.7 (2026-10-24)
 
 - Title screen: while "Continue" is selected, a line at the bottom shows

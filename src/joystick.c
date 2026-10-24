@@ -518,7 +518,7 @@ void push_pad_key(SDL_Scancode key, int j)
 	memset(&e.key.keysym, 0, sizeof(e.key.keysym));
 
 	e.key.keysym.scancode = key;
-	e.key.keysym.unused = (Uint32)(j + 1);
+	e.key.keysym.unused = PAD_KEY_MARK | (Uint32)(j + 1);
 	e.key.state = SDL_RELEASED;
 
 	e.type = SDL_KEYDOWN;

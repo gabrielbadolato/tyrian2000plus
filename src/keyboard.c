@@ -286,7 +286,10 @@ void handleSdlEvents(void)
 					input->scancode = ev.key.keysym.scancode;
 					input->mod = ev.key.keysym.mod;
 					input->ch = 0;
-					input->pad = ev.key.keysym.unused <= 255 ? (Uint8)ev.key.keysym.unused : 0;
+					// SDL does not clear keysym.unused for a real key: only a
+					// key pushed for a controller (sym 0, with the mark) has one
+					input->pad = ev.key.keysym.sym == 0 && (ev.key.keysym.unused & 0xFFFF0000u) == PAD_KEY_MARK
+						? (Uint8)(ev.key.keysym.unused & 0xFF) : 0;
 					keyboardInputsBack = keyboardInputsBack == COUNTOF(keyboardInputs) - 1 ? 0 : keyboardInputsBack + 1;
 					keyboardInputsCount += 1;
 				}

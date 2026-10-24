@@ -29,6 +29,7 @@
 #include "font.h"
 #include "fonthand.h"
 #include "gallery.h"
+#include "gfxopts.h"
 #include "helptext.h"
 #include "joystick.h"
 #include "jukebox.h"
@@ -74,31 +75,26 @@
 const char *opentyrian_str = "Tyrian 2000+";
 const char *opentyrian_version = OPENTYRIAN_VERSION;
 
-static size_t getDisplayPickerItemsCount(void)
-{
-	return 1 + (size_t)SDL_GetNumVideoDisplays();
-}
+// the picker of a Graphics option lists its values (gfxopts.c)
+#define GFX_PICKER(name, option) \
+	static size_t get##name##PickerItemsCount(void) \
+	{ \
+		return gfx_option_count(option); \
+	} \
+	static const char *get##name##PickerItem(size_t i, char *buffer, size_t bufferSize) \
+	{ \
+		return gfx_option_value_name(option, i, buffer, bufferSize); \
+	}
 
-static const char *getDisplayPickerItem(size_t i, char *buffer, size_t bufferSize)
-{
-	if (i == 0)
-		return tr("Window");
+GFX_PICKER(Display, GFX_OPT_DISPLAY)
+GFX_PICKER(Scaler, GFX_OPT_SCALER)
+GFX_PICKER(ScalingMode, GFX_OPT_SCALING_MODE)
+GFX_PICKER(SharpBilinear, GFX_OPT_SHARP_BILINEAR)
+GFX_PICKER(VSync, GFX_OPT_VSYNC)
+GFX_PICKER(SmoothMotion, GFX_OPT_SMOOTH_MOTION)
+GFX_PICKER(Brightness, GFX_OPT_BRIGHTNESS)
 
-	snprintf(buffer, bufferSize, tr("Display %d"), (int)i);
-	return buffer;
-}
-
-static size_t getScalerPickerItemsCount(void)
-{
-	return (size_t)scalers_count;
-}
-
-static const char *getScalerPickerItem(size_t i, char *buffer, size_t bufferSize)
-{
-	(void)buffer, (void)bufferSize;
-
-	return scalers[i].name;
-}
+#undef GFX_PICKER
 
 static size_t getOffOnPickerItemsCount(void)
 {
@@ -110,20 +106,6 @@ static const char *getOffOnPickerItem(size_t i, char *buffer, size_t bufferSize)
 	(void)buffer, (void)bufferSize;
 
 	return i == 0 ? tr("Off") : tr("On");
-}
-
-static const char *const brightnessNames[] = { "Normal", "Bright", "Brighter", "Brightest" };
-
-static size_t getBrightnessPickerItemsCount(void)
-{
-	return COUNTOF(brightnessNames);
-}
-
-static const char *getBrightnessPickerItem(size_t i, char *buffer, size_t bufferSize)
-{
-	(void)buffer, (void)bufferSize;
-
-	return tr(brightnessNames[i]);
 }
 
 static const char *const vibrationNames[RUMBLE_STRENGTHS] = { "Off", "Weak", "Strong" };
@@ -173,18 +155,6 @@ static const char *getMouseActionPickerItem(size_t i, char *buffer, size_t buffe
 	(void)buffer, (void)bufferSize;
 
 	return tr(mouseActionNames[i]);
-}
-
-static size_t getScalingModePickerItemsCount(void)
-{
-	return (size_t)ScalingMode_MAX;
-}
-
-static const char *getScalingModePickerItem(size_t i, char *buffer, size_t bufferSize)
-{
-	(void)buffer, (void)bufferSize;
-
-	return tr(scaling_mode_names[i]);
 }
 
 static size_t getGameSpeedPickerItemsCount(void)
@@ -432,9 +402,9 @@ void setupMenuPage(SetupPage page)
 				{ MENU_ITEM_DISPLAY, "Display:", "Change the display mode.", getDisplayPickerItemsCount, getDisplayPickerItem },
 				{ MENU_ITEM_SCALER, "Scaler:", "Change the pixel art scaling algorithm.", getScalerPickerItemsCount, getScalerPickerItem },
 				{ MENU_ITEM_SCALING_MODE, "Scaling Mode:", "Change the scaling mode.", getScalingModePickerItemsCount, getScalingModePickerItem },
-				{ MENU_ITEM_SHARP_BILINEAR, "Sharp Bilinear:", "Keep pixels even when the scale is not exact.", getOffOnPickerItemsCount, getOffOnPickerItem },
-				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getOffOnPickerItemsCount, getOffOnPickerItem },
-				{ MENU_ITEM_SMOOTH_MOTION, "Smooth Motion:", "Show the levels at the display's refresh rate.", getOffOnPickerItemsCount, getOffOnPickerItem },
+				{ MENU_ITEM_SHARP_BILINEAR, "Sharp Bilinear:", "Keep pixels even when the scale is not exact.", getSharpBilinearPickerItemsCount, getSharpBilinearPickerItem },
+				{ MENU_ITEM_VSYNC, "VSync:", "Sync to the display to prevent tearing.", getVSyncPickerItemsCount, getVSyncPickerItem },
+				{ MENU_ITEM_SMOOTH_MOTION, "Smooth Motion:", "Show the levels at the display's refresh rate.", getSmoothMotionPickerItemsCount, getSmoothMotionPickerItem },
 				{ MENU_ITEM_BRIGHTNESS, "Brightness:", "Brighten the levels (F11 also works in game).", getBrightnessPickerItemsCount, getBrightnessPickerItem },
 				{ MENU_ITEM_DONE, "Done", "Return to the previous menu." },
 				{ -1 }
@@ -590,6 +560,17 @@ void setupMenuPage(SetupPage page)
 
 	int joystickIndex = 0;  // controller being changed
 
+	// the option of a Graphics item (gfxopts.c), or GFX_OPT_NONE
+#define gfxOptionOf(id) ( \
+		(id) == MENU_ITEM_DISPLAY ? GFX_OPT_DISPLAY : \
+		(id) == MENU_ITEM_SCALER ? GFX_OPT_SCALER : \
+		(id) == MENU_ITEM_SCALING_MODE ? GFX_OPT_SCALING_MODE : \
+		(id) == MENU_ITEM_SHARP_BILINEAR ? GFX_OPT_SHARP_BILINEAR : \
+		(id) == MENU_ITEM_VSYNC ? GFX_OPT_VSYNC : \
+		(id) == MENU_ITEM_SMOOTH_MOTION ? GFX_OPT_SMOOTH_MOTION : \
+		(id) == MENU_ITEM_BRIGHTNESS ? GFX_OPT_BRIGHTNESS : \
+		GFX_OPT_NONE)
+
 	// changes the controller number, sensitivity or threshold by one step, wrapping around
 #define stepJoystickSetting(id, step) \
 	do { \
@@ -682,42 +663,12 @@ void setupMenuPage(SetupPage page)
 
 			drawFontHvShadow(VGAScreen, xMenuItemName, y, name, FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 
+			const GfxOption gfxOption = gfxOptionOf(menuItem->id);
+			if (gfxOption != GFX_OPT_NONE)
+				drawFontHvShadow(VGAScreen, xMenuItemValue, y, gfx_option_current_name(gfxOption, buffer, sizeof(buffer)), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
+
 			switch (MENU_ITEM_BASE(menuItem->id))
 			{
-			case MENU_ITEM_DISPLAY:;
-				const char *value = tr("Window");
-				if (fullscreen_display >= 0)
-				{
-					snprintf(buffer, sizeof(buffer), tr("Display %d"), fullscreen_display + 1);
-					value = buffer;
-				}
-
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, value, FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
-
-			case MENU_ITEM_SCALER:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, scalers[scaler].name, FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
-
-			case MENU_ITEM_SCALING_MODE:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(scaling_mode_names[scaling_mode]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
-
-			case MENU_ITEM_SHARP_BILINEAR:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, sharp_bilinear_enabled ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
-
-			case MENU_ITEM_VSYNC:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, vsync_enabled ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
-
-			case MENU_ITEM_SMOOTH_MOTION:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, smooth_motion ? tr("On") : tr("Off"), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
-
-			case MENU_ITEM_BRIGHTNESS:
-				drawFontHvShadow(VGAScreen, xMenuItemValue, y, tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]), FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
-				break;
 			case MENU_ITEM_GAME_SPEED:
 				drawFontHvShadow(VGAScreen, xMenuItemValue, y, gameSpeedText[gameSpeed - 1], FONT_NORMAL, 15, -3 + (selected ? 2 : 0) + (disabled ? -4 : 0), false, 2);
 				break;
@@ -1307,59 +1258,17 @@ void setupMenuPage(SetupPage page)
 					break;
 				}
 				case MENU_ITEM_DISPLAY:
-				{
-					JE_playSampleNum(S_CLICK);
-
-					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = (size_t)(fullscreen_display + 1);
-					break;
-				}
 				case MENU_ITEM_SCALER:
-				{
-					JE_playSampleNum(S_CLICK);
-
-					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = scaler;
-					break;
-				}
 				case MENU_ITEM_SCALING_MODE:
-				{
-					JE_playSampleNum(S_CLICK);
-
-					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = scaling_mode;
-					break;
-				}
 				case MENU_ITEM_SHARP_BILINEAR:
-				{
-					JE_playSampleNum(S_CLICK);
-
-					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = sharp_bilinear_enabled ? 1 : 0;
-					break;
-				}
 				case MENU_ITEM_VSYNC:
-				{
-					JE_playSampleNum(S_CLICK);
-
-					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = vsync_enabled ? 1 : 0;
-					break;
-				}
 				case MENU_ITEM_SMOOTH_MOTION:
-				{
-					JE_playSampleNum(S_CLICK);
-
-					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = smooth_motion ? 1 : 0;
-					break;
-				}
 				case MENU_ITEM_BRIGHTNESS:
 				{
 					JE_playSampleNum(S_CLICK);
 
 					currentPicker = selectedMenuItemId;
-					pickerSelectedIndex = gammaCorrection % COUNTOF(brightnessNames);
+					pickerSelectedIndex = gfx_option_current(gfxOptionOf(selectedMenuItemId));
 					break;
 				}
 				case MENU_ITEM_GAME_SPEED:
@@ -1558,49 +1467,15 @@ void setupMenuPage(SetupPage page)
 					break;
 				}
 				case MENU_ITEM_DISPLAY:
-				{
-					if ((int)pickerSelectedIndex - 1 != fullscreen_display)
-						reinit_fullscreen((int)pickerSelectedIndex - 1);
-					break;
-				}
 				case MENU_ITEM_SCALER:
-				{
-					if (pickerSelectedIndex != scaler)
-					{
-						scaler_chosen = true;
-						const int oldScaler = scaler;
-						if (!init_scaler(pickerSelectedIndex) &&  // try new scaler
-						    !init_scaler(oldScaler))              // revert on fail
-						{
-							exit(EXIT_FAILURE);
-						}
-					}
-					break;
-				}
 				case MENU_ITEM_SCALING_MODE:
-				{
-					scaling_mode = pickerSelectedIndex;
-					break;
-				}
 				case MENU_ITEM_SHARP_BILINEAR:
-				{
-					set_sharp_bilinear(pickerSelectedIndex == 1);
-					break;
-				}
 				case MENU_ITEM_VSYNC:
-				{
-					set_vsync(pickerSelectedIndex == 1);
-					break;
-				}
 				case MENU_ITEM_SMOOTH_MOTION:
-				{
-					smooth_motion = pickerSelectedIndex == 1;
-					smooth_motion_chosen = true;
-					break;
-				}
 				case MENU_ITEM_BRIGHTNESS:
 				{
-					gammaCorrection = pickerSelectedIndex;  // applied when a level starts
+					// the brightness is applied when a level starts
+					gfx_option_set(gfxOptionOf(selectedMenuItem->id), pickerSelectedIndex);
 					break;
 				}
 				case MENU_ITEM_GAME_SPEED:
@@ -1651,6 +1526,7 @@ void setupMenuPage(SetupPage page)
 	}
 
 #undef stepJoystickSetting
+#undef gfxOptionOf
 #undef MENU_ITEM_BASE
 }
 

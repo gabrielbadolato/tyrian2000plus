@@ -240,6 +240,10 @@ title screen.
   and use the address it gives the host's computer. On Windows, allow the
   game when the firewall asks. A connection with a lot of lag makes the
   controls feel slower.
+- There is no password: while you host with the port open to the internet,
+  whoever reaches it first becomes the other player. Open the port only
+  while you play, or use the virtual network, which only your friends can
+  reach.
 
 ## Where each option is
 

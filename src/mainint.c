@@ -53,6 +53,7 @@
 #include "player.h"
 #include "shots.h"
 #include "smooth.h"
+#include "gfxopts.h"
 #include "sndmast.h"
 #include "sprite.h"
 #include "touch.h"
@@ -1515,8 +1516,6 @@ void JE_doInGameSetup(void)
 	mouseSetRelative(true);
 }
 
-static const char *const brightnessNames[] = { "Normal", "Bright", "Brighter", "Brightest" };
-
 JE_boolean JE_inGameSetup(void)
 {
 	bool result = false;
@@ -1672,6 +1671,10 @@ JE_boolean JE_inGameSetup(void)
 			char buffer[32];
 			const char *valueText = NULL;
 
+			// the Graphics page items are in the order of GfxOption
+			if (item >= MENU_ITEM_DISPLAY && item <= MENU_ITEM_BRIGHTNESS)
+				valueText = gfx_option_current_name((GfxOption)(item - MENU_ITEM_DISPLAY), buffer, sizeof(buffer));
+
 			switch (item)
 			{
 			case MENU_ITEM_MUSIC_VOLUME:
@@ -1692,35 +1695,6 @@ JE_boolean JE_inGameSetup(void)
 				break;
 			case MENU_ITEM_AUTO_FIRE:
 				valueText = autoFireToggle ? tr("On") : tr("Off");
-				break;
-			case MENU_ITEM_DISPLAY:
-				if (fullscreen_display >= 0)
-				{
-					snprintf(buffer, sizeof(buffer), tr("Display %d"), fullscreen_display + 1);
-					valueText = buffer;
-				}
-				else
-				{
-					valueText = tr("Window");
-				}
-				break;
-			case MENU_ITEM_SCALER:
-				valueText = scalers[scaler].name;
-				break;
-			case MENU_ITEM_SCALING_MODE:
-				valueText = tr(scaling_mode_names[scaling_mode]);
-				break;
-			case MENU_ITEM_SHARP_BILINEAR:
-				valueText = sharp_bilinear_enabled ? tr("On") : tr("Off");
-				break;
-			case MENU_ITEM_VSYNC:
-				valueText = vsync_enabled ? tr("On") : tr("Off");
-				break;
-			case MENU_ITEM_SMOOTH_MOTION:
-				valueText = smooth_motion ? tr("On") : tr("Off");
-				break;
-			case MENU_ITEM_BRIGHTNESS:
-				valueText = tr(brightnessNames[gammaCorrection % COUNTOF(brightnessNames)]);
 				break;
 			default:
 				break;
@@ -2065,62 +2039,18 @@ JE_boolean JE_inGameSetup(void)
 				break;
 			}
 			case MENU_ITEM_DISPLAY:
-			{
-				JE_playSampleNum(S_CURSOR);
-
-				// -1 is the window, then each display
-				const int count = 1 + SDL_GetNumVideoDisplays();
-				reinit_fullscreen((fullscreen_display + 1 + count + step) % count - 1);
-				break;
-			}
 			case MENU_ITEM_SCALER:
-			{
-				JE_playSampleNum(S_CURSOR);
-
-				scaler_chosen = true;
-				const int oldScaler = scaler;
-				if (!init_scaler((scaler + scalers_count + step) % scalers_count) &&  // try new scaler
-				    !init_scaler(oldScaler))                                        // revert on fail
-				{
-					exit(EXIT_FAILURE);
-				}
-				break;
-			}
 			case MENU_ITEM_SCALING_MODE:
-			{
-				JE_playSampleNum(S_CURSOR);
-
-				scaling_mode = (scaling_mode + ScalingMode_MAX + step) % ScalingMode_MAX;
-				break;
-			}
 			case MENU_ITEM_SHARP_BILINEAR:
-			{
-				JE_playSampleNum(S_CURSOR);
-
-				set_sharp_bilinear(!sharp_bilinear_enabled);
-				break;
-			}
 			case MENU_ITEM_VSYNC:
-			{
-				JE_playSampleNum(S_CURSOR);
-
-				set_vsync(!vsync_enabled);
-				break;
-			}
 			case MENU_ITEM_SMOOTH_MOTION:
-			{
-				JE_playSampleNum(S_CURSOR);
-
-				smooth_motion = !smooth_motion;
-				smooth_motion_chosen = true;
-				break;
-			}
 			case MENU_ITEM_BRIGHTNESS:
 			{
 				JE_playSampleNum(S_CURSOR);
 
-				gammaCorrection = (gammaCorrection + COUNTOF(brightnessNames) + step) % COUNTOF(brightnessNames);
-				applyLevelGamma();
+				gfx_option_step((GfxOption)(selectedItem - MENU_ITEM_DISPLAY), step);
+				if (selectedItem == MENU_ITEM_BRIGHTNESS)
+					applyLevelGamma();
 				break;
 			}
 			default:
